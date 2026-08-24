@@ -19,6 +19,12 @@ export interface ProblemCardProps {
   months: string[];
   monthsIn: string[];
   t: (key: string, values?: Record<string, string | number>) => string;
+  /**
+   * The assumptions this recommendation rests on, rendered with the card rather than in a
+   * footnote at the bottom of the page. A number is only as good as what it assumed, and the
+   * reader should not have to go looking for that.
+   */
+  assumptions?: string;
   onApply: (fix: Recommendation) => void;
 }
 
@@ -52,6 +58,7 @@ export function ProblemCard({
   months,
   monthsIn,
   t,
+  assumptions,
   onApply,
 }: ProblemCardProps) {
   const [openProof, setOpenProof] = useState<string | null>(null);
@@ -228,6 +235,12 @@ export function ProblemCard({
       {fixes.length === 0 && problem.severity !== 'info' && (
         <p className="muted" style={{ margin: 0, fontSize: 13 }}>
           {t('fixes.none')}
+        </p>
+      )}
+
+      {assumptions && fixes.length > 0 && (
+        <p className="muted" style={{ margin: 0, fontSize: 12 }}>
+          {assumptions}
         </p>
       )}
     </article>

@@ -105,9 +105,23 @@ public web app with no account required:
 - verified recommendations, each with an Apply button and a visible before/after re-run
 - scenario comparison as small multiples on one shared scale, plus the numbers
 - a sensitivity panel: six assumptions moved one at a time, each a full re-simulation
+- envelopes and per-person investment sleeves, including the "paid from pocket money" cap the
+  prototype claimed but never enforced
+- a share link that carries the whole plan in the URL fragment — never sent to a server
 - `localStorage` persistence, JSON export and import, engine-version awareness
+- keyboard navigation along the chart with a live region, so the tooltip is not pointer-only
 - installable PWA with an offline shell
 - public `/parametre`, `/metodika` and `/zasady`
+- `vercel.json` with a strict CSP: no third-party origins, because the app needs none
+
+**Phase 2 is complete: 21 of the 22 checklist items.** The one left is wiring Sentry and
+PostHog, which needs accounts rather than code.
+
+Before launch, two things in this repo are deliberately holding the brakes on:
+`apps/web/src/app/robots.ts` disallows every crawler and the locale layout sets a page-level
+`noindex`. Both come off together, and only once the ⚠️ statutory values on `/parametre` are
+confirmed from primary sources. Search is the main acquisition channel — being found with
+wrong benefit figures is worse than not being found.
 
 Next: optional accounts with client-side encryption, then notifications, then iOS.
 

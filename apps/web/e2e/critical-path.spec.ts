@@ -101,3 +101,54 @@ test.describe('planner', () => {
     await expect(page.getByLabel('Kolik máte teď')).toHaveValue('333000');
   });
 });
+
+test.describe('accessibility and sharing', () => {
+  test('the chart can be walked with the keyboard, not just a pointer', async ({ page }) => {
+    await page.goto('/cs');
+    const chart = page.locator('svg[role="img"]').first();
+    await chart.focus();
+    await expect(chart).toBeFocused();
+
+    /* Arrow keys move along the series and announce the reading in a live region. */
+    await page.keyboard.press('End');
+    const atEnd = await page.locator('p[aria-live="polite"]').first().textContent();
+    expect(atEnd).toMatch(/20\d\d/);
+
+    await page.keyboard.press('Home');
+    const atStart = await page.locator('p[aria-live="polite"]').first().textContent();
+    expect(atStart).toMatch(/20\d\d/);
+    expect(atStart).not.toBe(atEnd);
+  });
+
+  test('a shared link reproduces the plan it was made from', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.goto('/cs/plan');
+    await page.getByRole('button', { name: /Přeskočit/ }).click();
+    await page.getByLabel('Kolik máte teď').fill('777000');
+    await page.getByRole('button', { name: /Zkopírovat odkaz/ }).click();
+    await expect(page.getByText('Odkaz zkopírován')).toBeVisible();
+
+    const url = await page.evaluate(() => navigator.clipboard.readText());
+    expect(url).toContain('#p=');
+
+    /* A fresh browser context: no localStorage, so only the link can carry the plan. */
+    const other = await page.context().browser()!.newContext();
+    const fresh = await other.newPage();
+    await fresh.goto(url);
+    await expect(fresh.getByLabel('Kolik máte teď')).toHaveValue('777000');
+    await expect(fresh.getByText(/Plán načtený z odkazu/)).toBeVisible();
+    await other.close();
+  });
+
+  test('envelopes are descriptive: adding one must not move the projection', async ({ page }) => {
+    await page.goto('/cs/plan');
+    await page.getByRole('button', { name: /Přeskočit/ }).click();
+
+    const before = await page.locator('svg[role="img"]').first().getAttribute('aria-label');
+    await page.getByRole('button', { name: 'Přidat obálku' }).click();
+    await page.getByLabel('Kolik je v ní').fill('50000');
+    await page.waitForTimeout(600);
+    const after = await page.locator('svg[role="img"]').first().getAttribute('aria-label');
+    expect(after).toBe(before);
+  });
+});

@@ -181,7 +181,40 @@ export function ReserveChart({ result, currency, locale, months, labels }: Reser
     setHoverIndex(clamp(Math.round(t * (geometry.points.length - 1)), 0, geometry.points.length - 1));
   }
 
+  function handleKey(event: React.KeyboardEvent<SVGSVGElement>) {
+    if (!geometry) return;
+    const last = geometry.points.length - 1;
+    const current = hoverIndex ?? 0;
+    const step = event.shiftKey ? 12 : 1;
+    switch (event.key) {
+      case 'ArrowRight':
+        setHoverIndex(clamp(current + step, 0, last));
+        break;
+      case 'ArrowLeft':
+        setHoverIndex(clamp(current - step, 0, last));
+        break;
+      case 'Home':
+        setHoverIndex(0);
+        break;
+      case 'End':
+        setHoverIndex(last);
+        break;
+      case 'Escape':
+        setHoverIndex(null);
+        return;
+      default:
+        return;
+    }
+    event.preventDefault();
+  }
+
   const summary = `${labels.title}. ${labels.trough}: ${money(result.minReserve, currency, locale)} ${monthLabel(result.minReserveAt, months)}.`;
+
+  const hoveredPoint = hoverIndex !== null ? geometry?.points[hoverIndex] : undefined;
+  /* The tooltip is pointer-only; this is the same reading for a keyboard or a screen reader. */
+  const liveReading = hoveredPoint
+    ? `${monthLabel({ year: hoveredPoint.year, month: hoveredPoint.month }, months)}: ${money(hoveredPoint.reserve, currency, locale)}`
+    : '';
 
   return (
     <figure style={{ margin: 0 }} ref={hostRef}>
@@ -292,8 +325,14 @@ export function ReserveChart({ result, currency, locale, months, labels }: Reser
           hoverIndex={hoverIndex}
           onMove={handleMove}
           onLeave={() => setHoverIndex(null)}
+          onKey={handleKey}
         />
       )}
+
+      {/* Announced to assistive tech as the keyboard walks the series. */}
+      <p aria-live="polite" className="muted tabular" style={{ margin: '6px 0 0', fontSize: 12, minHeight: '1.2em' }}>
+        {liveReading}
+      </p>
     </figure>
   );
 }
@@ -328,6 +367,7 @@ function ChartSvg({
   hoverIndex,
   onMove,
   onLeave,
+  onKey,
 }: {
   L: Layout;
   narrow: boolean;
@@ -343,6 +383,7 @@ function ChartSvg({
   hoverIndex: number | null;
   onMove: (event: React.PointerEvent<SVGSVGElement>) => void;
   onLeave: () => void;
+  onKey: (event: React.KeyboardEvent<SVGSVGElement>) => void;
 }) {
   const { points, floors, x, y, line, area, floorLine, ticks, yTicks, yMin, troughIndex, axisScale } =
     geometry;
@@ -361,9 +402,11 @@ function ChartSvg({
       width="100%"
       role="img"
       aria-label={summary}
+      tabIndex={0}
       style={{ display: 'block', touchAction: 'pan-y' }}
       onPointerMove={onMove}
       onPointerLeave={onLeave}
+      onKeyDown={onKey}
     >
       <defs>
         <linearGradient id={`grad-${gradientId}`} x1="0" y1="0" x2="0" y2="1">

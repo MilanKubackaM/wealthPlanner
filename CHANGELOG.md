@@ -35,7 +35,20 @@ Added
 - PNG export of the chart. CSS custom properties are resolved to literal colours before
   serialising, since an SVG loaded into an `<img>` has no access to the document's cascade.
 - Installable PWA with an offline shell that never caches a plan.
-- 14 Playwright end-to-end tests across desktop and mobile, failing on ANY console error —
+- Envelopes and per-person investment sleeves, with the "paid from pocket money" flag wired to
+  the engine's cap. An end-to-end test asserts that adding an envelope does NOT move the
+  projection, which is what "descriptive" has to mean if the word is to be trusted.
+- A share link carrying the whole plan in the URL fragment, deflate-compressed with the native
+  `CompressionStream` and base64url-encoded — about 700 characters, and the fragment is never
+  sent in an HTTP request, so a shared plan goes past the server rather than through it. A test
+  round-trips it through a fresh browser context with no storage and asserts an identical
+  projection on the other side.
+- Keyboard navigation along the chart (arrows, Shift for a year at a time, Home/End, Escape)
+  with the reading announced in a live region, so the tooltip is no longer pointer-only.
+- The assumptions behind each recommendation are printed with the card, not in a page footnote.
+- `robots.ts` and `vercel.json` — the latter with a Content-Security-Policy that allows no
+  third-party origin at all, which the app can afford because it talks to none.
+- 20 Playwright end-to-end tests across desktop and mobile, failing on ANY console error —
   which is how the hydration bug above would have been caught before a human saw it.
 
 Decided

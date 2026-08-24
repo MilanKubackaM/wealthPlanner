@@ -19,6 +19,9 @@ import { ReserveChart } from './ReserveChart';
 import { ProblemCard } from './ProblemCard';
 import { Fieldset, MonthYearInput, NumberInput, SelectInput, StatTile } from './fields';
 import { Compare } from './Compare';
+import { EnvelopesEditor } from './EnvelopesEditor';
+import { SleevesEditor } from './SleevesEditor';
+import { decodeScenario, shareUrl } from '@/lib/share';
 import { Sensitivity } from './Sensitivity';
 
 /**
@@ -56,17 +59,39 @@ export function PlannerClient({
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [staleEngine, setStaleEngine] = useState(false);
   const [importError, setImportError] = useState(false);
+  const [shareState, setShareState] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const [fromLink, setFromLink] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
-  /* A stored plan skips onboarding entirely — nobody wants the wizard twice. */
+  /*
+   * A shared link wins over anything in storage — someone who opens a link came to see THAT
+   * plan. Otherwise a stored plan skips onboarding, because nobody wants the wizard twice.
+   */
   useEffect(() => {
-    const stored = loadPlan();
-    if (stored) {
-      setScenario(stored.scenario);
-      setSavedAt(stored.savedAt);
-      setStaleEngine(stored.staleEngine);
-      setStage('plan');
+    let cancelled = false;
+    async function boot() {
+      const fragment = window.location.hash;
+      if (fragment.startsWith('#p=')) {
+        const shared = await decodeScenario(fragment);
+        if (shared && !cancelled) {
+          setScenario(shared);
+          setFromLink(true);
+          setStage('plan');
+          return;
+        }
+      }
+      const stored = loadPlan();
+      if (stored && !cancelled) {
+        setScenario(stored.scenario);
+        setSavedAt(stored.savedAt);
+        setStaleEngine(stored.staleEngine);
+        setStage('plan');
+      }
     }
+    void boot();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const result = useMemo(() => simulate(scenario), [scenario]);
@@ -122,6 +147,17 @@ export function PlannerClient({
     anchor.download = 'plan.json';
     anchor.click();
     URL.revokeObjectURL(url);
+  }
+
+  async function handleShare() {
+    try {
+      const url = await shareUrl(scenario, window.location.origin, window.location.pathname);
+      await navigator.clipboard.writeText(url);
+      setShareState('copied');
+    } catch {
+      setShareState('failed');
+    }
+    setTimeout(() => setShareState('idle'), 2500);
   }
 
   async function handleImportFile(file: File) {
@@ -616,6 +652,15 @@ export function PlannerClient({
 
   return (
     <div style={{ display: 'grid', gap: 20 }}>
+      {fromLink && (
+        <p
+          className="card"
+          style={{ margin: 0, borderLeft: '3px solid var(--accent)', fontSize: 14 }}
+        >
+          {t('share.loadedFromLink')}
+        </p>
+      )}
+
       {staleEngine && (
         <p
           className="card"
@@ -696,6 +741,12 @@ export function PlannerClient({
             months={months}
             monthsIn={monthsIn}
             t={t as unknown as (key: string, values?: Record<string, string | number>) => string}
+            assumptions={t('assumptions.inline', {
+              return: `${scenario.jointInvesting.annualReturnPct} %`,
+              cpi: `${scenario.assumptions.cpiPct} %`,
+              floor: scenario.assumptions.reserveFloorMonths,
+              date: today,
+            })}
             onApply={applyFix}
           />
         ))}
@@ -726,6 +777,28 @@ export function PlannerClient({
         {mortgageFields}
         {expenseFields}
         {reserveFields}
+        {scenario.people.map((person, index) => (
+          <SleevesEditor
+            key={`sleeves-${person.id}`}
+            person={person}
+            personIndex={index}
+            currency={currency}
+            locale={locale}
+            onChange={(investments) =>
+              patch({
+                people: scenario.people.map((p, i) => (i === index ? { ...p, investments } : p)),
+              })
+            }
+          />
+        ))}
+        <EnvelopesEditor
+          envelopes={scenario.envelopes}
+          people={scenario.people}
+          result={result}
+          currency={currency}
+          locale={locale}
+          onChange={(envelopes) => patch({ envelopes })}
+        />
         {childFields}
         <Fieldset title={t('planner.assumptions')}>
           <NumberInput
@@ -762,6 +835,9 @@ export function PlannerClient({
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
           <button type="button" className="btn btn-primary" onClick={handleSave}>
             {t('planner.save')}
+          </button>
+          <button type="button" className="btn" onClick={() => void handleShare()}>
+            {t('share.button')}
           </button>
           <button type="button" className="btn" onClick={handleExport}>
             {t('planner.export')}
@@ -803,7 +879,20 @@ export function PlannerClient({
               {t('planner.importFailed')}
             </span>
           )}
+          {shareState !== 'idle' && (
+            <span
+              style={{
+                fontSize: 13,
+                color: shareState === 'copied' ? 'var(--status-good)' : 'var(--status-critical)',
+              }}
+            >
+              {shareState === 'copied' ? t('share.copied') : t('share.failed')}
+            </span>
+          )}
         </div>
+        <p className="muted" style={{ margin: 0, fontSize: 12 }}>
+          {t('share.hint')}
+        </p>
         <p className="muted" style={{ margin: 0, fontSize: 12 }}>
           {t('planner.computedAt', { date: today })} {t('disclaimer.short')}
         </p>

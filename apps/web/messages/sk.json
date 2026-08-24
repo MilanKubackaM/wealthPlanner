@@ -320,5 +320,42 @@
     "s4": "Pretože o vás správca nedrží žiadne osobné údaje, nie je z čoho robiť výpis ani čo mazať. Dáta pod vašou kontrolou zmažete tlačidlom „Začať znova“ alebo vymazaním dát stránky v prehliadači.",
     "s5title": "Kontakt",
     "s5": "Projekt je open source. Chyby, otázky a pripomienky patria do Issues v repozitári, kde ich zároveň vidí každý ďalší používateľ."
+  },
+  "envelopes": {
+    "title": "Obálky (sporenie na cieľ)",
+    "body": "Rozdelenie rezervy na konkrétne účely. Model s nimi nepočíta ako s ďalším výdavkom — ukazujú, koľko z rezervy je už zamluvené.",
+    "add": "Pridať obálku",
+    "remove": "Odobrať",
+    "name": "Na čo",
+    "amount": "Koľko je v nej",
+    "target": "Cieľ",
+    "owner": "Čia je",
+    "shared": "Spoločná",
+    "counts": "Súčasť rezervy",
+    "countsHint": "Spoločné obálky tvoria časť hotovostnej rezervy, osobné nie.",
+    "sharedTotal": "V spoločných obálkach",
+    "personalTotal": "V osobných obálkach",
+    "progress": "{pct} % z cieľa"
+  },
+  "sleeves": {
+    "title": "Osobné investície — {name}",
+    "add": "Pridať investíciu",
+    "remove": "Odobrať",
+    "name": "Názov",
+    "monthly": "Mesačne",
+    "return": "Očakávaný výnos",
+    "start": "Súčasná hodnota",
+    "fromPocket": "Platí sa z vreckového",
+    "fromPocketHint": "Keď je zaškrtnuté, vklad sa zastropuje vreckovým danej osoby — nezhodnocujú sa peniaze, ktoré z domácnosti neodišli."
+  },
+  "share": {
+    "button": "Skopírovať odkaz na plán",
+    "copied": "Odkaz skopírovaný",
+    "failed": "Kopírovanie sa nepodarilo",
+    "hint": "Odkaz nesie celý plán v adrese. Na server sa nič neposiela — časť za mriežkou prehliadač nikdy neodosiela.",
+    "loadedFromLink": "Plán načítaný z odkazu. Uložením do prehliadača si ho zachováte."
+  },
+  "assumptions": {
+    "inline": "Počítané s: výnos {return}, inflácia {cpi}, rezerva {floor} mesiacov fixných výdavkov, právny stav {date}."
   }
 }
