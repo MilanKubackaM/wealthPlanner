@@ -3,11 +3,13 @@ dist/
 .turbo/
 .next/
 coverage/
+test-results/
+playwright-report/
 *.log
 .DS_Store
 .env
 .env.local
 .vercel
 
-# build metadata
-*.tsbuildinfo
+# local setup archive (never commit)
+.setup-archive/

@@ -5,6 +5,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { routing } from '@/i18n/routing';
 import { Link } from '@/i18n/navigation';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { RegisterServiceWorker } from '@/components/RegisterServiceWorker';
 import '../globals.css';
 
 export function generateStaticParams() {
@@ -41,6 +42,7 @@ export default async function LocaleLayout({
     <html lang={locale} suppressHydrationWarning>
       <body>
         <NextIntlClientProvider>
+          <RegisterServiceWorker />
           <header
             style={{
               borderBottom: '1px solid var(--border)',
@@ -85,6 +87,7 @@ export default async function LocaleLayout({
                 <Link href="/plan">{t('nav.plan')}</Link>
                 <Link href="/parametre">{t('nav.parameters')}</Link>
                 <Link href="/metodika">{t('nav.methodology')}</Link>
+                <Link href="/zasady">{t('nav.privacy')}</Link>
                 <Link href="/" locale={locale === 'cs' ? 'sk' : 'cs'} hrefLang={locale === 'cs' ? 'sk' : 'cs'}>
                   {locale === 'cs' ? 'SK' : 'CZ'}
                 </Link>

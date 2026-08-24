@@ -18,6 +18,8 @@ import { money, monthPhrase, type UiLocale } from '@/lib/format';
 import { ReserveChart } from './ReserveChart';
 import { ProblemCard } from './ProblemCard';
 import { Fieldset, MonthYearInput, NumberInput, SelectInput, StatTile } from './fields';
+import { Compare } from './Compare';
+import { Sensitivity } from './Sensitivity';
 
 /**
  * The planner. Two different recompute rhythms, chosen from measurement rather than taste:
@@ -699,6 +701,16 @@ export function PlannerClient({
         ))}
       </section>
 
+      <Compare
+        scenario={scenario}
+        currency={currency}
+        locale={locale}
+        months={months}
+        onApply={(next) => setScenario(next)}
+      />
+
+      <Sensitivity scenario={scenario} currency={currency} locale={locale} months={months} />
+
       <section className="card" style={{ display: 'grid', gap: 20 }}>
         <SelectInput
           id="country-plan"
@@ -813,6 +825,7 @@ export function chartLabels(t: ReturnType<typeof useTranslations>) {
     tableInvest: t('chart.tableInvest'),
     tableMortgage: t('chart.tableMortgage'),
     tableNetWorth: t('chart.tableNetWorth'),
+    exportPng: t('chart.exportPng'),
   };
 }
 

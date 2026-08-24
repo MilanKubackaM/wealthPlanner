@@ -13,7 +13,8 @@
     "methodology": "Metodika",
     "toDark": "Tmavý režim",
     "toLight": "Svetlý režim",
-    "language": "Jazyk"
+    "language": "Jazyk",
+    "privacy": "Súkromie"
   },
   "landing": {
     "h1": "Kedy si môžeme dovoliť dieťa?",
@@ -46,7 +47,8 @@
     "tableMortgage": "Hypotéka",
     "tableNetWorth": "Čisté bohatstvo",
     "axisYear": "Rok",
-    "empty": "Zadajte príjmy a výdavky a graf sa dopočíta."
+    "empty": "Zadajte príjmy a výdavky a graf sa dopočíta.",
+    "exportPng": "Stiahnuť ako obrázok"
   },
   "problems": {
     "heading": "Čo model našiel",
@@ -200,13 +202,17 @@
   },
   "compare": {
     "heading": "Porovnanie scenárov",
-    "body": "Jedna projekcia je zaujímavosť. Dve sú rozhodnutie.",
-    "base": "Bez dieťaťa",
-    "withChild": "Dieťa {year}",
-    "later": "Dieťa {year}",
-    "minReserve": "Najnižšia rezerva",
-    "netWorth": "Čisté bohatstvo {year}",
-    "deficit": "Rezerva pod nulou"
+    "body": "Jedna projekcia je zaujímavosť. Dve sú rozhodnutie. Všetky tri grafy majú rovnakú svislú os, takže sa dajú porovnať pohľadom.",
+    "current": "Váš plán",
+    "noChild": "Bez dieťaťa",
+    "childIn": "Dieťa {year}",
+    "colVariant": "Scenár",
+    "colMinReserve": "Najnižšia rezerva",
+    "colWhen": "Kedy",
+    "colDeficit": "Pod nulou",
+    "colNetWorth": "Čisté bohatstvo {year}",
+    "deficitNo": "nie",
+    "apply": "Použiť tento scenár"
   },
   "parameters": {
     "title": "Parametre, s ktorými model počíta",
@@ -282,5 +288,37 @@
     "v októbri",
     "v novembri",
     "v decembri"
-  ]
+  ],
+  "sensitivity": {
+    "heading": "Čo keď sa predpoklady nevyplnia",
+    "body": "Toto je čestná odpoveď na otázku „a čo keď sa model mýli“. Každý riadok je celá simulácia znova, s jedným zmeneným predpokladom.",
+    "colVariant": "Zmena",
+    "colMinReserve": "Najnižšia rezerva",
+    "colWhen": "Kedy",
+    "colDeficit": "Pod nulou",
+    "base": "Váš plán, ako je",
+    "returnDown": "Výnos investícií o 1 pb nižší",
+    "cpiUp": "Inflácia o 2 pb vyššia",
+    "rateUp": "Sadzba hypotéky o 1 pb vyššia",
+    "incomeDown": "Jeden príjem o 30 % nižší",
+    "reserveRateDown": "Úrok na rezerve o 2 pb nižší",
+    "deficitNo": "nie",
+    "colNetWorth": "Čisté bohatstvo {year}",
+    "colPaid": "Hypotéka splatená",
+    "notPaid": "nesplatená"
+  },
+  "privacy": {
+    "title": "Zásady ochrany osobných údajov",
+    "lead": "Krátke, pretože je krátka aj pravda: aplikácia o vás nič neukladá.",
+    "s1title": "Kde sú vaše dáta",
+    "s1": "Váš plán sa ukladá len do localStorage vášho prehliadača, keď kliknete na „Uložiť do prehliadača“. Neopustí zariadenie. Neexistuje účet, prihlásenie ani databáza, do ktorej by sa dal poslať. Keď si prehliadaču vymažete dáta, plán zmizne — preto je tam export do súboru.",
+    "s2title": "Čo sa počíta kde",
+    "s2": "Celá simulácia beží vo vašom prehliadači v JavaScripte. Na server sa neposiela žiadne číslo z vášho rozpočtu, pretože server o nich nič nepočíta.",
+    "s3title": "Meranie prevádzky",
+    "s3": "Stránka nepoužíva reklamné ani sledovacie skripty tretích strán a nepredáva nikam žiadne dáta. Ak sa niekedy zapne anonymné meranie návštevnosti, bude to napísané tu a v EU regióne.",
+    "s4title": "Vaše práva",
+    "s4": "Pretože o vás správca nedrží žiadne osobné údaje, nie je z čoho robiť výpis ani čo mazať. Dáta pod vašou kontrolou zmažete tlačidlom „Začať znova“ alebo vymazaním dát stránky v prehliadači.",
+    "s5title": "Kontakt",
+    "s5": "Projekt je open source. Chyby, otázky a pripomienky patria do Issues v repozitári, kde ich zároveň vidí každý ďalší používateľ."
+  }
 }

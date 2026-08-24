@@ -75,11 +75,16 @@ is also why the running cost stays near zero.
 
 ```bash
 pnpm install
-pnpm test          # 63 tests: unit, golden-file projections, property tests, formatting
+pnpm test          # 63 unit / golden / property / formatting tests
 pnpm typecheck
 pnpm build
+pnpm --filter @wealthplanner/web e2e   # 14 end-to-end, desktop + mobile
 node scripts/engine-version-guard.mjs
 ```
+
+The end-to-end suite fails on any console error, which is how a hydration mismatch gets
+caught rather than shipped. In a sandbox that already has a Chromium, point
+`PW_EXECUTABLE_PATH` at it to skip the download.
 
 Golden files are hand-written JSON, not opaque snapshots, so a change in the arithmetic
 shows up as a readable diff. Regenerate deliberately and review every changed number:
@@ -91,14 +96,20 @@ node scripts/engine-version-guard.mjs --accept   # only for a genuine no-op refa
 
 ## Status
 
-Phases 1 and 2 of [`IMPLEMENTACIA.md`](./IMPLEMENTACIA.md) are done: the engine, and the
-public web app with no account required — landing page with a populated projection, a
-four-step onboarding instead of a wall of twenty-five fields, the canonical reserve chart
-with its trough named, verified recommendations with a visible re-run, `localStorage`
-persistence with export and import, and the public `/parametre` and `/metodika` pages.
+Phases 1 and 2 of [`IMPLEMENTACIA.md`](./IMPLEMENTACIA.md) are done — the engine, and the
+public web app with no account required:
 
-Next: scenario comparison side by side, a sensitivity panel, PWA install, then optional
-accounts with client-side encryption.
+- landing page with a populated projection and the trough stated in a sentence
+- four-step onboarding with national-average defaults, not a wall of empty fields
+- the canonical reserve chart, responsive down to a phone, with a table view and PNG export
+- verified recommendations, each with an Apply button and a visible before/after re-run
+- scenario comparison as small multiples on one shared scale, plus the numbers
+- a sensitivity panel: six assumptions moved one at a time, each a full re-simulation
+- `localStorage` persistence, JSON export and import, engine-version awareness
+- installable PWA with an offline shell
+- public `/parametre`, `/metodika` and `/zasady`
+
+Next: optional accounts with client-side encryption, then notifications, then iOS.
 
 ## Not financial advice
 

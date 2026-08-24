@@ -4,6 +4,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { CurrencyCode } from '@wealthplanner/jurisdictions';
 import type { ProjectionResult } from '@wealthplanner/engine';
 import { axisScaleFor, money, moneyAxis, monthLabel, type UiLocale } from '@/lib/format';
+import { downloadChartPng } from '@/lib/exportImage';
 
 /*
  * The canonical chart: ONE series — the cash reserve — with the floor as a reference line
@@ -95,6 +96,7 @@ export interface ReserveChartProps {
     tableInvest: string;
     tableMortgage: string;
     tableNetWorth: string;
+    exportPng: string;
   };
 }
 
@@ -194,15 +196,30 @@ export function ReserveChart({ result, currency, locale, months, labels }: Reser
         }}
       >
         <figcaption style={{ fontWeight: 600, fontSize: 15 }}>{labels.title}</figcaption>
-        <button
-          type="button"
-          className="btn"
-          style={{ padding: '5px 10px', fontSize: 13 }}
-          onClick={() => setShowTable((v) => !v)}
-          aria-expanded={showTable}
-        >
-          {showTable ? labels.hideTable : labels.showTable}
-        </button>
+        <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {!showTable && (
+            <button
+              type="button"
+              className="btn"
+              style={{ padding: '5px 10px', fontSize: 13 }}
+              onClick={() => {
+                const svg = svgRef.current;
+                if (svg) void downloadChartPng(svg, 'rezerva.png');
+              }}
+            >
+              {labels.exportPng}
+            </button>
+          )}
+          <button
+            type="button"
+            className="btn"
+            style={{ padding: '5px 10px', fontSize: 13 }}
+            onClick={() => setShowTable((v) => !v)}
+            aria-expanded={showTable}
+          >
+            {showTable ? labels.hideTable : labels.showTable}
+          </button>
+        </span>
       </div>
 
       {showTable || !geometry ? (

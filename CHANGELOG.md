@@ -22,8 +22,21 @@ Added
 - Verified recommendations in the UI, each with an Apply button and a before/after re-run.
 - `localStorage` persistence, JSON export and import, engine-version awareness on load.
 - Public `/parametre` (every statutory constant with its source and last-verified date,
-  unconfirmed ones flagged in the UI) and `/metodika` (the monthly order of operations and
-  the binary-search-then-verify procedure, written out).
+  unconfirmed ones flagged in the UI), `/metodika` (the monthly order of operations and the
+  binary-search-then-verify procedure, written out) and `/zasady` (short, because the truth is
+  short: nothing about the user is stored anywhere).
+- Scenario comparison as small multiples — without a child, as entered, and with the child
+  three years later — all three on ONE shared vertical scale, because a per-panel scale would
+  make the worst scenario look like the best. Any variant can be adopted with one click.
+- A sensitivity panel: return −1 pp, inflation +2 pp, mortgage rate +1 pp, one income −30 %,
+  reserve rate −2 pp, each a full re-simulation. It reports net worth and the payoff year
+  alongside the trough, because a fixed mortgage payment means a rate shock does not move the
+  cash reserve at all — three rows showed an identical trough until those columns were added.
+- PNG export of the chart. CSS custom properties are resolved to literal colours before
+  serialising, since an SVG loaded into an `<img>` has no access to the document's cascade.
+- Installable PWA with an offline shell that never caches a plan.
+- 14 Playwright end-to-end tests across desktop and mobile, failing on ANY console error —
+  which is how the hydration bug above would have been caught before a human saw it.
 
 Decided
 - The simulation runs in the browser, never on a server. Measured: `simulate()` 0.9 ms,
