@@ -1,0 +1,286 @@
+{
+  "brand": {
+    "name": "Dovolíme si?",
+    "tagline": "Mesiac po mesiaci prepočítaný rozpočet vašej domácnosti na ďalších 25 rokov"
+  },
+  "meta": {
+    "title": "Dovolíme si? — mesačný simulátor rodinných financií",
+    "description": "Zadarmo a bez registrácie: čo urobí dieťa, refixácia hypotéky alebo zmena sporenia s vaším rozpočtom — mesiac po mesiaci, s českými a slovenskými dávkami v modeli."
+  },
+  "nav": {
+    "plan": "Môj plán",
+    "parameters": "Parametre",
+    "methodology": "Metodika",
+    "toDark": "Tmavý režim",
+    "toLight": "Svetlý režim",
+    "language": "Jazyk"
+  },
+  "landing": {
+    "h1": "Kedy si môžeme dovoliť dieťa?",
+    "lead": "Simulátor, ktorý nepočíta po rokoch, ale po mesiacoch — takže vám povie konkrétny mesiac, v ktorom vaša rezerva narazí na dno, a koľko v tom momente bude chýbať.",
+    "demoNote": "Ukázka na priemernej domácnosti s hypotékou a dieťaťom o tri roky. Všetky čísla si môžete prepísať.",
+    "cta": "Vyskúšať — bez registrácie",
+    "ctaMethodology": "Ako to počíta",
+    "privacy": "Vaše dáta zostávajú vo vašom prehliadači.",
+    "free": "Zadarmo navždy. Žiadne reklamy. Žiadne affiliate odkazy.",
+    "healthy": "V tejto podobe plán drží: rezerva nikdy neklesne pod {floor}.",
+    "whyMonthlyTitle": "Prečo mesačne",
+    "whyMonthly": "Ročný model nedokáže povedať „v januári 2032“. Tridsaťštyritýždňová materská, splátkový kalendár hypotéky aj prepad rezervy sú podmesačné javy — a práve v nich sa plán láme.",
+    "verifiedTitle": "Každé odporúčanie je dokázané",
+    "verified": "Návrh sa nevymýšľa. Model hľadá binárnym polením najmenšiu zmenu, ktorá problém odstráni, potom spustí celú simuláciu znova a ukáže vám oba priebehy. Keď sa zmena nepreukáže, nezobrazí sa.",
+    "openSourceTitle": "Celý model je verejný",
+    "openSource": "Kód, testy aj zdroje zákonných parametrov. Môžete si skontrolovať, ako sa dopočítalo každé číslo."
+  },
+  "chart": {
+    "title": "Hotovostná rezerva",
+    "reserve": "Rezerva",
+    "invest": "Investície",
+    "floor": "Odporúčané minimum ({months} mesiace fixných výdavkov)",
+    "floorShort": "Minimum",
+    "trough": "Dno rezervy",
+    "showTable": "Zobraziť ako tabuľku",
+    "hideTable": "Zobraziť ako graf",
+    "tableYear": "Rok",
+    "tableReserve": "Rezerva",
+    "tableInvest": "Investície",
+    "tableMortgage": "Hypotéka",
+    "tableNetWorth": "Čisté bohatstvo",
+    "axisYear": "Rok",
+    "empty": "Zadajte príjmy a výdavky a graf sa dopočíta."
+  },
+  "problems": {
+    "heading": "Čo model našiel",
+    "noneTitle": "Plán drží",
+    "noneBody": "Rezerva v celej projekcii neklesne pod odporúčané minimum a investovanie sa nikde nepreruší.",
+    "reserve-deficit": {
+      "title": "Rezerva sa vyčerpá {when}. Najhlbšia je {worstWhen}, kedy bude chýbať {amount}.",
+      "body": "Počas materskej a rodičovskej výdavky prevýšia príjem natoľko, že spoločná rezerva sa dostane pod nulu, a to aj po automatickom pozastavení investovania."
+    },
+    "reserve-below-floor": {
+      "title": "Rezerva klesne na {amount} {when} — do minima chýba {gap}",
+      "body": "Odporúčané minimum je {floor}, teda tri mesiace fixných výdavkov. Pod túto úroveň by rezerva nemala klesnúť ani počas rodičovskej."
+    },
+    "dca-paused": {
+      "title": "Investovanie sa preruší na {months} mesiacov, prvýkrát {when}",
+      "body": "Na hotovosti nezostane dosť, aby pravidelný vklad bežal bez prerušenia — model musel vynechať vklady za {amount}."
+    },
+    "pocket-overcommitted": {
+      "title": "Osobné investície prevyšujú vreckové o {amount}",
+      "body": "Vklad označený ako platený z vreckového sa z neho zaplatiť nedá. Model ho preto zastropoval vreckovým, takže sa nezhodnocujú peniaze, ktoré z domácnosti nikdy neodišli."
+    },
+    "low-reserve-rate": {
+      "title": "Rezerva zarába {rate} — prichádzate o približne {amount} ročne",
+      "body": "Sporiace účty v tejto chvíli nesú okolo {suggested}. Model neodporúča žiadnu konkrétnu banku ani produkt, len ukazuje rozdiel."
+    },
+    "idle-surplus": {
+      "title": "Mesačne zostáva {amount}, ale prebytok sa len hromadí na účte",
+      "body": "Automatické investovanie prebytku je vypnuté, takže všetko nad výdavky zostáva v hotovosti."
+    },
+    "child-outside-horizon": {
+      "title": "Dieťa s dátumom {when} je mimo horizont projekcie",
+      "body": "Model ho nepočíta vôbec. Posuň dátum, alebo predĺž horizont v predpokladoch."
+    },
+    "oneoff-outside-horizon": {
+      "title": "Jednorazová položka s dátumom {when} je mimo horizont projekcie",
+      "body": "Model ju nepočíta. Posuň dátum, alebo predĺž horizont."
+    }
+  },
+  "fixes": {
+    "heading": "Čo s tým — každá varianta problém preukázateľne odstráni",
+    "apply": "Použiť",
+    "showProof": "Ukázať prepočet",
+    "hideProof": "Skryť prepočet",
+    "proofBefore": "Teraz",
+    "proofAfter": "Po zmene",
+    "proofMinReserve": "Najnižšia rezerva",
+    "proofDeficit": "Pod nulou",
+    "proofNever": "nikdy",
+    "proofPaused": "Prerušené vklady",
+    "proofMonths": "{count} mesiacov",
+    "none": "Žiadna jednotlivá páka problém nevyrieši — bude treba kombináciu nižších výdavkov, nižších vkladov a neskoršieho dieťaťa.",
+    "levers": {
+      "jointInvesting_monthlyContribution": "Znížiť spoločný mesačný vklad",
+      "reserve_sweepCap": "Zvýšiť strop rezervy (nechať viac v hotovosti)",
+      "expenses_variableTotal": "Znížiť voľné výdavky",
+      "reserve_balance": "Mať dnes vyššiu rezervu",
+      "children_parentalMonths": "Skrátiť čerpanie rodičovskej"
+    }
+  },
+  "onboarding": {
+    "skip": "Preskočiť — chcem vidieť priemernú domácnosť",
+    "next": "Pokračovať",
+    "back": "Späť",
+    "finish": "Zobraziť plán",
+    "progress": "Krok {step} z {total}",
+    "estimateNote": "Predvyplnené národným priemerom. Stačí odhad, presné čísla doplníš kedykoľvek neskôr.",
+    "step1": {
+      "title": "Kde žijete a čo zarábate",
+      "body": "Podľa krajiny sa do modelu dostanú správne dávky, limity a mena."
+    },
+    "step2": {
+      "title": "Hypotéka a pravidelné výdavky",
+      "body": "Fixné výdavky určujú, aká vysoká má byť vaša rezerva."
+    },
+    "step3": {
+      "title": "Rezerva a investovanie",
+      "body": "Koľko máte v hotovosti a koľko mesačne posielate do investícií."
+    },
+    "step4": {
+      "title": "Deti",
+      "body": "Toto je tá časť, kvôli ktorej celý model existuje. Nechaj prázdne, ak deti neplánujete."
+    }
+  },
+  "planner": {
+    "country": "Krajina",
+    "countryCZ": "Česko",
+    "countrySK": "Slovensko",
+    "person": "Osoba {n}",
+    "personName": "Meno",
+    "netIncome": "Čistý mesačný príjem",
+    "incomeGrowth": "Ročný rast príjmu",
+    "pocketMoney": "Osobné vreckové",
+    "mortgage": "Hypotéka",
+    "mortgageBalance": "Zostatok",
+    "mortgageRate": "Úroková sadzba",
+    "mortgagePayment": "Mesačná splátka",
+    "refix": "Refixácia",
+    "refixNone": "Neuvažovať",
+    "refixAdd": "Pridať refixáciu",
+    "refixAt": "Kedy",
+    "refixRate": "Nová sadzba",
+    "refixHint": "Pri priemernej sadzbe okolo {rate} je refixácia pre väčšinu domácností najväčšie riziko najbližšej dekády.",
+    "expenses": "Pravidelné výdavky",
+    "expenseUtilities": "Energie a služby",
+    "expenseInsurance": "Poistenie",
+    "expenseGroceries": "Potraviny a domácnosť",
+    "expenseOther": "Voľné výdavky",
+    "expenseFixed": "Fixné",
+    "expenseVariable": "Voľné",
+    "expenseKindHint": "Fixné výdavky sa počítajú do odporúčanej rezervy, voľné nie.",
+    "reserve": "Hotovostná rezerva",
+    "reserveBalance": "Koľko máte teraz",
+    "reserveRate": "Úrok",
+    "sweepCap": "Strop rezervy",
+    "sweepHint": "Čokoľvek nad strop sa automaticky investuje. Prázdne pole strop vypne.",
+    "investing": "Pravidelné investovanie",
+    "dca": "Mesačný vklad",
+    "expectedReturn": "Očakávaný ročný výnos",
+    "children": "Deti",
+    "childAdd": "Pridať dieťa",
+    "childRemove": "Odobrať",
+    "childLabel": "Dieťa {n}",
+    "childBirth": "Predpokladané narodenie",
+    "childCost": "Mesačné náklady",
+    "childLeaveBy": "Na materskej a rodičovskej bude",
+    "childParentalMonths": "Dĺžka čerpania rodičovskej",
+    "childReturnPct": "Návrat do práce",
+    "childReturnHint": "Podiel pôvodného príjmu po skončení rodičovskej.",
+    "assumptions": "Predpoklady",
+    "cpi": "Inflácia výdavkov",
+    "horizon": "Horizont",
+    "reserveFloorMonths": "Odporúčaná rezerva",
+    "months": "{count, plural, one {# mesiac} few {# mesiace} other {# mesiacov}}",
+    "years": "{count, plural, one {# rok} few {# roky} other {# rokov}}",
+    "monthUnit": "mesiacov",
+    "computedAt": "Počítané podľa právneho stavu k {date}.",
+    "recomputing": "Prepočítavam odporúčania…",
+    "save": "Uložiť do prehliadača",
+    "saved": "Uložené {when}",
+    "export": "Exportovať",
+    "import": "Importovať",
+    "reset": "Začať znova",
+    "resetConfirm": "Zmazať plán a začať znova s priemernou domácnosťou?",
+    "importFailed": "Súbor sa nepodarilo prečítať.",
+    "staleEngine": "Model sa od uloženia tohto plánu spresnil. Čísla sa neprepočítali automaticky — skontroluj ich.",
+    "summaryNetWorth": "Čisté bohatstvo v roku {year}",
+    "summaryMinReserve": "Najnižšia rezerva",
+    "summaryMortgagePaid": "Hypotéka splatená",
+    "summaryMortgageNever": "nie do horizontu",
+    "summaryForegone": "Nezarobený príjem kvôli rodičovskej"
+  },
+  "compare": {
+    "heading": "Porovnanie scenárov",
+    "body": "Jedna projekcia je zaujímavosť. Dve sú rozhodnutie.",
+    "base": "Bez dieťaťa",
+    "withChild": "Dieťa {year}",
+    "later": "Dieťa {year}",
+    "minReserve": "Najnižšia rezerva",
+    "netWorth": "Čisté bohatstvo {year}",
+    "deficit": "Rezerva pod nulou"
+  },
+  "parameters": {
+    "title": "Parametre, s ktorými model počíta",
+    "lead": "Najpravdepodobnejšia príčina zlej projekcie nie je chyba vo výpočte, ale zastaraná zákonná konštanta. Preto je tu všetko vypísané so zdrojom a dátumom poslednej kontroly.",
+    "colParam": "Parameter",
+    "colValue": "Hodnota",
+    "colVerified": "Skontrolované",
+    "colSource": "Zdroj",
+    "unverified": "Neoverené z primárneho zdroja",
+    "recheck": "Parametre sa znova overujú 1. januára a 1. júla.",
+    "leaveHeading": "Materská a rodičovská",
+    "leaveCz": "Česko: materská 28 týždňov (37 pri dvojčatách) vo výške 70 % redukovaného denného vymeriavacieho základu. Rodičovský příspěvek je pevná celková suma, ktorú si rodič rozvrhne sám v rámci mesačného limitu.",
+    "leaveSk": "Slovensko: materská 34 týždňov (37 pre osamelú matku, 43 pri dvojčatách) vo výške 75 % denného vymeriavacieho základu. Rodičovský príspevok je pevná mesačná suma až do troch rokov dieťaťa.",
+    "leaveDifference": "Nie sú to dve sady čísel jedného modelu, ale dva rôzne systémy. V Česku skrátenie čerpania mesačnú dávku zvýši, na Slovensku nie."
+  },
+  "methodology": {
+    "title": "Ako to počíta",
+    "lead": "Model je deterministický: rovnaké vstupy vždy vrátia rovnaké čísla. Žiadna náhoda, žiadne Monte Carlo, žiadny jazykový model.",
+    "orderTitle": "Poradie operácií v jednom mesiaci",
+    "order1": "Príjmy vyrastú podľa vlastného tempa každej osoby, výdavky podľa inflácie.",
+    "order2": "Vyriešia sa fázy materskej a rodičovskej. Pri prekrytí dvoch detí sa berie najvýhodnejšia aktívna dávka a príjem nikdy neskočí späť na plný plat, kým je nejaké okno otvorené.",
+    "order3": "Umorí sa hypotéka, vrátane prípadnej refixácie platnej od daného mesiaca.",
+    "order4": "Rezerve sa pripíše úrok z počiatočného zostatku, potom sa uplatní čistý peňažný tok.",
+    "order5": "Pravidelný vklad sa zastropuje tým, čo je reálne k dispozícii.",
+    "order6": "Prebytok nad stropom rezervy sa presunie do investícií.",
+    "order7": "Investičným zostatkom sa pripíše výnos.",
+    "orderNote": "Úrok sa počíta z počiatočného zostatku, teda pred peňažným tokom. V prebytkových mesiacoch ho to nadhodnotí, v deficitných podhodnotí. Je to zvolená konvencia, nie opomenutie.",
+    "searchTitle": "Ako vzniká odporúčanie",
+    "search1": "Model nájde problém — napríklad že rezerva klesne pod nulu.",
+    "search2": "Pre každú páku (vklad, voľné výdavky, strop rezervy, dĺžka rodičovskej, dnešná rezerva) sa binárnym polením hľadá najmenšia hodnota, pri ktorej problém zmizne.",
+    "search3": "Nájdená hodnota sa zaokrúhli na použiteľný krok a celá simulácia sa spustí znova.",
+    "search4": "Keď sa po zaokrúhlení problém nevyrieši, model ide o krok ďalej a skúsi znova. Keď ho páka nevyrieši vôbec, nezobrazí sa — nikdy nedostaneš návrh, ktorý nefunguje.",
+    "limitsTitle": "Čo model nerobí",
+    "limits": [
+      "Nepočíta dane z investičných výnosov ani zdanenie príjmu — pracuje s čistými príjmami, ktoré zadáte.",
+      "Výnosy sú nominálne a konštantné. Skutočné trhy takto nevyzerajú.",
+      "Nemodeluje stratu práce, chorobu, rozvod ani druhú nehnuteľnosť.",
+      "Nepozná vaše skutočné bankové účty a nikdy sa na ne nepripojí.",
+      "Neodporúča žiadny fond, banku ani produkt a nikdy nebude."
+    ],
+    "engineVersion": "Verzia modelu: {version}",
+    "engineVersionNote": "Uložený plán si pamätá, ktorou verziou bol spočítaný. Keď sa model spresní, starý plán sa nikdy neprepočíta bez tvojho vedomia.",
+    "sourceCode": "Zdrojový kód"
+  },
+  "disclaimer": {
+    "short": "Iba ilustratívny model. Neposkytuje investičné ani hypotekárne poradenstvo.",
+    "long": "Tento nástroj premieta dôsledky predpokladov, ktoré zadáte. Nie je to investičné, daňové ani hypotekárne poradenstvo a neodporúča žiadne finančné produkty. Rozhodnutia o deťoch, hypotéke a investíciách by na ňom nemali stáť samy. Zákonné parametre nesú dátum poslednej kontroly a zákony sa menia."
+  },
+  "months": [
+    "január",
+    "február",
+    "marec",
+    "apríl",
+    "máj",
+    "jún",
+    "júl",
+    "august",
+    "september",
+    "október",
+    "november",
+    "december"
+  ],
+  "monthsIn": [
+    "v januári",
+    "vo februári",
+    "v marci",
+    "v apríli",
+    "v máji",
+    "v júni",
+    "v júli",
+    "v auguste",
+    "v septembri",
+    "v októbri",
+    "v novembri",
+    "v decembri"
+  ]
+}

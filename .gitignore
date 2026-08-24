@@ -9,5 +9,5 @@ coverage/
 .env.local
 .vercel
 
-# local setup archive (safe to delete)
-.setup-archive/
+# build metadata
+*.tsbuildinfo

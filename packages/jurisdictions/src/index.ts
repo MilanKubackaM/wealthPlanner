@@ -1,10 +1,10 @@
-export * from './types.js';
-export { czechia, czLeaveRegime } from './cz.js';
-export { slovakia, skLeaveRegime } from './sk.js';
+export * from './types';
+export { czechia, czLeaveRegime } from './cz';
+export { slovakia, skLeaveRegime } from './sk';
 
-import type { Jurisdiction, JurisdictionCode } from './types.js';
-import { czechia } from './cz.js';
-import { slovakia } from './sk.js';
+import type { Jurisdiction, JurisdictionCode } from './types';
+import { czechia } from './cz';
+import { slovakia } from './sk';
 
 export const JURISDICTIONS: Record<JurisdictionCode, Jurisdiction> = {
   CZ: czechia,

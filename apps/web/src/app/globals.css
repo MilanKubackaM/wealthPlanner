@@ -1,0 +1,223 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens. The light palette is defined on bare :root; dark redefines only the
+ * tokens, under both the OS media query and an explicit [data-theme] stamp, so a manual
+ * toggle wins in either direction. Chart series colours come from a validated
+ * categorical palette — blue and aqua clear the CVD, normal-vision and lightness gates
+ * in both modes. Aqua sits below 3:1 on the light surface, so the chart carries direct
+ * labels and a table view (the relief rule) and never leans on hue alone.
+ */
+
+:root {
+  color-scheme: light;
+
+  --plane: #f9f9f7;
+  --surface: #fcfcfb;
+  --surface-raised: #ffffff;
+
+  --ink: #0b0b0b;
+  --ink-secondary: #52514e;
+  --ink-muted: #898781;
+
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.1);
+  --border-strong: rgba(11, 11, 11, 0.18);
+
+  /* categorical series */
+  --series-reserve: #2a78d6;
+  --series-invest: #1baf7a;
+
+  /* status — fixed, never themed, always paired with an icon and a label */
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+
+  --accent: #2a78d6;
+  --accent-ink: #ffffff;
+
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    --plane: #0d0d0d;
+    --surface: #1a1a19;
+    --surface-raised: #232322;
+
+    --ink: #ffffff;
+    --ink-secondary: #c3c2b7;
+    --ink-muted: #898781;
+
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.1);
+    --border-strong: rgba(255, 255, 255, 0.18);
+
+    --series-reserve: #3987e5;
+    --series-invest: #199e70;
+
+    --accent: #3987e5;
+    --accent-ink: #06131f;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --plane: #0d0d0d;
+  --surface: #1a1a19;
+  --surface-raised: #232322;
+
+  --ink: #ffffff;
+  --ink-secondary: #c3c2b7;
+  --ink-muted: #898781;
+
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.18);
+
+  --series-reserve: #3987e5;
+  --series-invest: #199e70;
+
+  --accent: #3987e5;
+  --accent-ink: #06131f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--plane);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+  /* Dense numeric pages must never scroll sideways. */
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+
+a {
+  color: var(--accent);
+  text-underline-offset: 3px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ------------------------------------------------------------------ utility ---- */
+
+.wrap {
+  width: 100%;
+  max-width: 1120px;
+  margin-inline: auto;
+  padding-inline: 20px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.muted {
+  color: var(--ink-secondary);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* A wide table or chart scrolls inside its own box, never the page. */
+.scroll-x {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-raised);
+  color: var(--ink);
+  border-radius: var(--radius-sm);
+  padding: 9px 14px;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn:hover {
+  border-color: var(--accent);
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.btn-primary:hover {
+  filter: brightness(1.08);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.field label {
+  font-size: 13px;
+  color: var(--ink-secondary);
+  font-weight: 500;
+}
+
+.field input,
+.field select {
+  background: var(--surface-raised);
+  color: var(--ink);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 9px 11px;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  width: 100%;
+}
+
+.field .hint {
+  font-size: 12px;
+  color: var(--ink-muted);
+}

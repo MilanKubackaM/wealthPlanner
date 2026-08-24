@@ -157,6 +157,11 @@ export interface MonthlyPoint {
   mortgageBalance: number;
   dcaTarget: number;
   dcaActual: number;
+  /**
+   * The reserve floor for THIS month — reserveFloorMonths × this month's fixed outgoings,
+   * so it rises with inflation instead of being frozen at month one.
+   */
+  floor: number;
   sweep: number;
   surplus: number;
   /** Per-person income this month, keyed by person id. */

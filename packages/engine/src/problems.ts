@@ -1,4 +1,4 @@
-import type { ProjectionResult, ScenarioInput, YearMonth } from './types.js';
+import type { ProjectionResult, ScenarioInput, YearMonth } from './types';
 
 /**
  * The engine emits STRUCTURED FACTS, never prose. All wording, currency formatting and
@@ -23,6 +23,8 @@ export interface Problem {
   severity: Severity;
   facts: {
     at?: YearMonth | null;
+    /** For the deficit rule: the month of the DEEPEST shortfall, which is not the month it first goes negative. */
+    worstAt?: YearMonth | null;
     amount?: number;
     floor?: number;
     gap?: number;
@@ -61,6 +63,7 @@ export function detectProblems(
       severity: 'critical',
       facts: {
         at: result.deficitAt,
+        worstAt: result.minReserveAt,
         amount: Math.max(0, -result.minReserve),
         gap: Math.max(0, -result.worstFloorGap),
         floor: result.floorAtWorst,

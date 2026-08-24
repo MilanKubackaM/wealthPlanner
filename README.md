@@ -28,6 +28,8 @@ the whole reason this project exists.
 ## Repository layout
 
 ```
+apps/
+  web               Next.js 16 App Router, cs + sk, deployed on Vercel
 packages/
   engine            simulation + verified recommendations. Pure TS, ZERO runtime deps.
   jurisdictions     CZ/SK statutory parameters and leave regimes, each with a source
@@ -37,10 +39,20 @@ scripts/
   engine-version-guard.mjs   fails CI if the engine's arithmetic changes silently
 ```
 
-`apps/web` (Next.js on Vercel) and `apps/mobile` (Expo) join later. Both consume the same
-`packages/engine`, unmodified. **The engine is never reimplemented per platform** — two
-engines would produce two answers, and the moment the web says January 2032 while the
-phone says February 2032, the product's entire claim is dead.
+`apps/mobile` (Expo) joins later and consumes the same `packages/engine`, unmodified.
+**The engine is never reimplemented per platform** — two engines would produce two answers,
+and the moment the web says January 2032 while the phone says February 2032, the product's
+entire claim is dead.
+
+## Two recompute rhythms, chosen from measurement
+
+    simulate()   ~0.9 ms   → runs on every keystroke; the chart tracks typing
+    recommend()  ~89 ms    → about a hundred full simulations; debounced, in a transition
+
+On a mid-range phone that second figure is several hundred milliseconds. Blocking a keystroke
+on it would make the product feel broken, so the chart and the recommendations update on
+different clocks. Both run in the browser: no projection is ever computed on a server, which
+is also why the running cost stays near zero.
 
 ## The rules that hold this together
 
@@ -63,8 +75,9 @@ phone says February 2032, the product's entire claim is dead.
 
 ```bash
 pnpm install
-pnpm test          # 45 tests: unit, golden-file projections, property tests
+pnpm test          # 63 tests: unit, golden-file projections, property tests, formatting
 pnpm typecheck
+pnpm build
 node scripts/engine-version-guard.mjs
 ```
 
@@ -78,8 +91,14 @@ node scripts/engine-version-guard.mjs --accept   # only for a genuine no-op refa
 
 ## Status
 
-Phase 1 of [`IMPLEMENTACIA.md`](./IMPLEMENTACIA.md) — the engine — is done. The web
-application is next.
+Phases 1 and 2 of [`IMPLEMENTACIA.md`](./IMPLEMENTACIA.md) are done: the engine, and the
+public web app with no account required — landing page with a populated projection, a
+four-step onboarding instead of a wall of twenty-five fields, the canonical reserve chart
+with its trough named, verified recommendations with a visible re-run, `localStorage`
+persistence with export and import, and the public `/parametre` and `/metodika` pages.
+
+Next: scenario comparison side by side, a sensitivity panel, PWA install, then optional
+accounts with client-side encryption.
 
 ## Not financial advice
 

@@ -20,6 +20,8 @@ jobs:
         run: pnpm typecheck
       - name: Tests
         run: pnpm test
+      - name: Build
+        run: pnpm build
       # The engine is the one place where a silent bug becomes wrong financial advice.
       # A changed formula without a version bump fails the build.
       - name: Engine version guard

@@ -1,4 +1,4 @@
-import type { Jurisdiction, LeaveContext, LeavePhase, LeavePlan, LeaveRegime } from './types.js';
+import type { Jurisdiction, LeaveContext, LeavePhase, LeavePlan, LeaveRegime } from './types';
 
 const SP_MATERSKE = 'https://www.socpoist.sk/materske';
 const UPSVR_RODICOVSKY = 'https://www.upsvr.gov.sk/socialne-veci-a-rodina/rodicovsky-prispevok';

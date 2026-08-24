@@ -1,6 +1,6 @@
 import type { LeavePhase } from '@wealthplanner/jurisdictions';
-import { ENGINE_VERSION } from './version.js';
-import { addMonths, growthFactor, monthlyRate, monthsBetween, toAbsolute } from './time.js';
+import { ENGINE_VERSION } from './version';
+import { addMonths, growthFactor, monthlyRate, monthsBetween, toAbsolute } from './time';
 import type {
   Child,
   MonthlyPoint,
@@ -9,7 +9,7 @@ import type {
   ScenarioInput,
   YearMonth,
   YearlyPoint,
-} from './types.js';
+} from './types';
 
 interface MortgageState {
   id: string;
@@ -302,6 +302,7 @@ export function simulate(input: ScenarioInput): ProjectionResult {
       mortgageBalance,
       dcaTarget,
       dcaActual,
+      floor: floorThisMonth,
       sweep,
       surplus: income - spending - dcaActual,
       incomeByPerson,

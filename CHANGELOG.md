@@ -5,6 +5,39 @@ produced number must also bump `ENGINE_VERSION` in `packages/engine/src/version.
 
 ## [Unreleased]
 
+### Web app — public, no account required
+
+Added
+- `apps/web`: Next.js 16 App Router on Vercel, full `cs-CZ` and `sk-SK` locales (two
+  catalogues, not one compromise — including month names in the locative case with their
+  preposition, since Intl only gives the nominative and Slovak needs "vo februári").
+- Landing page that shows a working projection above the fold, populated with the national
+  average household plus a child in three years, and states the trough in a sentence.
+- Four-step onboarding with national-average defaults instead of a single screen of
+  twenty-five empty fields, with the chart visible throughout so every answer moves it.
+- The canonical reserve chart: one series, the floor as a reference line, the trough on an
+  opaque callout chip, crosshair tooltip, and a table view. Its viewBox is chosen per
+  breakpoint rather than scaled, because an 880-unit box on a 350px phone renders labels at
+  about 4px.
+- Verified recommendations in the UI, each with an Apply button and a before/after re-run.
+- `localStorage` persistence, JSON export and import, engine-version awareness on load.
+- Public `/parametre` (every statutory constant with its source and last-verified date,
+  unconfirmed ones flagged in the UI) and `/metodika` (the monthly order of operations and
+  the binary-search-then-verify procedure, written out).
+
+Decided
+- The simulation runs in the browser, never on a server. Measured: `simulate()` 0.9 ms,
+  `recommend()` 89 ms for about a hundred simulations. The chart therefore recomputes
+  synchronously on every keystroke while recommendations are debounced inside a transition.
+- Chart series use a categorical palette validated for colour-vision deficiency, normal-vision
+  separation and contrast in both light and dark. Identity never rests on hue: the series is
+  directly labelled and the trough carries text.
+
+Fixed
+- Currency and compact-number formatting no longer come raw from Intl. Node and Chrome
+  disagreed on both the space character and the fraction digits for cs-CZ, which made every
+  server-rendered amount a hydration mismatch. Regression tests now assert the exact strings.
+
 ### Engine v2 — extracted from the single-file prototype
 
 Added

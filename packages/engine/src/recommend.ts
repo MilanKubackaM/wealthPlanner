@@ -1,6 +1,6 @@
-import { simulate } from './simulate.js';
-import { isHealthy, type Problem } from './problems.js';
-import type { ProjectionResult, ScenarioInput, YearMonth } from './types.js';
+import { simulate } from './simulate';
+import { isHealthy, type Problem } from './problems';
+import type { ProjectionResult, ScenarioInput, YearMonth } from './types';
 
 /**
  * A lever is one input dimension the engine may propose changing. Levers are pure:

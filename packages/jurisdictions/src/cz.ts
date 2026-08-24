@@ -1,4 +1,4 @@
-import type { Jurisdiction, LeaveContext, LeavePhase, LeavePlan, LeaveRegime } from './types.js';
+import type { Jurisdiction, LeaveContext, LeavePhase, LeavePlan, LeaveRegime } from './types';
 
 const CSSZ_PPM = 'https://www.cssz.gov.cz/penezita-pomoc-v-materstvi';
 const MPSV_RODICOVSKY = 'https://www.mpsv.cz/-/rodicovsky-prispevek';

@@ -1,4 +1,4 @@
-import type { YearMonth } from './types.js';
+import type { YearMonth } from './types';
 
 /** Absolute month number since year 0. Makes month arithmetic trivial and total-order safe. */
 export function toAbsolute(ym: YearMonth): number {
