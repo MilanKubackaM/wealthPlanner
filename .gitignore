@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.turbo/
+.next/
+coverage/
+*.log
+.DS_Store
+.env
+.env.local
+.vercel
+
+# local setup archive (safe to delete)
+.setup-archive/

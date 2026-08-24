@@ -1,0 +1,86 @@
+{
+  "engineVersion": 2,
+  "months": 412,
+  "minReserve": 400000,
+  "minReserveAt": null,
+  "deficitAt": null,
+  "pausedMonths": 0,
+  "pausedAmount": 0,
+  "pausedFrom": null,
+  "mortgagePaidYear": null,
+  "fixedMonthlyOutgoings": 31500,
+  "reserveFloor": 94500,
+  "worstFloorGap": 338333.33,
+  "worstFloorGapAt": {
+    "year": 2026,
+    "month": 8
+  },
+  "firstSurplus": 31500,
+  "foregoneIncome": 0,
+  "finalNetWorth": 91532595.61,
+  "sample": [
+    {
+      "i": 0,
+      "ym": "2026-09",
+      "income": 105000,
+      "spending": 63500,
+      "reserve": 432833.33,
+      "joint": 10000,
+      "mortgage": 0
+    },
+    {
+      "i": 60,
+      "ym": "2031-09",
+      "income": 115928.48,
+      "spending": 71844.42,
+      "reserve": 900000,
+      "joint": 2638127.81,
+      "mortgage": 0
+    },
+    {
+      "i": 120,
+      "ym": "2036-09",
+      "income": 127994.41,
+      "spending": 81285.37,
+      "reserve": 900000,
+      "joint": 7200664.59,
+      "mortgage": 0
+    },
+    {
+      "i": 180,
+      "ym": "2041-09",
+      "income": 141316.18,
+      "spending": 91966.93,
+      "reserve": 900000,
+      "joint": 13857255.93,
+      "mortgage": 0
+    },
+    {
+      "i": 240,
+      "ym": "2046-09",
+      "income": 156024.48,
+      "spending": 104052.14,
+      "reserve": 900000,
+      "joint": 23482454.85,
+      "mortgage": 0
+    },
+    {
+      "i": 300,
+      "ym": "2051-09",
+      "income": 172263.63,
+      "spending": 117725.45,
+      "reserve": 900000,
+      "joint": 37313475.44,
+      "mortgage": 0
+    },
+    {
+      "i": 360,
+      "ym": "2056-09",
+      "income": 190192.97,
+      "spending": 133195.54,
+      "reserve": 900000,
+      "joint": 57101042.62,
+      "mortgage": 0
+    }
+  ]
+}
