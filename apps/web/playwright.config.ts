@@ -6,10 +6,16 @@ import { defineConfig, devices } from '@playwright/test';
  * recommendation pass, applying a fix, and the mobile layout.
  */
 /*
- * CI installs its own browsers, so this stays empty there. Locally (or in a sandbox that
- * already ships a Chromium) point PW_EXECUTABLE_PATH at it to skip the download.
+ * Normally Playwright manages its own browser download and this is unset. Point
+ * PW_EXECUTABLE_PATH at an existing Chromium only in an environment that already ships one
+ * (a container, a sandbox) to avoid the download. `scripts/ship.sh` runs
+ * `playwright install chromium` for you, so a fresh clone never fails with
+ * "Executable doesn't exist".
+ *
+ * Empty is not a value: `??` would accept PW_EXECUTABLE_PATH="" and hand Playwright an
+ * empty path.
  */
-const executablePath = process.env.PW_EXECUTABLE_PATH;
+const executablePath = process.env.PW_EXECUTABLE_PATH || undefined;
 
 /* Empty is not a value: `??` would accept E2E_BASE_URL="" and break every navigation. */
 const externalBaseUrl = process.env.E2E_BASE_URL || undefined;

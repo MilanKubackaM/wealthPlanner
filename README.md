@@ -71,6 +71,19 @@ is also why the running cost stays near zero.
 5. **Changing what a number means bumps `ENGINE_VERSION`.** Saved scenarios record the
    version they were computed with and are never silently re-simulated with newer logic.
 
+## Shipping
+
+```bash
+scripts/ship.sh "what changed"              # checks, build, e2e, commit, push
+scripts/ship.sh "wip" --skip-e2e            # skip the browser suite while iterating
+```
+
+The script clears git's stale lock files, installs the Playwright browser if missing, runs
+every check, refuses to continue if the engine fingerprint and its version disagree, then
+commits and pushes. It reads the push token from `../.wealthplanner-token` — deliberately
+*outside* this repository, so `git add -A` can never pick it up. This repo is public; a token
+committed here would be readable by strangers within seconds.
+
 ## Development
 
 ```bash
@@ -112,7 +125,7 @@ public web app with no account required:
 - keyboard navigation along the chart with a live region, so the tooltip is not pointer-only
 - installable PWA with an offline shell
 - public `/parametre`, `/metodika` and `/zasady`
-- `vercel.json` with a strict CSP: no third-party origins, because the app needs none
+- a strict CSP in `next.config.ts` — no third-party origins, because the app needs none
 
 **Phase 2 is complete: 21 of the 22 checklist items.** The one left is wiring Sentry and
 PostHog, which needs accounts rather than code.
@@ -122,6 +135,18 @@ Before launch, two things in this repo are deliberately holding the brakes on:
 `noindex`. Both come off together, and only once the ⚠️ statutory values on `/parametre` are
 confirmed from primary sources. Search is the main acquisition channel — being found with
 wrong benefit figures is worse than not being found.
+
+## Deploying
+
+Import the repository on Vercel with **Root Directory `apps/web`** and accept every detected
+default — `turbo run build`, `pnpm install`, Next.js output. Nothing else needs setting, and
+there are no environment variables yet.
+
+Security headers are declared in `next.config.ts`, not in a `vercel.json`. Vercel reads
+`vercel.json` from the project's Root Directory, so with Root Directory `apps/web` a file at the
+repository root is silently ignored — the headers would look configured and simply not be
+served. In the framework config they apply everywhere, including `next start` and local dev.
+`curl -I` on any route shows them.
 
 Next: optional accounts with client-side encryption, then notifications, then iOS.
 

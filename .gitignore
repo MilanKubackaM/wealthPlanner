@@ -1,15 +1,36 @@
+# dependencies
 node_modules/
+
+# build output
 dist/
-.turbo/
 .next/
+out/
+.turbo/
+*.tsbuildinfo
+
+# test artefacts
 coverage/
 test-results/
 playwright-report/
-*.log
-.DS_Store
+blob-report/
+.playwright/
+
+# environment and secrets
 .env
 .env.local
-.vercel
+.env.*.local
+# the push token lives OUTSIDE this repository (../.wealthplanner-token) so it can never be
+# added by accident; this line only guards against someone moving it in here
+.wealthplanner-token
 
-# local setup archive (never commit)
+# deploy
+.vercel/
+
+# local setup archives written by the assistant's file bridge (never commit)
 .setup-archive/
+
+# editor / OS
+.DS_Store
+*.log
+.idea/
+.vscode/
