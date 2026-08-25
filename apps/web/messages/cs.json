@@ -15,12 +15,11 @@
     "label": "Hlavní navigace",
     "skip": "Přejít na obsah",
     "theme": "Přepnout světlý a tmavý režim",
-    "langLabel": "Jazyk",
-    "cta": "Zkusit bez registrace"
+    "langLabel": "Jazyk"
   },
   "landing": {
     "h1": "Kdy si můžeme dovolit dítě?",
-    "cta": "Vyzkoušet — bez registrace",
+    "cta": "Vytvořit přehled",
     "ctaMethodology": "Jak to počítá",
     "healthy": "Rezerva v téhle podobě nikdy neklesne pod {floor}.",
     "whyMonthlyTitle": "Měsíc po měsíci",

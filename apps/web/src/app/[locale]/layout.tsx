@@ -66,7 +66,6 @@ export default async function LocaleLayout({
               plan: t('nav.plan'),
               parameters: t('nav.parameters'),
               methodology: t('nav.methodology'),
-              cta: t('nav.cta'),
               navLabel: t('nav.label'),
               langLabel: t('nav.langLabel'),
               themeLabel: t('nav.theme'),

@@ -110,6 +110,15 @@ test.describe('landing', () => {
     await expect(page.locator('.example-foot').getByRole('link')).toBeVisible();
 
     /*
+     * The bar carries no primary button any more; /plan is the one accented destination, so
+     * the page has exactly one thing saying "start here" instead of two.
+     */
+    await expect(page.locator('.nav-cta')).toHaveCount(0);
+    const planLink = page.locator('.nav-link[data-primary]');
+    await expect(planLink).toHaveCount(1);
+    await expect(planLink).toHaveText('Můj plán');
+
+    /*
      * Three marks, three words each, and NO explanatory paragraphs. The page is deliberately
      * this bare: everything cut from it is still on /metodika, and a stranger deciding whether
      * to spend a minute here reads a headline and looks at a chart, not six paragraphs.

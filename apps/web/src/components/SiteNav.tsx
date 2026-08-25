@@ -6,8 +6,13 @@ import { ThemeToggle } from './ThemeToggle';
 import type { AppLocale } from '@/i18n/routing';
 
 /**
- * Three tiers in one bar: identity, destinations, utilities+action. Destinations are furniture
- * (--ink-secondary, weight 500), not content links, which is why they are not accent-blue.
+ * Three tiers in one bar: identity, destinations, utilities. Destinations are furniture
+ * (--ink-secondary, weight 500), not content links — with ONE exception.
+ *
+ * `/plan` carries the accent, because the bar used to hold a primary "try it" button that went
+ * to exactly that route. Removing the button would have left nothing in the bar pointing at the
+ * product, so the accent moved onto the destination the button duplicated rather than being
+ * deleted along with it. One accented thing in the bar, same as before; one fewer control.
  *
  * The bar has a FIXED height on desktop and cannot wrap. The scrolled state changes background,
  * border and shadow only — a sticky element that changes height reflows the document under it.
@@ -23,7 +28,6 @@ type Labels = {
   plan: string;
   parameters: string;
   methodology: string;
-  cta: string;
   navLabel: string;
   langLabel: string;
   themeLabel: string;
@@ -31,9 +35,9 @@ type Labels = {
 };
 
 const ROUTES = [
-  { href: '/plan', key: 'plan' },
-  { href: '/parametre', key: 'parameters' },
-  { href: '/metodika', key: 'methodology' },
+  { href: '/plan', key: 'plan', primary: true },
+  { href: '/parametre', key: 'parameters', primary: false },
+  { href: '/metodika', key: 'methodology', primary: false },
 ] as const;
 
 export function SiteNav({ locale, labels }: { locale: AppLocale; labels: Labels }) {
@@ -60,8 +64,6 @@ export function SiteNav({ locale, labels }: { locale: AppLocale; labels: Labels 
   }, []);
 
   const other: AppLocale = locale === 'cs' ? 'sk' : 'cs';
-  /* Two primary buttons in one viewport is the tell of an unfinished nav. */
-  const showCta = pathname !== '/' && pathname !== '/plan';
 
   return (
     <>
@@ -88,7 +90,7 @@ export function SiteNav({ locale, labels }: { locale: AppLocale; labels: Labels 
 
           <nav className="nav-routes" aria-label={labels.navLabel}>
             <ul>
-              {ROUTES.map(({ href, key }) => {
+              {ROUTES.map(({ href, key, primary }) => {
                 const active = pathname === href;
                 return (
                   <li key={href}>
@@ -96,6 +98,7 @@ export function SiteNav({ locale, labels }: { locale: AppLocale; labels: Labels 
                       href={href}
                       className="nav-link"
                       data-active={active}
+                      data-primary={primary || undefined}
                       data-label={labels[key]}
                       aria-current={active ? 'page' : undefined}
                     >
@@ -120,21 +123,6 @@ export function SiteNav({ locale, labels }: { locale: AppLocale; labels: Labels 
 
             <ThemeToggle label={labels.themeLabel} />
 
-            {showCta && (
-              <Link href="/plan" className="btn btn-primary btn-sm nav-cta">
-                {labels.cta}
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                  <path
-                    d="M5 12h13M13 6l6 6-6 6"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </Link>
-            )}
           </div>
         </div>
       </header>

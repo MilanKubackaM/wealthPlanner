@@ -1276,6 +1276,20 @@ Bridge do používateľovho stroja **nedovolí unlink**, takže obyčajný `tar 
 súbory a všetky zmenené **ticho preskočí** — repozitár skončí v stave, ktorý sa ani nepreloží.
 Vždy `tar -xzf ... --overwrite` (truncate namiesto unlink).
 
+### Fáza 2.5f — Jedna vec, ktorá hovorí „začni tu" (hotové 25. 8. 2026)
+
+Primárne tlačidlo v hlavičke smerovalo na `/plan`, čo je zároveň prvá destinácia v tej istej
+lište — dva ovládacie prvky pre jednu route. Tlačidlo je preč a **akcent sa presunul na
+destináciu, ktorú duplikovalo**, nie zmazaný spolu s ním: lišta má stále presne jednu vec, ktorá
+hovorí „začni tu", a o jeden prvok menej.
+
+Aktívny stav to neruší — bol už predtým postavený na troch signáloch (`aria-current`, 2px lišta,
+váha 650) a farba medzi nimi zámerne nebola, takže akcentovaný odkaz a aktuálna stránka sú
+rozlíšiteľné aj vedľa seba.
+
+CTA sa prestalo menovať „Vyskúšať — bez registrácie" a menuje sa **„Vytvoriť prehľad"** —
+pomenúva, čo vznikne, nie čo to nestojí.
+
 ### Fáza 2.6 — Hodnotenia od používateľov (analýza hotová, implementácia pauznutá)
 
 > Analýza je dokončená 25. 8. 2026, implementácia odložená. Toto je jediná funkcia v celom

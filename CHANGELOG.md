@@ -1,5 +1,19 @@
 # Changelog
 
+## Phase 2.5f — One thing that says "start here"
+
+- **The header's primary button is gone.** It pointed at `/plan`, which is also the first
+  destination in the same bar, so the bar carried two controls for one route.
+- **`/plan` now carries the accent instead.** The accent moved onto the destination the button
+  duplicated rather than being deleted with it: the bar still has exactly one thing saying
+  "start here", and one control fewer. Active state is unaffected — it was already three
+  signals (aria-current, a 2px rail, weight 650) with colour deliberately not among them, so
+  the accented link and the current page stay distinguishable.
+- **"Vyzkoušet — bez registrace" is now "Vytvořit přehled"** (`Vytvoriť prehľad`). It names
+  what the button produces rather than what it does not cost.
+
+An e2e test asserts the old button is absent and that exactly one destination is accented.
+
 ## Phase 2.5e — Less to read
 
 The landing page lost four blocks of prose and the score panel lost its disclaimer. Everything

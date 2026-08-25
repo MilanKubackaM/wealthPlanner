@@ -927,6 +927,23 @@ th {
   background: var(--control-bg-hover);
 }
 
+/*
+ * The one accented destination. The bar used to carry a primary button pointing at /plan;
+ * with that button gone the accent moved onto the destination it duplicated, so the bar still
+ * has exactly one thing that says "start here" and one control fewer.
+ *
+ * Weight 650 is reserved here too, via the ::after width trick, so becoming active adds no width.
+ */
+.nav-link[data-primary] {
+  color: var(--accent-strong);
+  font-weight: 650;
+}
+
+.nav-link[data-primary]:hover {
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+
 /* Active = three signals: aria-current (machine), a 2px rail (shape), weight 650 (mass).
    Colour is a redundant fourth; strip it and the state is still unambiguous. */
 .nav-link[data-active='true'] {
@@ -934,6 +951,10 @@ th {
   font-weight: 650;
   background: var(--accent-soft);
 }
+.nav-link[data-primary][data-active='true'] {
+  color: var(--accent-strong);
+}
+
 .nav-link[data-active='true']::before {
   content: '';
   position: absolute;
@@ -1052,10 +1073,6 @@ th {
   .nav-link {
     font-size: var(--text-base);
     white-space: nowrap;
-  }
-  .nav-cta {
-    /* The rail already carries the destinations; the CTA rides at its end. */
-    margin-inline-start: var(--space-2);
   }
 }
 
