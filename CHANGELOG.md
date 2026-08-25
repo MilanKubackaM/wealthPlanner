@@ -1,5 +1,46 @@
 # Changelog
 
+## Phase 2.5g — The wizard asks, and waits for an answer
+
+**Required amounts now start EMPTY and the step will not advance until they are answered.**
+Income, the mortgage figures or the rent, and the four expense lines carry a tinted "povinné"
+badge and a dashed edge; Continue is disabled while any of them is blank. The household shape
+and the housing kind get the same badge, because neither has a pre-selection.
+
+The trick is where "unanswered" lives. The engine has no empty states — every amount is a
+number, always, which is what makes the projection total and the goldens stable — so it cannot
+represent one. The scenario keeps carrying the national average; the INPUT renders nothing.
+Nobody is shown a plan built on figures they never saw, and no null ever reaches `simulate()`.
+
+Required-ness is a property of the wizard, not of the field: on the plan's editor every value
+shows, with the "odhad" badge as before. A blank there would hide the number the chart is
+actually drawn from.
+
+**"Estimate it for me" and "skip the rest" are gone,** and so is the consequence ribbon that
+used to caption the stepper. All three existed to soften the same problem — a full analysis of a
+household nobody had described — and an analysis of the national average presented as yours is
+worse than no analysis. Emptiness plus a blocked Continue is a stronger guarantee than a caption
+admitting the numbers are averages. The genuine "I don't want to fill this in" cases already had
+real answers: no children, no other debts, no cash, no investments.
+
+**Boilerplate stripped from every step.** Four of the eight subtitles are gone, along with every
+field hint in the stepper, the "prefilled by the national average" note, and the completeness
+counter. What explained the MODEL rather than the question was noise on the one screen whose
+whole design is a single question; it lives on /metodika. `planner.countryHint` survives because
+the plan's settings editor still uses it — a settings surface where an explanation belongs.
+
+Two bugs found on the way, both by the console-error gate and the suite:
+
+- Choosing the housing kind had no pre-selection but its sub-fields keyed off the underlying
+  state, so a mortgage balance was asked for before the user said they had a mortgage — the same
+  trap as the birth-year fields on step 2, and fixed the same way.
+- The test helper that walks the wizard filled every box with one round number, which
+  reproduced the old single-adult insolvency bug inside the suite: one income of 39 000 carrying
+  a couple's mortgage payment. It now answers per field, mirroring `czDefaults`.
+
+`finishWizard` lost a dead `completed` parameter, left over from the parked review prompt.
+Style ratchets: inline styles 141 → 139, numeric literals 99 → 98.
+
 ## Phase 2.5f — One thing that says "start here"
 
 - **The hero's "how it counts" button is gone too.** It sat beside the primary action competing

@@ -157,12 +157,10 @@
     "applyHint": "Skúste niektorú použiť — graf aj veta nad ním sa prepočítajú."
   },
   "onboarding": {
-    "skip": "Preskočiť zvyšok — chcem vidieť plán",
     "next": "Pokračovať",
     "back": "Späť",
     "finish": "Zobraziť plán",
     "progress": "{total, select, 5 {Krok {step} z 5} 8 {Krok {step} z 8} other {Krok {step} zo {total}}}",
-    "estimateNote": "Predvyplnené národným priemerom. Stačí odhad — presné čísla doplníte kedykoľvek neskôr.",
     "step1": {
       "title": "Kde žijete a čo zarábate",
       "body": "Podľa krajiny sa do modelu dostanú správne dávky, limity a mena."
@@ -179,60 +177,45 @@
       "title": "Deti",
       "body": "Toto je tá časť, kvôli ktorej celý model existuje. Nechaj prázdne, ak deti neplánujete."
     },
-    "estimate": "Odhadnúť za mňa",
     "badgeEstimate": "odhad",
+    "badgeRequired": "povinné",
     "backToAverage": "Späť na priemer",
     "shape": {
-      "title": "Plánujete za seba, alebo za dvoch?",
-      "body": "Toto je jediná odpoveď, ktorá mení všetky ďalšie obrazovky, tak ju vyberieme hneď."
+      "title": "Plánujete za seba, alebo za dvoch?"
     },
     "income": {
       "title": "Koľko čistého mesačne príde",
       "body": "Čistý príjem po zdanení, tak ako ho vidíte na účte."
     },
     "housing": {
-      "title": "Ako riešite bývanie",
-      "body": "Hypotéka sa umoruje a raz skončí. Nájom neskončí a rastie — model to počíta inak."
+      "title": "Ako riešite bývanie"
     },
     "debts": {
       "title": "Máte okrem bývania ďalšie dlhy?",
-      "body": "Auto na úver, spotrebiteľský úver, kreditka. Úrok pri nich býva vyšší než výnos investícií."
+      "body": "Auto na úver, spotrebiteľský úver, kreditka."
     },
     "expenses": {
-      "title": "Pravidelné výdavky",
-      "body": "Fixné výdavky určujú, aká vysoká má byť vaša rezerva."
+      "title": "Pravidelné výdavky"
     },
     "cash": {
       "title": "Rezerva a investovanie",
-      "body": "Hotovosť po účtoch a investície po položkách — každá so svojím vlastným výnosom. Oboje môžete nechať prázdne."
+      "body": "Oboje môžete nechať prázdne."
     },
     "children": {
       "title": "Deti",
-      "body": "Nič tu nie je povinné. Model vie spočítať aj domácnosť, ktorá deti neplánuje."
+      "body": "Nič tu nie je povinné."
     },
     "ribbon": {
-      "label": "Zatiaľ to vyzerá takto",
-      "holds": "Rezerva vydrží",
-      "belowFloor": "Rezerva klesne pod minimum",
-      "deficit": "Rezerva sa vyčerpá",
-      "trough": "Najnižšia rezerva {amount} — {when}",
-      "troughDeficit": "Rezerva sa vyčerpá {when}, chýbať bude {amount}",
-      "stepDown": "Tento krok: dno o {amount} nižšie",
-      "stepUp": "Tento krok: dno o {amount} vyššie",
-      "stepFlat": "Tento krok: na dno nemá vplyv",
-      "completeness": "Vaše čísla: {done} z {total} · zvyšok je národný priemer",
-      "recap": "Hotovo. Tri čísla, ktoré s vaším plánom urobili najviac:",
-      "recapNone": "Hotovo. Zostali ste pri národných priemeroch — plán nižšie je priemerná domácnosť.",
-      "neverDips": "Rezerva nikde neklesne pod dnešných {amount}.",
-      "pristine": "Zatiaľ počítame s národným priemerom. Ako začnete zadávať svoje čísla, uvidíte tu, čo s plánom robia."
+      "recap": "Hotovo. Tri čísla, ktoré s vaším plánom urobili najviac:"
     },
     "country": {
       "title": "V ktorej krajine to počítame?",
-      "body": "Rozhoduje krajina, kde pracujete a beriete dávky — nie jazyk, v ktorom appku čítate."
+      "body": "Rozhoduje krajina, kde pracujete a beriete dávky."
     }
   },
   "planner": {
     "country": "Krajina",
+    "countryHint": "Podľa krajiny sa do modelu dostanú správne dávky, limity a mena. Nemusí to byť krajina, v ktorej čítate túto stránku.",
     "countryCZ": "Česko",
     "countrySK": "Slovensko",
     "person": "Osoba {n}",
@@ -252,8 +235,6 @@
     "expenseInsurance": "Poistenie",
     "expenseGroceries": "Potraviny a domácnosť",
     "expenseOther": "Voľné výdavky",
-    "expenseFixed": "Fixné",
-    "expenseVariable": "Voľné",
     "reserve": "Hotovostná rezerva",
     "reserveBalance": "Koľko máte teraz",
     "reserveRate": "Úrok",
@@ -294,14 +275,11 @@
     "householdShape": "Domácnosť",
     "shapeSingle": "Jeden dospelý",
     "shapeCouple": "Dvaja dospelí",
-    "shapeHint": "Podľa toho sa prispôsobia aj predvyplnené výdavky a rezerva.",
     "personSolo": "Vy",
     "optional": "voliteľné",
     "yourName": "Vaše meno",
     "nameOf": "Meno — osoba {n}",
-    "nameHint": "Len aby plán hovoril vašimi menami namiesto „Osoba 1\". Zostáva vo vašom prehliadači, nikam sa neposiela — a nechať to prázdne je úplne v poriadku.",
     "birthYear": "Rok narodenia",
-    "birthYearHint": "Kvôli horizontu plánu a limitom pre mladších ako 36 rokov. Nikam sa neposiela.",
     "ageUnknown": "vek nezadaný",
     "age": "{years} rokov",
     "housing": "Bývanie",
@@ -354,7 +332,6 @@
     "autosave": "Zmeny sa ukladajú automaticky do tohto prehliadača.",
     "savedAuto": "Automaticky uložené v {when} — len vo vašom prehliadači.",
     "saving": "Ukladám…",
-    "countryHint": "Podľa krajiny sa do modelu dostanú správne dávky, limity a mena. Nemusí to byť krajina, v ktorej čítate túto stránku.",
     "countryHintCZ": "Koruny, české dávky, limity ČNB",
     "countryHintSK": "Eurá, slovenské dávky, limity NBS",
     "refixHas": "Máte fixáciu, ktorá skončí?",

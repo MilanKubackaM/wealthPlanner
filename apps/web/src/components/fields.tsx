@@ -93,6 +93,13 @@ export interface NumberFieldProps {
   /** True when the value is still the prefilled national average. Drives the badge. */
   estimate?: boolean;
   estimateLabel?: string;
+  /**
+   * The projection is meaningless without this number, so the step will not advance until it
+   * is answered — and until then the input renders EMPTY rather than showing the national
+   * average as if it were the user's own figure.
+   */
+  required?: boolean;
+  requiredLabel?: string;
   span?: Span;
   disabled?: boolean;
   autoFocus?: boolean;
@@ -118,6 +125,8 @@ export function NumberField({
   note,
   estimate,
   estimateLabel,
+  required,
+  requiredLabel,
   span = 6,
   disabled,
   autoFocus,
@@ -130,15 +139,30 @@ export function NumberField({
   const effMax = max ?? spec.max;
   const affix = unit ?? (spec.money ? CURRENCY_SYMBOL[currency] : spec.percent ? '%' : undefined);
 
-  const [text, setText] = useState(() => groupNumber(value, locale, spec.precision));
+  /*
+   * A REQUIRED field that has not been answered renders EMPTY, even though `value` holds a
+   * number underneath.
+   *
+   * That split is deliberate and it is the whole trick. The engine has no empty states — every
+   * amount is a number, always, which is what makes the projection total and the goldens
+   * stable — so "unanswered" cannot live in the model. It lives here instead: the scenario
+   * carries the national average, this input shows nothing, and the step will not advance until
+   * the user has put their own figure in. Nobody is shown a plan built on numbers they never
+   * saw, and no null ever reaches `simulate()`.
+   */
+  const blank = required === true && estimate === true;
+
+  const [text, setText] = useState(() =>
+    blank ? '' : groupNumber(value, locale, spec.precision),
+  );
   const [focused, setFocused] = useState(false);
   const [bound, setBound] = useState<string | null>(null);
   /* Whether this focus came from the click that is still in progress. See onPointerUp. */
   const arriving = useRef(false);
 
   useEffect(() => {
-    if (!focused) setText(groupNumber(value, locale, spec.precision));
-  }, [value, focused, locale, spec.precision]);
+    if (!focused) setText(blank ? '' : groupNumber(value, locale, spec.precision));
+  }, [value, focused, locale, spec.precision, blank]);
 
   function commit(next: number): void {
     let out = next;
@@ -170,11 +194,21 @@ export function NumberField({
       <label className="f-label" htmlFor={id}>
         <span>{label}</span>
         {affix ? <span className="sr-only">{` (${affix})`}</span> : null}
-        {estimate && estimateLabel ? <span className="f-badge">{estimateLabel}</span> : null}
+        {/*
+          One badge, never two. "povinné" wins while the field is unanswered, because at that
+          moment it is the only thing the user needs to know; "odhad" is a claim about a value
+          that is not there yet.
+        */}
+        {blank && requiredLabel ? (
+          <span className="f-badge f-badge-required">{requiredLabel}</span>
+        ) : estimate && estimateLabel ? (
+          <span className="f-badge">{estimateLabel}</span>
+        ) : null}
       </label>
       <div
         className="f-control"
         data-numeric="true"
+        data-blank={blank ? 'true' : undefined}
         data-invalid={shown ? 'true' : undefined}
         data-disabled={disabled ? 'true' : undefined}
       >
@@ -187,6 +221,8 @@ export function NumberField({
           disabled={disabled}
           autoFocus={autoFocus}
           value={text}
+          required={required || undefined}
+          aria-required={required || undefined}
           aria-invalid={shown ? true : undefined}
           aria-describedby={describedBy}
           onPointerUp={(event) => {
@@ -225,7 +261,11 @@ export function NumberField({
             arriving.current = false;
             const parsed = parseNumber(text);
             if (parsed !== null) commit(Number(parsed.toFixed(spec.precision)));
-            setText(groupNumber(parsed ?? value, locale, spec.precision));
+            /* Leaving a required field empty must leave it EMPTY. Writing the underlying
+               average back on blur would silently answer the question for the user. */
+            setText(
+              parsed === null && blank ? '' : groupNumber(parsed ?? value, locale, spec.precision),
+            );
           }}
           onKeyDown={(event) => {
             if (event.key === 'ArrowUp') {
@@ -343,6 +383,7 @@ export function ChoiceField<T extends string>({
   options,
   onChange,
   hint,
+  requiredLabel,
   span = 12,
 }: {
   id: string;
@@ -352,6 +393,8 @@ export function ChoiceField<T extends string>({
   options: Array<{ value: T; label: string; hint?: string }>;
   onChange: (value: T) => void;
   hint?: string;
+  /** Shown while `value` is null: this choice has no default and the step waits for it. */
+  requiredLabel?: string;
   span?: Span;
 }) {
   if (variant === 'select') {
@@ -376,7 +419,14 @@ export function ChoiceField<T extends string>({
 
   return (
     <fieldset className={`f span-${span}`} style={{ border: 0, padding: 0, margin: 0 }}>
-      <legend className="f-label">{label}</legend>
+      <legend className="f-label">
+        <span>{label}</span>
+        {/* A choice with no default needs the same mark as an empty amount, or the disabled
+            Continue button is the only clue and it does not say why. */}
+        {requiredLabel && value === null ? (
+          <span className="f-badge f-badge-required">{requiredLabel}</span>
+        ) : null}
+      </legend>
       <div className={variant === 'cards' ? 'choice-cards' : 'choice-seg'} role="radiogroup" aria-label={label}>
         {options.map((option) => {
           const selected = value === option.value;

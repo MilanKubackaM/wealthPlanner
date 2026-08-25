@@ -1294,6 +1294,44 @@ Zmizlo aj tlačidlo „Ako to počíta" z hero sekcie: stálo vedľa primárnej 
 istý klik, pričom `/metodika` je destinácia v lište pár centimetrov nad ním. Stálo teda pozornosť
 a neotváralo nič, čo by inak bolo nedostupné. Hero je jeden nadpis a jedno tlačidlo.
 
+### Fáza 2.5g — Wizard sa pýta a čaká na odpoveď (hotové 25. 8. 2026)
+
+Povinné sumy začínajú **prázdne** a krok sa neposunie, kým nie sú vyplnené. Príjem, čísla
+hypotéky alebo nájom a štyri riadky výdavkov nesú tónovaný štítok „povinné" a prerušovaný rám.
+Tvar domácnosti a typ bývania dostali ten istý štítok, pretože ani jeden nemá predvoľbu.
+
+**Kde žije „nevyplnené".** Engine nemá prázdne stavy — každá suma je vždy číslo, čo je presne to,
+čo drží projekciu totálnu a goldeny stabilné — takže „nevyplnené" v modeli byť nemôže. Scenár
+naďalej nesie národný priemer, ale **input nezobrazuje nič**. Nikto nedostane plán postavený na
+číslach, ktoré nevidel, a do `simulate()` sa nikdy nedostane `null`.
+
+Povinnosť je vlastnosť **wizardu**, nie poľa. V editore na stránke plánu sa každá hodnota
+zobrazuje so štítkom „odhad" ako predtým — prázdne pole by tam skrylo číslo, z ktorého je graf
+nakreslený, a nie je tam čo blokovať.
+
+**Tlačidlá „Odhadnúť za mňa" a „Preskočiť zvyšok" sú zrušené**, rovnako ako ribbon nad krokmi.
+Všetky tri zjemňovali ten istý problém — plnú analýzu domácnosti, ktorú nikto neopísal — a
+analýza národného priemeru vydávaná za tvoju je horšia než žiadna analýza. Prázdnota plus
+zablokované Pokračovať je silnejšia záruka než titulok priznávajúci, že sú to priemery. Skutočné
+prípady „toto nechcem vyplňovať" už mali vlastné odpovede: žiadne deti, žiadne ďalšie dlhy,
+žiadna hotovosť, žiadne investície.
+
+Zo steppera zmizli štyri z ôsmich podtitulkov, všetky hinty polí, veta o predvyplnení a počítadlo
+úplnosti. Čo vysvetľovalo **model** namiesto otázky, bolo na obrazovke s jednou otázkou šum; je
+to na `/metodike`. `planner.countryHint` prežil — používa ho editor nastavení na stránke plánu,
+kde vysvetlenie patrí.
+
+Dve chyby cestou, obe zachytené console-error gate a suitou:
+
+1. Typ bývania nemal predvoľbu, ale podpolia sa riadili podľa spodného stavu — takže sa pýtal na
+   zostatok hypotéky skôr, než užívateľ povedal, že hypotéku má. Tá istá pasca ako s rokom
+   narodenia v kroku 2, opravená rovnako.
+2. Testovací helper vypĺňal každé pole jedným okrúhlym číslom, čím **vo vnútri suity zreprodukoval
+   starý bug s insolventnou jednočlennou domácnosťou**: jeden príjem 39 000 nesúci splátku
+   hypotéky pre pár. Teraz odpovedá po poliach podľa `czDefaults`.
+
+`finishWizard` stratil mŕtvy parameter `completed` po zaparkovaných hodnoteniach.
+
 ### Fáza 2.6 — Hodnotenia od používateľov (analýza hotová, implementácia pauznutá)
 
 > Analýza je dokončená 25. 8. 2026, implementácia odložená. Toto je jediná funkcia v celom

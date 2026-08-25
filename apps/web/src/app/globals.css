@@ -1241,6 +1241,26 @@ th {
   font-weight: 500;
 }
 
+/*
+ * "Povinné". The one badge on this form that is allowed to catch the eye, because it is the
+ * only one reporting something the user has to DO — the others describe a value that is
+ * already there. Tinted rather than loud: it appears on several fields of the same step at
+ * once, and four alarm-red pills read as four errors rather than four questions.
+ */
+.f-badge-required {
+  border-color: var(--status-warning-text);
+  background: transparent;
+  color: var(--status-warning-text);
+  font-weight: 650;
+}
+
+/* An unanswered required amount. Dashed, so an empty box reads as waiting rather than broken —
+   `data-invalid` keeps the solid red edge for a value that is actually wrong. */
+.f-control[data-blank='true'] {
+  border-style: dashed;
+  border-color: var(--status-warning-text);
+}
+
 /* The border lives on the wrapper, not on the input, because the unit affix sits inside it. */
 .f-control {
   display: flex;
@@ -1713,79 +1733,6 @@ th {
   background: var(--surface);
 }
 
-/* --------------------------------------------------- wizard consequence ribbon ----
- * Pinned between the step body and its buttons. Two lines, no SVG, so it is above the fold
- * on a 360px phone — which the chart it replaced never was.
- */
-
-.ribbon {
-  display: grid;
-  gap: 2px;
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--border);
-  border-inline-start: 3px solid var(--ink-muted);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-}
-
-.ribbon[data-verdict='holds'] {
-  border-inline-start-color: var(--status-good-text);
-}
-
-.ribbon[data-verdict='belowFloor'] {
-  border-inline-start-color: var(--status-warning-text);
-}
-
-.ribbon[data-verdict='deficit'] {
-  border-inline-start-color: var(--status-critical-text);
-}
-
-.ribbon-label {
-  margin: 0;
-  font-size: var(--text-2xs);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.ribbon-line {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-2);
-  margin: 0;
-  font-size: var(--text-sm);
-  font-variant-numeric: var(--font-num);
-}
-
-.ribbon-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 650;
-}
-
-/* Colour is never the only signal: the glyph and the word carry it too. */
-.ribbon[data-verdict='holds'] .ribbon-chip {
-  color: var(--status-good-text);
-}
-
-.ribbon[data-verdict='belowFloor'] .ribbon-chip {
-  color: var(--status-warning-text);
-}
-
-.ribbon[data-verdict='deficit'] .ribbon-chip {
-  color: var(--status-critical-text);
-}
-
-.ribbon-trough {
-  color: var(--ink);
-}
-
-.ribbon-meta {
-  font-size: var(--text-xs);
-  color: var(--ink-secondary);
-}
-
 /* ------------------------------------------------------------------ plan rail ----- */
 
 .plan-rail {
@@ -2016,15 +1963,6 @@ th {
 }
 
 /* Before any of the user's own numbers exist there is no verdict, so the band is neutral. */
-.ribbon[data-verdict='pristine'] {
-  border-inline-start-color: var(--border-strong);
-}
-
-.ribbon-pristine {
-  color: var(--ink-secondary);
-  max-width: 66ch;
-}
-
 /* ----------------------------------------------------------- the landing example ----
  * A chart of numbers nobody entered has to say so. The badge names it, the story says whose
  * household it is, and the footer says what the visitor gets for answering the same questions.

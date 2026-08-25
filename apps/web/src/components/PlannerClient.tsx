@@ -50,7 +50,6 @@ import {
   StatTile,
   TextField,
 } from './fields';
-import { ConsequenceRibbon } from './ConsequenceRibbon';
 import { Disclosure, SectionRail, usePrinting } from './Disclosure';
 import { Compare } from './Compare';
 import { EnvelopesEditor } from './EnvelopesEditor';
@@ -80,7 +79,8 @@ import { Sensitivity } from './Sensitivity';
  *
  * Two structural decisions that are easy to undo by accident:
  *
- *   1. There is NO chart inside the wizard. See ConsequenceRibbon for the argument.
+ *   1. There is NO chart inside the wizard: one question at a time, and on a phone a chart
+ *      below the buttons is a chart nobody sees.
  *   2. The plan page is disclosure sections, not one long scroll and not tabs. Every collapsed
  *      header carries a live summary, so collapsing costs no information.
  */
@@ -376,8 +376,12 @@ export function PlannerClient({
     return () => window.removeEventListener('pagehide', flush);
   }, []);
 
-  const markTouched = useCallback((path: string) => {
-    setTouched((current) => (current.includes(path) ? current : [...current, path]));
+  /** Variadic, because "estimate it for me" answers a whole step's worth of fields at once. */
+  const markTouched = useCallback((...paths: string[]) => {
+    setTouched((current) => {
+      const fresh = paths.filter((path) => !current.includes(path));
+      return fresh.length === 0 ? current : [...current, ...fresh];
+    });
   }, []);
 
   const patch = useCallback((next: Partial<ScenarioInput>) => {
@@ -598,6 +602,7 @@ export function PlannerClient({
   /* ----------------------------------------------------------------- fields ----- */
 
   const estimateLabel = t('onboarding.badgeEstimate');
+  const requiredLabel = t('onboarding.badgeRequired');
   const errorMax = (max: number) => t('fieldError.max', { max });
   const errorMin = (min: number) => t('fieldError.min', { min });
 
@@ -605,9 +610,60 @@ export function PlannerClient({
     locale,
     currency,
     estimateLabel,
+    requiredLabel,
     errorMax,
     errorMin,
   } as const;
+
+  /**
+   * The amounts the projection is meaningless without. They render EMPTY until answered and
+   * they block the step's Continue button, which together replace what the prefilled averages
+   * and the consequence ribbon used to do: instead of showing a plan built on figures the user
+   * never saw and captioning it "these are averages", the flow simply does not produce a plan
+   * until the figures are theirs.
+   *
+   * Note what is NOT here. Birth year is optional in the model and stays an estimate. Cash and
+   * investments were made explicitly optional. Assumptions (inflation, horizon) have defensible
+   * defaults that most users should not have to think about. Requiring those would be friction
+   * without information.
+   */
+  function requiredPaths(step: StepId): string[] {
+    switch (step) {
+      case 'shape':
+        return ['household.shape'];
+      case 'income':
+        return scenario.people.map((_, i) => `people[${i}].netMonthlyIncome`);
+      case 'housing':
+        /* Until the kind is chosen there is nothing else to require — and nothing else is on
+           screen to answer, so requiring an invisible field would disable Continue with no
+           visible cause. */
+        if (!touched.includes('housing.kind')) return ['housing.kind'];
+        return scenario.housing.kind === 'rent'
+          ? ['housing.rent.monthlyAmount']
+          : scenario.housing.mortgages.length > 0
+            ? [
+                'housing.mortgage.balance',
+                'housing.mortgage.annualRatePct',
+                'housing.mortgage.monthlyPayment',
+              ]
+            : [];
+      case 'expenses':
+        return scenario.expenses.map((e) => `expenses.${e.id}`);
+      default:
+        return [];
+    }
+  }
+
+  /**
+   * Required-ness is a property of the WIZARD, not of the field.
+   *
+   * The same field builders render the plan's editor, and there a blank input would be a
+   * straight regression: nothing there blocks anything, so hiding the figure the projection is
+   * actually using would leave the user unable to see what the chart is drawn from. On the plan
+   * page every value shows, carrying the "odhad" badge exactly as before.
+   */
+  const isRequired = (path: string, step: StepId) =>
+    stage === 'onboarding' && requiredPaths(step).includes(path);
 
   const incomeFields = (
     <>
@@ -620,6 +676,7 @@ export function PlannerClient({
           value={person.netMonthlyIncome}
           span={solo ? 6 : 6}
           estimate={!touched.includes(`people[${index}].netMonthlyIncome`)}
+          required={isRequired(`people[${index}].netMonthlyIncome`, 'income')}
           onChange={(v) =>
             edit(`people[${index}].netMonthlyIncome`, {
               people: scenario.people.map((p, i) => (i === index ? { ...p, netMonthlyIncome: v } : p)),
@@ -642,7 +699,6 @@ export function PlannerClient({
           { value: 'CZ', label: t('planner.countryCZ'), hint: t('planner.countryHintCZ') },
           { value: 'SK', label: t('planner.countrySK'), hint: t('planner.countryHintSK') },
         ]}
-        hint={t('planner.countryHint')}
         onChange={setCountry}
       />
     </>
@@ -657,7 +713,7 @@ export function PlannerClient({
         /* No pre-selection. This one answer restructures every screen after it, it costs one
            tap, and guessing it wrong costs the user a rebuild in the middle of the wizard. */
         value={touched.includes('household.shape') ? (solo ? 'single' : 'couple') : null}
-        hint={t('planner.shapeHint')}
+        requiredLabel={requiredLabel}
         options={[
           { value: 'single', label: t('planner.shapeSingle') },
           { value: 'couple', label: t('planner.shapeCouple') },
@@ -673,21 +729,13 @@ export function PlannerClient({
         without the gate this screen asked about an adult the user had not yet said existed —
         and produced a second one the instant they did.
 
-        A name first, then the birth year: who they are, then a fact about them. That ordering
-        also matters for the group note underneath, which explains that the prefilled values
-        are national averages — it belongs directly under the two `estimate` fields, not
-        stranded below two fields nothing prefilled.
+        A name first, then the birth year: who they are, then a fact about them.
 
-        Three deliberate choices in this one small field:
-
-        It is OPTIONAL and says so on the label, because a name box on a form about someone's
-        money reads as data collection unless it is visibly not required. The hint says where
-        the answer goes — nowhere — for the same reason the birth-year hint does.
-
-        And the placeholder is the fallback the rest of the app already uses (`Osoba 1`), so an
-        empty field is not a blank waiting to be filled but a working default on display. That
-        is why the value stays `person.label` and is never pre-filled: writing "Osoba 1" into
-        the input would make the user delete a word before typing their own.
+        The name is optional and its label says so, because a name box on a form about someone's
+        money reads as data collection unless it is visibly not required. Its placeholder is the
+        fallback the rest of the app already uses (`Osoba 1`), so an empty field is a working
+        default on display rather than a blank waiting to be filled — which is also why the
+        value stays `person.label` and is never pre-filled.
       */}
       {touched.includes('household.shape') &&
         scenario.people.map((person, index) => (
@@ -697,7 +745,6 @@ export function PlannerClient({
             label={solo ? t('planner.yourName') : t('planner.nameOf', { n: index + 1 })}
             optionalLabel={t('planner.optional')}
             placeholder={solo ? t('planner.personSolo') : t('planner.person', { n: index + 1 })}
-            hint={index === 0 ? t('planner.nameHint') : undefined}
             value={person.label}
             span={3}
             onChange={(v) =>
@@ -716,7 +763,6 @@ export function PlannerClient({
             label={
               solo ? t('planner.birthYear') : `${t('planner.birthYear')} — ${personName(index)}`
             }
-            hint={index === 0 ? t('planner.birthYearHint') : undefined}
             value={person.birthYear ?? startMonth.year - 32}
             min={startMonth.year - 90}
             max={startMonth.year}
@@ -754,7 +800,10 @@ export function PlannerClient({
         id="housing-kind"
         label={t('planner.housingKind')}
         variant="cards"
-        value={housingChoice}
+        /* No pre-selection: which of the three it is changes what the rest of the step even
+           asks for, and a wrong guess makes the user undo a screen they never chose. */
+        value={touched.includes('housing.kind') ? housingChoice : null}
+        requiredLabel={requiredLabel}
         options={[
           { value: 'mortgage', label: t('planner.housingMortgage') },
           { value: 'rent', label: t('planner.housingRent') },
@@ -766,7 +815,7 @@ export function PlannerClient({
         }}
       />
 
-      {housingChoice === 'mortgage' && mortgage ? (
+      {touched.includes('housing.kind') && housingChoice === 'mortgage' && mortgage ? (
         <>
           <NumberField
             id="m-balance"
@@ -775,6 +824,7 @@ export function PlannerClient({
             value={mortgage.balance}
             span={6}
             estimate={!touched.includes('housing.mortgage.balance')}
+            required={isRequired('housing.mortgage.balance', 'housing')}
             onChange={(v) => patchMortgage({ balance: v }, 'housing.mortgage.balance')}
             {...numberProps}
           />
@@ -785,6 +835,7 @@ export function PlannerClient({
             value={mortgage.annualRatePct}
             span={3}
             estimate={!touched.includes('housing.mortgage.annualRatePct')}
+            required={isRequired('housing.mortgage.annualRatePct', 'housing')}
             onChange={(v) => patchMortgage({ annualRatePct: v }, 'housing.mortgage.annualRatePct')}
             {...numberProps}
           />
@@ -795,6 +846,7 @@ export function PlannerClient({
             value={mortgage.monthlyPayment}
             span={3}
             estimate={!touched.includes('housing.mortgage.monthlyPayment')}
+            required={isRequired('housing.mortgage.monthlyPayment', 'housing')}
             onChange={(v) => patchMortgage({ monthlyPayment: v }, 'housing.mortgage.monthlyPayment')}
             {...numberProps}
           />
@@ -883,7 +935,7 @@ export function PlannerClient({
         </>
       ) : null}
 
-      {housingChoice === 'rent' && rent ? (
+      {touched.includes('housing.kind') && housingChoice === 'rent' && rent ? (
         <>
           <NumberField
             id="rent-amount"
@@ -892,6 +944,7 @@ export function PlannerClient({
             value={rent.monthlyAmount}
             span={6}
             estimate={!touched.includes('housing.rent.monthlyAmount')}
+            required={isRequired('housing.rent.monthlyAmount', 'housing')}
             onChange={(v) => patchRent({ monthlyAmount: v }, 'housing.rent.monthlyAmount')}
             {...numberProps}
           />
@@ -1072,10 +1125,12 @@ export function PlannerClient({
           id={`exp-${expense.id}`}
           kind="money.monthly"
           label={tx(`planner.expense${expense.id.charAt(0).toUpperCase()}${expense.id.slice(1)}`)}
-          hint={expense.kind === 'fixed' ? t('planner.expenseFixed') : t('planner.expenseVariable')}
+          /* The fixed/variable distinction is real and it matters to the reserve floor, but it
+             is not something to explain four times on one screen. It is on /metodika. */
           value={expense.monthlyAmount}
           span={3}
           estimate={!touched.includes(`expenses.${expense.id}`)}
+          required={isRequired(`expenses.${expense.id}`, 'expenses')}
           onChange={(v) =>
             edit(`expenses.${expense.id}`, {
               expenses: scenario.expenses.map((e, i) => (i === index ? { ...e, monthlyAmount: v } : e)),
@@ -1426,11 +1481,8 @@ export function PlannerClient({
     children: childFields,
   };
 
-  /* The projection as this step was entered, so the ribbon can attribute the change to it. */
-  const stepBaseline = useRef<ProjectionResult | null>(null);
   const stepId = STEP_IDS[step] ?? 'shape';
   useEffect(() => {
-    stepBaseline.current = simulate(scenario);
     /* Deliberately keyed on the step alone: re-snapshotting on every edit would make the
        delta always read zero. */
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1447,7 +1499,20 @@ export function PlannerClient({
    * it yet — the review prompt that will is parked in the plan — but the distinction is real and
    * cheap to keep, and reconstructing it later means touching all three call sites again.
    */
-  function finishWizard(completed: boolean) {
+  /*
+   * There is exactly one way out of the wizard now: answering it.
+   *
+   * "Estimate it for me" and "skip the rest" are gone. Both produced a full analysis of a
+   * household nobody had described, and an analysis of the national average dressed up as
+   * yours is worse than no analysis — it is the one output of this product that must never be
+   * wrong. The genuine "I do not want to fill this in" cases already have real answers of
+   * their own: no children, no other debts, no cash, no investments. None of them needs a
+   * button that leaves the rest to chance.
+   *
+   * (`completed` was a dead parameter here — it was added for the review prompt that got
+   * parked, and nothing in this body ever read it.)
+   */
+  function finishWizard() {
     const pristine = defaultScenario(scenario.jurisdiction, startMonth, size);
     const mine = simulate(scenario).minReserve;
     const groups: Array<[string, ScenarioInput]> = [
@@ -1474,6 +1539,13 @@ export function PlannerClient({
 
   if (stage === 'onboarding') {
     const total = STEP_IDS.length;
+    /* Required and still unanswered on this step. Drives both the disabled Continue and what
+       "estimate it for me" has to fill in. */
+    const missing = requiredPaths(stepId).filter((path) => !touched.includes(path));
+    /* `t.has` rather than a try/catch: a step without a subtitle is a design decision, not an
+       error, and next-intl logs a missing key as one. */
+    const bodyKey = `onboarding.${stepId}.body`;
+    const stepBody = t.has(bodyKey as never) ? tx(bodyKey) : null;
     return (
       <div className="stack-lg">
         {otherCountry ? (
@@ -1496,9 +1568,17 @@ export function PlannerClient({
               {t('onboarding.progress', { step: step + 1, total: String(total) })}
             </p>
             <h2 style={{ fontSize: 'var(--text-2xl)', marginTop: 4 }}>{tx(`onboarding.${stepId}.title`)}</h2>
-            <p className="muted" style={{ margin: '6px 0 0', fontSize: 14, maxWidth: '60ch' }}>
-              {tx(`onboarding.${stepId}.body`)}
-            </p>
+            {/*
+              Optional. Four of the eight steps lost their subtitle: it earns its place only
+              where it changes what the user types, and where it explained the MODEL instead of
+              the question it was boilerplate on the one screen whose whole design is a single
+              question. That material is on /metodika.
+            */}
+            {stepBody ? (
+              <p className="muted" style={{ margin: '6px 0 0', fontSize: 14, maxWidth: '60ch' }}>
+                {stepBody}
+              </p>
+            ) : null}
           </div>
 
           <div className="wizard-pips" aria-hidden="true">
@@ -1509,35 +1589,6 @@ export function PlannerClient({
 
           <div className="grid-12">{stepBodies[stepId]}</div>
 
-          <p className="muted" style={{ margin: 0, fontSize: 12 }}>
-            {t('onboarding.estimateNote')}
-          </p>
-
-          <ConsequenceRibbon
-            result={result}
-            baseline={stepBaseline.current}
-            currency={currency}
-            locale={locale}
-            monthsIn={monthsIn}
-            answered={answered}
-            total={tracked.length}
-            stepKey={stepId}
-            labels={{
-              label: t('onboarding.ribbon.label'),
-              holds: t('onboarding.ribbon.holds'),
-              belowFloor: t('onboarding.ribbon.belowFloor'),
-              deficit: t('onboarding.ribbon.deficit'),
-              trough: (amount, when) => t('onboarding.ribbon.trough', { amount, when }),
-              neverDips: (amount) => t('onboarding.ribbon.neverDips', { amount }),
-              pristine: t('onboarding.ribbon.pristine'),
-              troughDeficit: (amount, when) => t('onboarding.ribbon.troughDeficit', { amount, when }),
-              stepDown: (amount) => t('onboarding.ribbon.stepDown', { amount }),
-              stepUp: (amount) => t('onboarding.ribbon.stepUp', { amount }),
-              stepFlat: t('onboarding.ribbon.stepFlat'),
-              completeness: (done, all) => t('onboarding.ribbon.completeness', { done, total: all }),
-            }}
-          />
-
           <div className="row">
             {step > 0 && (
               <button type="button" className="btn btn-secondary" onClick={() => setStep((s) => s - 1)}>
@@ -1547,26 +1598,12 @@ export function PlannerClient({
             <button
               type="button"
               className="btn btn-primary"
-              disabled={stepId === 'shape' && !touched.includes('household.shape')}
-              onClick={() => (step === total - 1 ? finishWizard(true) : setStep((s) => s + 1))}
+              /* Every required field on THIS step, not on the whole form: a step cannot be
+                 blocked by a question the user has not been shown yet. */
+              disabled={missing.length > 0}
+              onClick={() => (step === total - 1 ? finishWizard() : setStep((s) => s + 1))}
             >
               {step === total - 1 ? t('onboarding.finish') : t('onboarding.next')}
-            </button>
-            <button
-              type="button"
-              className="btn btn-ghost"
-              /* Accepting the prefilled estimates step by step still means walking the flow. */
-              onClick={() => (step === total - 1 ? finishWizard(true) : setStep((s) => s + 1))}
-            >
-              {t('onboarding.estimate')}
-            </button>
-            <button
-              type="button"
-              className="btn btn-ghost"
-              style={{ marginInlineStart: 'auto' }}
-              onClick={() => finishWizard(false)}
-            >
-              {t('onboarding.skip')}
             </button>
           </div>
         </div>

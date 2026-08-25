@@ -9,10 +9,103 @@ function failOnConsoleErrors(page: Page, sink: string[]) {
 }
 
 /** Eight steps now, and every one of them offers a way straight to the plan. */
-async function skipWizard(page: Page, locale: 'cs' | 'sk' = 'cs') {
-  const label = locale === 'sk' ? /Preskočiť/ : /Přeskočit/;
-  const skip = page.getByRole('button', { name: label });
-  if (await skip.isVisible().catch(() => false)) await skip.click();
+/**
+ * Walks the wizard to the plan by ANSWERING it, because there is no longer any other way out.
+ *
+ * "Skip the rest" and "estimate it for me" were both removed: they produced a full analysis of
+ * a household nobody had described. So the tests do what a user now has to do — fill whatever
+ * the step marks required, choose whatever choice has no default, and press Continue.
+ *
+ * The VALUES matter. Filling every box with the same round number produces a household whose
+ * income equals its grocery bill, and half the suite is about what the model finds in a
+ * plausible one — so these mirror `czDefaults`, and any field the map does not name falls back
+ * to a harmless amount.
+ */
+const WIZARD_ANSWERS: Record<string, string> = {
+  'm-balance': '4510000',
+  'm-rate': '4.5',
+  'm-payment': '24200',
+  'rent-amount': '18000',
+  'exp-utilities': '6500',
+  'exp-insurance': '1200',
+  'exp-groceries': '14000',
+  'exp-other': '8000',
+};
+
+/** Income ids carry the person's generated id, so they are matched by prefix. */
+function answerFor(id: string): string {
+  if (id.startsWith('income-')) return '39000';
+  return WIZARD_ANSWERS[id] ?? '1000';
+}
+
+/**
+ * Generic on purpose. It reads the step for `[data-blank]` inputs and `.f-badge-required`
+ * choices rather than hard-coding which steps have them, so adding a required field to the
+ * wizard does not silently strand a dozen tests on step four.
+ */
+async function fillWizard(
+  page: Page,
+  locale: 'cs' | 'sk' = 'cs',
+  shape: 'single' | 'couple' = 'couple',
+) {
+  const next = locale === 'sk' ? 'Pokračovať' : 'Pokračovat';
+
+  /* Nothing to do if the plan is already on screen — finishing the wizard saves, so a reload
+     lands on the plan rather than back at step one. */
+  if ((await page.locator('.wizard').count()) === 0) return;
+
+  /*
+   * The shape is chosen EXPLICITLY rather than by the generic "take the first option" rule.
+   *
+   * Taking the first option picks a single adult, and the amounts below are a couple's — which
+   * reproduced, inside the test helper, the very insolvency bug this suite once existed to
+   * catch: one income of 39 000 carrying a couple's mortgage payment and a couple's groceries.
+   * Every plan assertion downstream then describes a household nobody meant to build.
+   */
+  await page.getByRole('button', { name: next }).click();
+  const shapeLabel =
+    locale === 'sk'
+      ? shape === 'single'
+        ? /Jeden dospelý/
+        : /Dvaja dospelí/
+      : shape === 'single'
+        ? /Jeden dospělý/
+        : /Dva dospělí/;
+  await page.getByRole('radio', { name: shapeLabel }).click();
+  await runRemainingSteps(page, locale);
+}
+
+/** The generic part: answer whatever this step requires, press on, repeat until the plan. */
+async function runRemainingSteps(page: Page, locale: 'cs' | 'sk' = 'cs') {
+  const next = locale === 'sk' ? 'Pokračovať' : 'Pokračovat';
+  const finish = locale === 'sk' ? 'Zobraziť plán' : 'Zobrazit plán';
+
+  for (let guard = 0; guard < 12; guard++) {
+    const done = page.getByRole('button', { name: finish });
+    const cont = page.getByRole('button', { name: next });
+    const button = (await done.count()) > 0 ? done : cont;
+    if ((await button.count()) === 0) return;
+
+    /* Any choice still waiting for an answer: take the first option. */
+    while ((await page.locator('.f-badge-required').count()) > 0) {
+      const radios = page.locator('[role="radiogroup"] [role="radio"]');
+      const blanks = page.locator('.f-control[data-blank="true"] input');
+      if ((await blanks.count()) > 0) break;
+      if ((await radios.count()) === 0) break;
+      await radios.first().click();
+    }
+
+    const blanks = page.locator('.f-control[data-blank="true"] input');
+    for (let i = (await blanks.count()) - 1; i >= 0; i--) {
+      const field = blanks.nth(i);
+      await field.fill(answerFor((await field.getAttribute('id')) ?? ''));
+    }
+
+    await expect(button).toBeEnabled();
+    await button.click();
+    if ((await done.count()) > 0 && (await page.locator('.wizard').count()) === 0) return;
+    if ((await page.locator('.wizard').count()) === 0) return;
+  }
 }
 
 /**
@@ -34,7 +127,8 @@ async function waitForAutosave(page: Page, locale: 'cs' | 'sk' = 'cs') {
 /**
  * Walks the two structural questions the wizard opens with: the country (pre-selected from the
  * locale, but a real choice) and the household shape (no pre-selection at all). Leaves the
- * wizard on the income step.
+ * wizard on the income step, whose fields are EMPTY and whose Continue is disabled — use
+ * `advance` from there rather than clicking Continue.
  */
 async function startWizard(page: Page, shape: 'single' | 'couple' = 'couple') {
   await page.getByRole('button', { name: 'Pokračovat' }).click();
@@ -54,11 +148,30 @@ async function openSection(page: Page, id: string) {
   await expect(header).toHaveAttribute('aria-expanded', 'true');
 }
 
-/** Walks the whole eight-step wizard to the plan, which is what unlocks the review prompt. */
-async function completeWizard(page: Page) {
-  await startWizard(page);
-  for (let i = 0; i < 5; i++) await page.getByRole('button', { name: 'Pokračovat' }).click();
-  await page.getByRole('button', { name: 'Zobrazit plán' }).click();
+/**
+ * Advance exactly one step, answering whatever it requires first.
+ *
+ * Continue is disabled while a required field on the step is unanswered, and there is no
+ * "estimate it for me" button any more — so a test that walks the flow has to answer, same as
+ * a user.
+ */
+async function advance(page: Page, locale: 'cs' | 'sk' = 'cs') {
+  const next = page.getByRole('button', { name: locale === 'sk' ? 'Pokračovať' : 'Pokračovat' });
+  while ((await page.locator('.f-badge-required').count()) > 0) {
+    const blanks = page.locator('.f-control[data-blank="true"] input');
+    if ((await blanks.count()) > 0) {
+      for (let i = (await blanks.count()) - 1; i >= 0; i--) {
+        const field = blanks.nth(i);
+        await field.fill(answerFor((await field.getAttribute('id')) ?? ''));
+      }
+      continue;
+    }
+    const radios = page.locator('[role="radiogroup"] [role="radio"]');
+    if ((await radios.count()) === 0) break;
+    await radios.first().click();
+  }
+  await expect(next).toBeEnabled();
+  await next.click();
 }
 
 /** Opens a group inside the "Čísla plánu" section (envelopes, personal investing). */
@@ -282,24 +395,25 @@ test.describe('the wizard', () => {
 
     /*
      * Deliberate: the chart is not in the stepper. On a phone it sat below the buttons, so it
-     * was off-screen on every step, and it split attention on the one screen whose whole
-     * design is one question at a time. The ribbon replaces it.
+     * was off-screen on every step, and it split attention on the one screen whose whole design
+     * is one question at a time.
      */
     await expect(page.locator('svg[role="img"]')).toHaveCount(0);
-    await expect(page.getByText('Zatím to vypadá takto')).toBeVisible();
 
     /*
-     * And it passes no verdict yet. A fresh session used to be told "the reserve holds — lowest
-     * 200 000 Kč in August 2026" on the first screen, which is a judgement about a household
-     * the visitor has not described.
+     * And the step is now ONLY the question. The running consequence ribbon that used to sit
+     * here is gone, along with every explanatory hint: no verdict can be reached without the
+     * user's own figures any more, because the required fields are empty and Continue is
+     * disabled — which is a stronger guarantee than a caption saying "these are averages".
      */
-    await expect(page.locator('.ribbon')).toHaveAttribute('data-verdict', 'pristine');
-    /* `.ribbon-pristine`, not the text: the same sentence is also in the sr-only live region. */
-    await expect(page.locator('.ribbon-pristine')).toContainText(/Zatím počítáme s národním průměrem/);
+    await expect(page.locator('.ribbon')).toHaveCount(0);
+    await expect(page.getByText('Zatím to vypadá takto')).toHaveCount(0);
+    await expect(page.locator('.f-hint')).toHaveCount(0);
 
     /* The shape restructures every screen after it, so unlike the country it gets no default:
-       nothing is pre-selected and the wizard will not advance until it is answered. */
+       nothing is pre-selected, it is marked required, and the wizard will not advance. */
     await expect(page.getByRole('button', { name: 'Pokračovat' })).toBeDisabled();
+    await expect(page.locator('.f-badge-required')).toHaveText('povinné');
 
     /*
      * And nothing about a PERSON is asked before the user has said a person exists. The
@@ -326,19 +440,31 @@ test.describe('the wizard', () => {
     await expect(nameField).toHaveValue('');
     await expect(nameField).toHaveAttribute('placeholder', 'Vy');
     await expect(page.locator('.f-badge-soft').first()).toContainText('volitelné');
-    await expect(page.getByText(/Zůstává ve vašem prohlížeči/)).toBeVisible();
 
     await page.getByRole('button', { name: 'Pokračovat' }).click();
     await expect(page.getByRole('heading', { name: /Kolik čistého/ })).toBeVisible();
     /* One adult means one income field, not two. */
     await expect(page.getByLabel(/Čistý měsíční příjem/)).toHaveCount(1);
 
-    /* One real number, and the band starts answering. */
-    await page.getByLabel(/Čistý měsíční příjem/).fill('52000');
-    await expect(page.locator('.ribbon')).not.toHaveAttribute('data-verdict', 'pristine');
+    /*
+     * The heart of it: a required amount shows NOTHING until the user answers it. The scenario
+     * underneath still holds the national average — the engine has no empty states and must not
+     * grow one — but the input does not present that average as if it were their figure, and
+     * the step will not move on.
+     */
+    const income = page.getByLabel(/Čistý měsíční příjem/);
+    await expect(income).toHaveValue('');
+    await expect(page.locator('.f-control[data-blank="true"]')).toHaveCount(1);
+    await expect(page.getByRole('button', { name: 'Pokračovat' })).toBeDisabled();
+
+    /* Answering it clears the block and retires the badge. */
+    await income.fill('52000');
+    await expect(page.getByRole('button', { name: 'Pokračovat' })).toBeEnabled();
+    await expect(page.locator('.f-badge-required')).toHaveCount(0);
 
     expect(errors, errors.join('\n')).toEqual([]);
   });
+
 
   test('names both adults optionally, and falls back to Osoba 1 when left blank', async ({
     page,
@@ -367,7 +493,7 @@ test.describe('the wizard', () => {
   test('offers rent as a first-class alternative to a mortgage', async ({ page }) => {
     await page.goto('/cs/plan');
     await startWizard(page);
-    await page.getByRole('button', { name: 'Pokračovat' }).click();
+    await advance(page);
 
     await expect(page.getByRole('heading', { name: /Jak řešíte bydlení/ })).toBeVisible();
     await page.getByRole('radio', { name: /V nájmu/ }).click();
@@ -379,8 +505,17 @@ test.describe('the wizard', () => {
   test('asks about the refixation instead of pretending it is already filled in', async ({ page }) => {
     await page.goto('/cs/plan');
     await startWizard(page);
-    await page.getByRole('button', { name: 'Pokračovat' }).click();
+    await advance(page);
     await expect(page.getByRole('heading', { name: /Jak řešíte bydlení/ })).toBeVisible();
+
+    /*
+     * Nothing about a mortgage is asked before the user says they have one. The kind has no
+     * pre-selection now, and the sub-fields are gated on the answer rather than on the state
+     * the scenario happens to hold — the same trap as the birth-year fields on step 2.
+     */
+    await expect(page.locator('#m-balance')).toHaveCount(0);
+    await page.getByRole('radio', { name: /Vlastní na hypotéku/ }).click();
+    await expect(page.locator('#m-balance')).toBeVisible();
 
     /*
      * The regression this exists for: the date and the new rate used to be rendered as if they
@@ -411,8 +546,10 @@ test.describe('the wizard', () => {
 
     await page.goto('/cs/plan');
     await startWizard(page);
-    for (let i = 0; i < 4; i++) await page.getByRole('button', { name: 'Pokračovat' }).click();
+    for (let i = 0; i < 4; i++) await advance(page);
     await expect(page.getByRole('heading', { name: /Rezerva a investování/ })).toBeVisible();
+    /* Cash and investments are optional, so nothing here is marked required. */
+    await expect(page.locator('.f-badge-required')).toHaveCount(0);
 
     /* A current account at 0 % beside a savings account is the commonest real arrangement. */
     await page.getByRole('button', { name: 'Přidat účet' }).click();
@@ -438,7 +575,7 @@ test.describe('the wizard', () => {
   test('treats children as a question, not as a form to fill in', async ({ page }) => {
     await page.goto('/cs/plan');
     await startWizard(page);
-    for (let i = 0; i < 5; i++) await page.getByRole('button', { name: 'Pokračovat' }).click();
+    for (let i = 0; i < 5; i++) await advance(page);
 
     await expect(page.getByRole('heading', { name: 'Děti' })).toBeVisible();
     /* The default is "we don't know yet", and that state is complete, not unfinished. */
@@ -456,7 +593,7 @@ test.describe('planner', () => {
     failOnConsoleErrors(page, errors);
 
     await page.goto('/cs/plan');
-    await skipWizard(page);
+    await fillWizard(page);
 
     await expect(page.getByRole('heading', { name: 'Verdikt' })).toBeVisible();
     await expect(page.getByText('Nejnižší rezerva').first()).toBeVisible();
@@ -472,7 +609,7 @@ test.describe('planner', () => {
 
   test('a collapsed section opens from the rail and remembers that it is open', async ({ page }) => {
     await page.goto('/cs/plan');
-    await skipWizard(page);
+    await fillWizard(page);
 
     await page
       .getByRole('navigation', { name: 'Části plánu' })
@@ -484,15 +621,15 @@ test.describe('planner', () => {
     await expect(page).toHaveURL(/\?s=srovnani/);
 
     await page.reload();
-    /* Reading state is kept under its own storage key, so it survives a reload whether or not
-       a plan is stored — which is why the wizard has to be skipped again here. */
-    await skipWizard(page);
+    /* Reading state is kept under its own storage key, separate from the plan, so it survives
+       a reload. The wizard does not come back: finishing it saves the plan. */
+    await expect(page.locator('.wizard')).toHaveCount(0);
     await expect(page.locator('#srovnani-btn')).toHaveAttribute('aria-expanded', 'true');
   });
 
   test('adding a child changes the verdict', async ({ page }) => {
     await page.goto('/cs/plan');
-    await skipWizard(page);
+    await fillWizard(page);
     /* The healthy verdict block. Its glyph is aria-hidden and part of the text node, so this
        addresses the block rather than an exact string. */
     await expect(page.locator('.notice[data-tone="good"]')).toBeVisible();
@@ -505,7 +642,7 @@ test.describe('planner', () => {
 
   test('a proven fix can be applied and it improves the trough', async ({ page }) => {
     await page.goto('/cs/plan');
-    await skipWizard(page);
+    await fillWizard(page);
     await openSection(page, 'cisla');
     await page.getByRole('radio', { name: /Ano — máme nebo plánujeme/ }).click();
 
@@ -528,7 +665,7 @@ test.describe('planner', () => {
     failOnConsoleErrors(page, errors);
 
     await page.goto('/cs/plan');
-    await skipWizard(page);
+    await fillWizard(page);
 
     /* The gauge reports a percentage, and it sits UNDER the chart it is a reading of.
        `.gauge`, not `.ring`: that name belongs to a Tailwind utility, which painted a 1px
@@ -574,7 +711,7 @@ test.describe('planner', () => {
     failOnConsoleErrors(page, errors);
 
     await page.goto('/cs/plan');
-    await skipWizard(page);
+    await fillWizard(page);
     await page.getByRole('button', { name: /Rozepsat po částech/ }).click();
 
     const investing = page.locator('.health-row').nth(1);
@@ -596,7 +733,7 @@ test.describe('planner', () => {
 
   test('a plan survives a reload with no save button in sight', async ({ page }) => {
     await page.goto('/cs/plan');
-    await skipWizard(page);
+    await fillWizard(page);
     await openSection(page, 'cisla');
     await page.getByLabel(/Kolik máte teď/).fill('333000');
     /* No Save button: the change persists on its own. */
@@ -610,7 +747,7 @@ test.describe('planner', () => {
 
   test('the editor accepts the numbers this product itself prints', async ({ page }) => {
     await page.goto('/cs/plan');
-    await skipWizard(page);
+    await fillWizard(page);
     await openSection(page, 'cisla');
 
     /*
@@ -641,10 +778,10 @@ test.describe('country and locale', () => {
     failOnConsoleErrors(page, errors);
 
     await page.goto('/cs/plan');
-    await skipWizard(page);
+    await fillWizard(page);
     await openSection(page, 'cisla');
     await expect(page.locator('#m-balance')).toHaveValue(/4\s?510\s?000/);
-    /* Touch one field so there is something to autosave, then let it. */
+    /* A figure nothing else in the suite uses, so finding it later can only mean a leak. */
     await page.getByLabel(/Kolik máte teď/).fill('222000');
     await waitForAutosave(page);
 
@@ -652,12 +789,21 @@ test.describe('country and locale', () => {
     await page.getByRole('link', { name: 'SK', exact: true }).click();
     await expect(page).toHaveURL(/\/sk(\/|$)/);
     await page.goto('/sk/plan');
-    await skipWizard(page, 'sk');
+
+    /*
+     * The whole assertion: the Slovak planner opens its own EMPTY wizard rather than the Czech
+     * household. Plans are stored per country, so there is nothing here to restore — and now
+     * that the wizard cannot be skipped, "nothing to restore" means "step one", which is a
+     * sharper proof than reading a default off a prefilled field.
+     */
+    await expect(page.locator('.wizard')).toBeVisible();
+    await expect(page.getByRole('heading', { name: /V ktorej krajine/ })).toBeVisible();
+    await fillWizard(page, 'sk');
     await openSection(page, 'cisla');
 
-    /* Slovak page, Slovak numbers — the whole assertion. */
-    await expect(page.locator('#m-balance')).toHaveValue(/130\s?000/);
-    await expect(page.locator('#m-payment')).toHaveValue(/650/);
+    /* Slovak page, euro, and not a trace of the Czech reserve. */
+    await expect(page.locator('.f-unit').first()).toHaveText('€');
+    await expect(page.getByText('222 000')).toHaveCount(0);
 
     expect(errors, errors.join('\n')).toEqual([]);
   });
@@ -678,12 +824,21 @@ test.describe('country and locale', () => {
     await page.getByRole('button', { name: 'Pokračovať' }).click();
     await page.getByRole('radio', { name: /Dvaja dospelí/ }).click();
     await page.getByRole('button', { name: 'Pokračovať' }).click();
+    await expect(page.getByRole('heading', { name: /Koľko čistého/ })).toBeVisible();
 
-    /* Slovak labels, Czech money. */
-    await expect(page.getByLabel(/Čistý mesačný príjem/).first()).toHaveValue(/39\s?000/);
+    /*
+     * Slovak labels, Czech money. The income fields start empty now — required and unanswered —
+     * so the currency is asserted on the affix, which is rendered either way, and then on a
+     * figure the test types in itself.
+     */
+    const income = page.getByLabel(/Čistý mesačný príjem/).first();
+    await expect(income).toHaveValue('');
     await expect(page.locator('.f-unit').first()).toHaveText('Kč');
+    await income.fill('39000');
+    await expect(income).toHaveValue(/39\s?000/);
 
-    await page.getByRole('button', { name: /Preskočiť/ }).click();
+    /* The rest of the wizard, answered — there is no way past it any more. */
+    await runRemainingSteps(page, 'sk');
     await openSection(page, 'cisla');
     await expect(page.locator('#m-balance')).toHaveValue(/4\s?510\s?000/);
     await page.getByLabel(/Koľko máte teraz/).fill('250000');
@@ -700,13 +855,13 @@ test.describe('country and locale', () => {
 
   test('each country keeps its own plan — one does not overwrite the other', async ({ page }) => {
     await page.goto('/cs/plan');
-    await skipWizard(page);
+    await fillWizard(page);
     await openSection(page, 'cisla');
     await page.getByLabel(/Kolik máte teď/).fill('333000');
     await waitForAutosave(page);
 
     await page.goto('/sk/plan');
-    await skipWizard(page, 'sk');
+    await fillWizard(page, 'sk');
     await openSection(page, 'cisla');
     await page.getByLabel(/Koľko máte teraz/).fill('12000');
     await waitForAutosave(page, 'sk');
@@ -739,7 +894,7 @@ test.describe('accessibility and sharing', () => {
   test('a shared link reproduces the plan it was made from', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await page.goto('/cs/plan');
-    await skipWizard(page);
+    await fillWizard(page);
     await openSection(page, 'cisla');
     await page.getByLabel(/Kolik máte teď/).fill('777000');
     await page.getByRole('button', { name: /Zkopírovat odkaz/ }).click();
@@ -760,7 +915,7 @@ test.describe('accessibility and sharing', () => {
 
   test('envelopes are descriptive: adding one must not move the projection', async ({ page }) => {
     await page.goto('/cs/plan');
-    await skipWizard(page);
+    await fillWizard(page);
     await openSection(page, 'cisla');
     await openGroup(page, /Obálky/);
 
