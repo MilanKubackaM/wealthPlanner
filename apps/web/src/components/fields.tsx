@@ -208,6 +208,9 @@ export function NumberField({
       <div
         className="f-control"
         data-numeric="true"
+        /* No styling hangs off this — the badge alone marks an unanswered field, since a dashed
+           edge on four boxes at once read as four broken inputs. It is kept as the state hook
+           the e2e suite uses to find what still needs answering. */
         data-blank={blank ? 'true' : undefined}
         data-invalid={shown ? 'true' : undefined}
         data-disabled={disabled ? 'true' : undefined}

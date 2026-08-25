@@ -630,7 +630,17 @@ export function PlannerClient({
   function requiredPaths(step: StepId): string[] {
     switch (step) {
       case 'shape':
-        return ['household.shape'];
+        /*
+         * The birth year is required too. The model treats it as optional — `Person.birthYear`
+         * is `number | undefined` and `ageAt()` returns null rather than inventing 35 — but
+         * "optional in the type" is not "guess it for the user": it drives the horizon and the
+         * under-36 mortgage limits, so a silent 1994 is a silent answer to a question about a
+         * real person. Optional in the model, asked for in the wizard.
+         */
+        return [
+          'household.shape',
+          ...scenario.people.map((_, i) => `people[${i}].birthYear`),
+        ];
       case 'income':
         return scenario.people.map((_, i) => `people[${i}].netMonthlyIncome`);
       case 'housing':
@@ -768,6 +778,7 @@ export function PlannerClient({
             max={startMonth.year}
             span={3}
             estimate={!touched.includes(`people[${index}].birthYear`)}
+            required={isRequired(`people[${index}].birthYear`, 'shape')}
             onChange={(v) =>
               edit(`people[${index}].birthYear`, {
                 people: scenario.people.map((p, i) => (i === index ? { ...p, birthYear: v } : p)),

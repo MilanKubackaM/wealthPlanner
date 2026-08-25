@@ -38,6 +38,18 @@ Two bugs found on the way, both by the console-error gate and the suite:
   reproduced the old single-adult insolvency bug inside the suite: one income of 39 000 carrying
   a couple's mortgage payment. It now answers per field, mirroring `czDefaults`.
 
+**The birth year is required too.** The model treats it as optional and `ageAt()` returns null
+rather than inventing 35 — but "optional in the type" is not "guess it for the user". It drives
+the horizon and the under-36 mortgage limits, so a silent 1994 is a silent answer to a question
+about a real person.
+
+**The "povinné" badge lost its border and its pill,** and the dashed edge on unanswered fields
+is gone. The outlined badge was taller than the label beside it and sat on the input below,
+making a word look like a control; four dashed boxes on one step read as four broken inputs.
+What is left is a legible distinction: an outlined pill is a claim about a value ("odhad",
+"voliteľné"), plain colour is something you have to do. `data-blank` survives as the state hook
+the e2e suite uses to find what still needs answering.
+
 `finishWizard` lost a dead `completed` parameter, left over from the parked review prompt.
 Style ratchets: inline styles 141 → 139, numeric literals 99 → 98.
 

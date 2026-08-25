@@ -1213,6 +1213,9 @@ th {
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  /* The label row used to sit flush on the control, so any badge in it looked attached to the
+     input rather than to the label. */
+  margin-block-end: var(--space-1);
   font-size: var(--text-xs);
   font-weight: 500;
   color: var(--ink-secondary);
@@ -1242,23 +1245,25 @@ th {
 }
 
 /*
- * "Povinné". The one badge on this form that is allowed to catch the eye, because it is the
- * only one reporting something the user has to DO — the others describe a value that is
- * already there. Tinted rather than loud: it appears on several fields of the same step at
- * once, and four alarm-red pills read as four errors rather than four questions.
+ * "Povinné". The one badge on this form allowed to catch the eye, because it is the only one
+ * reporting something the user has to DO — the others describe a value that is already there.
+ *
+ * No border and no pill. The outlined version was taller than the label beside it and its
+ * bottom edge sat on the input below, which made a word look like a control. Colour and weight
+ * carry it; the shape was doing nothing but taking up height.
+ *
+ * Tinted rather than loud on purpose: it appears on four fields of one step at once, and four
+ * alarm-red pills read as four errors rather than four questions.
  */
 .f-badge-required {
-  border-color: var(--status-warning-text);
+  border: 0;
+  border-radius: 0;
   background: transparent;
-  color: var(--status-warning-text);
+  padding-inline: 0;
+  font-size: var(--text-2xs);
   font-weight: 650;
-}
-
-/* An unanswered required amount. Dashed, so an empty box reads as waiting rather than broken —
-   `data-invalid` keeps the solid red edge for a value that is actually wrong. */
-.f-control[data-blank='true'] {
-  border-style: dashed;
-  border-color: var(--status-warning-text);
+  letter-spacing: 0.01em;
+  color: var(--status-warning-text);
 }
 
 /* The border lives on the wrapper, not on the input, because the unit affix sits inside it. */

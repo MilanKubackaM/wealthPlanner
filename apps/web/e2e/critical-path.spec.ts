@@ -32,9 +32,12 @@ const WIZARD_ANSWERS: Record<string, string> = {
   'exp-other': '8000',
 };
 
-/** Income ids carry the person's generated id, so they are matched by prefix. */
+/** Income and birth-year ids carry the person's generated id, so they match by prefix. */
 function answerFor(id: string): string {
   if (id.startsWith('income-')) return '39000';
+  /* A year, not an amount: the field clamps to a valid range, so 1000 would silently become
+     the earliest allowed year and every horizon assertion downstream would drift. */
+  if (id.startsWith('birth-')) return '1990';
   return WIZARD_ANSWERS[id] ?? '1000';
 }
 
@@ -133,6 +136,9 @@ async function waitForAutosave(page: Page, locale: 'cs' | 'sk' = 'cs') {
 async function startWizard(page: Page, shape: 'single' | 'couple' = 'couple') {
   await page.getByRole('button', { name: 'Pokračovat' }).click();
   await page.getByRole('radio', { name: shape === 'single' ? /Jeden dospělý/ : /Dva dospělí/ }).click();
+  /* The birth years are required as well, so the step will not advance without them. */
+  const years = page.getByLabel(/Rok narození/);
+  for (let i = (await years.count()) - 1; i >= 0; i--) await years.nth(i).fill('1990');
   await page.getByRole('button', { name: 'Pokračovat' }).click();
 }
 
@@ -427,8 +433,11 @@ test.describe('the wizard', () => {
     await page.getByRole('radio', { name: /Jeden dospělý/ }).click();
     await expect(page.getByRole('radio', { name: /Jeden dospělý/ })).toHaveAttribute('aria-checked', 'true');
 
-    /* Now they appear — one of each, because one adult was chosen. */
+    /* Now they appear — one of each, because one adult was chosen. And the birth year is
+       asked for rather than guessed: optional in the model, required in the wizard, because a
+       silent 1994 is a silent answer to a question about a real person. */
     await expect(page.getByLabel(/Rok narození/)).toHaveCount(1);
+    await expect(page.getByLabel(/Rok narození/)).toHaveValue('');
     const nameField = page.getByLabel(/Vaše jméno/);
     await expect(nameField).toHaveCount(1);
 
@@ -440,6 +449,10 @@ test.describe('the wizard', () => {
     await expect(nameField).toHaveValue('');
     await expect(nameField).toHaveAttribute('placeholder', 'Vy');
     await expect(page.locator('.f-badge-soft').first()).toContainText('volitelné');
+
+    /* The shape is answered but the birth year is not, so the step is still held. */
+    await expect(page.getByRole('button', { name: 'Pokračovat' })).toBeDisabled();
+    await page.getByLabel(/Rok narození/).fill('1990');
 
     await page.getByRole('button', { name: 'Pokračovat' }).click();
     await expect(page.getByRole('heading', { name: /Kolik čistého/ })).toBeVisible();
@@ -483,6 +496,9 @@ test.describe('the wizard', () => {
 
     /* Naming one and leaving the other blank must not leave a hole anywhere downstream. */
     await page.getByLabel(/Jméno — osoba 1/).fill('Milan');
+    const years = page.getByLabel(/Rok narození/);
+    await years.nth(0).fill('1990');
+    await years.nth(1).fill('1992');
     await page.getByRole('button', { name: 'Pokračovat' }).click();
     await expect(page.getByLabel(/Čistý měsíční příjem — Milan/)).toBeVisible();
     await expect(page.getByLabel(/Čistý měsíční příjem — Osoba 2/)).toBeVisible();
@@ -823,6 +839,9 @@ test.describe('country and locale', () => {
     await page.getByRole('radio', { name: /Česko/ }).click();
     await page.getByRole('button', { name: 'Pokračovať' }).click();
     await page.getByRole('radio', { name: /Dvaja dospelí/ }).click();
+    /* The birth years are required too, so the step holds until they are answered. */
+    const years = page.getByLabel(/Rok narodenia/);
+    for (let i = (await years.count()) - 1; i >= 0; i--) await years.nth(i).fill('1990');
     await page.getByRole('button', { name: 'Pokračovať' }).click();
     await expect(page.getByRole('heading', { name: /Koľko čistého/ })).toBeVisible();
 

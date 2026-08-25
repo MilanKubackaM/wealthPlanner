@@ -1332,6 +1332,23 @@ Dve chyby cestou, obe zachytené console-error gate a suitou:
 
 `finishWizard` stratil mŕtvy parameter `completed` po zaparkovaných hodnoteniach.
 
+**Doladenie po prvom pohľade na to naživo:**
+
+- **Rok narodenia je tiež povinný.** Držal som sa toho, že model ho pripúšťa prázdny
+  (`Person.birthYear` je `number | undefined` a `ageAt()` vracia `null` namiesto vymysleného 35)
+  — ale „optional v type" nie je „uhádni to za užívateľa". Riadi horizont a limity pre mladších
+  ako 36, takže tichá 1994 je tichá odpoveď na otázku o skutočnom človeku. Optional v modeli,
+  vypýtaný vo wizarde.
+- **Štítok „povinné" stratil rám a pilulku.** Orámovaná verzia bola vyššia než štítok vedľa nej
+  a jej spodná hrana sedela na inpute, čím slovo vyzeralo ako ovládací prvok. Nesie ho farba a
+  váha; tvar nerobil nič, len zaberal výšku. Vznikol z toho aj čitateľný rozdiel: **orámované =
+  tvrdenie o hodnote** („odhad", „voliteľné"), **plná farba = niečo, čo musíš urobiť**.
+- **Prerušovaný rám povinných polí je zmazaný.** Na štyroch poliach jedného kroku naraz čítal
+  ako štyri rozbité inputy. `data-blank` atribút zostal — nič naň už nevisí štýlom, je to hook,
+  ktorým e2e suita hľadá, čo ešte treba odpovedať.
+- `.f-label` dostal `margin-block-end`: riadok so štítkom predtým sedel priamo na ovládacom
+  prvku, takže akýkoľvek badge v ňom vyzeral prilepený k inputu, nie k štítku.
+
 ### Fáza 2.6 — Hodnotenia od používateľov (analýza hotová, implementácia pauznutá)
 
 > Analýza je dokončená 25. 8. 2026, implementácia odložená. Toto je jediná funkcia v celom
