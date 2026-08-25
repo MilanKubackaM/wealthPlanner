@@ -789,6 +789,22 @@ v jedinom riadku (`engineVersion` 3 → 4), tri nové goldeny pribudli. Zo 72 po
    `overflow-x: hidden` a každý tap pod zlomom dopadal na iný prvok, než na aký mieril. §6.3 to
    zakazuje výslovne; teraz to hlídá aj e2e na mobilnom projekte.
 
+**Krajina je otázka, nie odvodenie z jazyka rozhrania — rozhodnutie 4 sa týmto opravuje.** Plán
+hovoril „krajina prestáva byť prvá otázka wizardu, odvodí sa z locale". To je nesprávne pre
+prípad, ktorý nie je ani vzácny, ani exotický: čítať po slovensky a pritom pracovať, mať
+hypotéku a vychovávať deti v Česku. Takému človeku odvodenie z jazyka pokazí naraz menu, model
+dávok, limity a každé predvyplnené číslo. Je to teraz **prvý krok wizardu** — pre väčšinu jeden
+tap, pretože locale stále dodáva úvodnú odpoveď — a každá možnosť hovorí, čo znamená („Koruny,
+české dávky, limity ČNB"). Voľba sa pamätá pod vlastným kľúčom, takže slovenský plán v korunách
+prežije reload, a je dosiahnuteľná aj z plánovej stránky. Zmena krajiny prepočíta všetky defaulty
+a povie to dopredu: mena je iná, model dávok je štrukturálne iný a kurz produkt zámerne nemá.
+Čo z pôvodného rozhodnutia platí ďalej: zmena krajiny už nesmie ticho zahodiť zadané hodnoty.
+
+**Mena je teraz čitateľná vnútri poľa.** Vykresľovala sa, ale bola pripnutá na pravý okraj 600px
+ovládacieho prvku za vlasovou linkou, 500 px od číslic — čítala sa ako samostatný prvok, nie ako
+súčasť čísla. Číselné vstupy sú zarovnané vpravo, takže hodnota končí tam, kde začína jej
+jednotka, a čísla sa zoradia do stĺpca, čo je celý zmysel tabulárnych číslic.
+
 **Autosave, a tlačidlo „Uložiť" zmizlo.** Plán, ktorý žije iba v prehliadači a treba ho uložiť
 ručne, je plán, ktorý ľudia stratia. Zapisuje sa ~700 ms po tom, čo prestaneš písať, z jedného
 miesta, aby to nemohlo zabudnúť žiadne budúce volanie. Tri podmienky, každá nesie váhu: len keď

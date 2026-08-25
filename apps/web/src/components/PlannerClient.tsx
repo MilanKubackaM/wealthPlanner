@@ -23,7 +23,16 @@ import {
   withRegime,
   type HouseholdSize,
 } from '@/lib/defaults';
-import { clearPlan, exportPlan, hasPlanFor, importPlan, loadPlan, savePlan } from '@/lib/storage';
+import {
+  clearPlan,
+  exportPlan,
+  hasPlanFor,
+  importPlan,
+  loadPlan,
+  loadPreferredCountry,
+  savePlan,
+  savePreferredCountry,
+} from '@/lib/storage';
 import { loadUiState, saveUiState } from '@/lib/uiState';
 import { money, monthPhrase, percent, type UiLocale } from '@/lib/format';
 import { ReserveChart } from './ReserveChart';
@@ -68,7 +77,22 @@ const AUTOSAVE_DEBOUNCE_MS = 700;
 
 type Stage = 'onboarding' | 'plan';
 
-const STEP_IDS = ['shape', 'income', 'housing', 'debts', 'expenses', 'cash', 'children'] as const;
+/*
+ * Country is the first question, not an inference from the interface language. Somebody can
+ * read Slovak and earn, borrow and raise children in Czechia — inferring it from the locale is
+ * wrong on the currency, the benefit model, the mortgage limits and every default at once. It
+ * is still ONE tap for almost everybody, because the locale supplies the initial answer.
+ */
+const STEP_IDS = [
+  'country',
+  'shape',
+  'income',
+  'housing',
+  'debts',
+  'expenses',
+  'cash',
+  'children',
+] as const;
 type StepId = (typeof STEP_IDS)[number];
 
 const SECTION_IDS = [
@@ -222,7 +246,9 @@ export function PlannerClient({
           return;
         }
       }
-      const stored = loadPlan(country);
+      /* The country the user chose, not the one their language implies. */
+      const preferred = loadPreferredCountry() ?? country;
+      const stored = loadPlan(preferred) ?? loadPlan(country);
       if (stored && !cancelled) {
         setScenarioRaw(stored.scenario);
         setSavedAt(stored.savedAt);
@@ -232,9 +258,9 @@ export function PlannerClient({
         return;
       }
       if (!cancelled) {
-        const other: JurisdictionCode = country === 'CZ' ? 'SK' : 'CZ';
+        const other: JurisdictionCode = preferred === 'CZ' ? 'SK' : 'CZ';
         if (hasPlanFor(other)) setOtherCountry(other);
-        setScenarioRaw(defaultScenario(country, startMonth));
+        setScenarioRaw(defaultScenario(preferred, startMonth));
       }
     }
     void boot();
@@ -443,6 +469,19 @@ export function PlannerClient({
 
   /* -------------------------------------------------------------- scenario ops --- */
 
+  /**
+   * Changing the country cannot keep the numbers. The currency differs, the benefit model is a
+   * structurally different one, and the mortgage limits are another regulator's — and there is
+   * no exchange rate here to convert with, on purpose. So this re-derives every default for the
+   * new country and says so before it does, rather than quietly relabelling koruna as euro.
+   */
+  function setCountry(next: JurisdictionCode) {
+    if (next === scenario.jurisdiction) return;
+    setScenario(defaultScenario(next, startMonth, size));
+    setTouched([]);
+    savePreferredCountry(next);
+  }
+
   function setHouseholdSize(next: HouseholdSize) {
     setScenario((current) => {
       /*
@@ -561,6 +600,23 @@ export function PlannerClient({
           {...numberProps}
         />
       ))}
+    </>
+  );
+
+  const countryFields = (
+    <>
+      <ChoiceField<JurisdictionCode>
+        id="country"
+        label={t('planner.country')}
+        variant="cards"
+        value={scenario.jurisdiction}
+        options={[
+          { value: 'CZ', label: t('planner.countryCZ'), hint: t('planner.countryHintCZ') },
+          { value: 'SK', label: t('planner.countrySK'), hint: t('planner.countryHintSK') },
+        ]}
+        hint={t('planner.countryHint')}
+        onChange={setCountry}
+      />
     </>
   );
 
@@ -1128,6 +1184,7 @@ export function PlannerClient({
   /* ---------------------------------------------------------------- wizard ------ */
 
   const stepBodies: Record<StepId, React.ReactNode> = {
+    country: countryFields,
     shape: shapeFields,
     income: incomeFields,
     housing: housingFields,
@@ -1522,20 +1579,24 @@ export function PlannerClient({
         onToggle={(soloClick) => toggleSection('cisla', soloClick)}
       >
         <div className="stack-lg">
-          <div className="row">
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={() => {
-                if (!confirm(t('planner.changeCountryConfirm'))) return;
-                setScenario(defaultScenario(scenario.jurisdiction === 'SK' ? 'CZ' : 'SK', startMonth, size));
-                setTouched([]);
+          <FieldGroup title={t('planner.country')} subtitle={t('planner.countryHint')}>
+            <ChoiceField<JurisdictionCode>
+              id="country-plan"
+              label={t('planner.country')}
+              variant="cards"
+              value={scenario.jurisdiction}
+              options={[
+                { value: 'CZ', label: t('planner.countryCZ'), hint: t('planner.countryHintCZ') },
+                { value: 'SK', label: t('planner.countrySK'), hint: t('planner.countryHintSK') },
+              ]}
+              /* Here it discards work, so it asks. In the wizard nothing has been typed yet. */
+              onChange={(code) => {
+                if (code === scenario.jurisdiction) return;
+                if (touched.length > 0 && !confirm(t('planner.changeCountryConfirm'))) return;
+                setCountry(code);
               }}
-            >
-              {t('planner.changeCountry')} ·{' '}
-              {scenario.jurisdiction === 'SK' ? t('planner.countrySK') : t('planner.countryCZ')}
-            </button>
-          </div>
+            />
+          </FieldGroup>
 
           <FieldGroup title={t('planner.householdShape')}>{shapeFields}</FieldGroup>
           <FieldGroup title={t('planner.netIncome')}>{incomeFields}</FieldGroup>

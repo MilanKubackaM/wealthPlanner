@@ -95,6 +95,22 @@ raises the "computed by another version" banner once rather than twice):
   rail stretched the page to 1450px inside a 412px viewport, `overflow-x: hidden` clipped it,
   and every tap below the fold landed on the wrong element.
 
+**The country is a question, not an inference from the interface language.** Deriving it from
+the locale was wrong for a case that is neither rare nor exotic: reading Slovak while earning,
+borrowing and raising children in Czechia. For that person locale-inference gets the currency,
+the benefit model, the mortgage limits and every prefilled number wrong at once. It is now the
+first wizard step — one tap for almost everybody, because the locale still supplies the initial
+answer — with each option stating what it means ("Koruny, české dávky, limity ČNB"). The choice
+is remembered under its own key, so a Slovak-language plan in koruna survives a reload, and it
+is reachable from the plan page afterwards. Changing it re-derives every default and says so
+first: the currency differs, the benefit model is structurally different, and there is
+deliberately no exchange rate here to convert with.
+
+**The currency is now legible inside the field.** It was rendered, but pinned to the right edge
+of a 600px control behind a hairline, 500px from the digits — it read as a separate widget
+rather than as part of the number. Numeric inputs are right-aligned, so the value ends where its
+unit begins and figures line up down a column, which is the entire point of tabular figures.
+
 **Autosave, and no Save button.** A plan that lives only in this browser and has to be saved
 by hand is a plan people lose, and losing somebody's numbers is the one thing this product must
 never do. Every change is written ~700 ms after the typing stops, from a single choke point, so

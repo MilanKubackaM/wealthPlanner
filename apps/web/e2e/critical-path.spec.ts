@@ -32,10 +32,12 @@ async function waitForAutosave(page: Page, locale: 'cs' | 'sk' = 'cs') {
 }
 
 /**
- * Answers the household question, which the wizard now requires before it will advance. That
- * gate is deliberate: it is the one answer that restructures every later screen.
+ * Walks the two structural questions the wizard opens with: the country (pre-selected from the
+ * locale, but a real choice) and the household shape (no pre-selection at all). Leaves the
+ * wizard on the income step.
  */
-async function answerShape(page: Page, shape: 'single' | 'couple' = 'couple') {
+async function startWizard(page: Page, shape: 'single' | 'couple' = 'couple') {
+  await page.getByRole('button', { name: 'Pokračovat' }).click();
   await page.getByRole('radio', { name: shape === 'single' ? /Jeden dospělý/ : /Dva dospělí/ }).click();
   await page.getByRole('button', { name: 'Pokračovat' }).click();
 }
@@ -132,6 +134,11 @@ test.describe('the wizard', () => {
     failOnConsoleErrors(page, errors);
 
     await page.goto('/cs/plan');
+    /* The country comes first, and it is a question rather than an inference from the language. */
+    await expect(page.getByRole('heading', { name: /V které zemi/ })).toBeVisible();
+    await expect(page.getByRole('radio', { name: /Česko/ })).toHaveAttribute('aria-checked', 'true');
+    await page.getByRole('button', { name: 'Pokračovat' }).click();
+
     await expect(page.getByRole('heading', { name: /Plánujete za sebe/ })).toBeVisible();
 
     /*
@@ -142,7 +149,7 @@ test.describe('the wizard', () => {
     await expect(page.locator('svg[role="img"]')).toHaveCount(0);
     await expect(page.getByText('Zatím to vypadá takto')).toBeVisible();
 
-    /* Step 1 restructures every screen after it, so it is a real choice, not a default —
+    /* The shape restructures every screen after it, so unlike the country it gets no default:
        nothing is pre-selected and the wizard will not advance until it is answered. */
     await expect(page.getByRole('button', { name: 'Pokračovat' })).toBeDisabled();
     await page.getByRole('radio', { name: /Jeden dospělý/ }).click();
@@ -158,7 +165,7 @@ test.describe('the wizard', () => {
 
   test('offers rent as a first-class alternative to a mortgage', async ({ page }) => {
     await page.goto('/cs/plan');
-    await answerShape(page);
+    await startWizard(page);
     await page.getByRole('button', { name: 'Pokračovat' }).click();
 
     await expect(page.getByRole('heading', { name: /Jak řešíte bydlení/ })).toBeVisible();
@@ -170,7 +177,7 @@ test.describe('the wizard', () => {
 
   test('treats children as a question, not as a form to fill in', async ({ page }) => {
     await page.goto('/cs/plan');
-    await answerShape(page);
+    await startWizard(page);
     for (let i = 0; i < 5; i++) await page.getByRole('button', { name: 'Pokračovat' }).click();
 
     await expect(page.getByRole('heading', { name: 'Děti' })).toBeVisible();
@@ -307,6 +314,42 @@ test.describe('country and locale', () => {
     /* Slovak page, Slovak numbers — the whole assertion. */
     await expect(page.locator('#m-balance')).toHaveValue(/130\s?000/);
     await expect(page.locator('#m-payment')).toHaveValue(/650/);
+
+    expect(errors, errors.join('\n')).toEqual([]);
+  });
+
+  test('a Slovak reader can plan in Czech koruna, and it survives a reload', async ({ page }) => {
+    /*
+     * The case that inferring the country from the locale gets wrong: same person, Slovak
+     * interface, Czech job, Czech mortgage, Czech benefits. Every number would be wrong.
+     */
+    const errors: string[] = [];
+    failOnConsoleErrors(page, errors);
+
+    await page.goto('/sk/plan');
+    await expect(page.getByRole('heading', { name: /V ktorej krajine/ })).toBeVisible();
+    await expect(page.getByRole('radio', { name: /Slovensko/ })).toHaveAttribute('aria-checked', 'true');
+
+    await page.getByRole('radio', { name: /Česko/ }).click();
+    await page.getByRole('button', { name: 'Pokračovať' }).click();
+    await page.getByRole('radio', { name: /Dvaja dospelí/ }).click();
+    await page.getByRole('button', { name: 'Pokračovať' }).click();
+
+    /* Slovak labels, Czech money. */
+    await expect(page.getByLabel(/Čistý mesačný príjem/).first()).toHaveValue(/39\s?000/);
+    await expect(page.locator('.f-unit').first()).toHaveText('Kč');
+
+    await page.getByRole('button', { name: /Preskočiť/ }).click();
+    await openSection(page, 'cisla');
+    await expect(page.locator('#m-balance')).toHaveValue(/4\s?510\s?000/);
+    await page.getByLabel(/Koľko máte teraz/).fill('250000');
+    await waitForAutosave(page, 'sk');
+
+    /* The choice is remembered, so a reload does not put them back on euro. */
+    await page.reload();
+    await openSection(page, 'cisla');
+    await expect(page.locator('#m-balance')).toHaveValue(/4\s?510\s?000/);
+    await expect(page.getByText('€')).toHaveCount(0);
 
     expect(errors, errors.join('\n')).toEqual([]);
   });

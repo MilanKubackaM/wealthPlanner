@@ -151,7 +151,7 @@
     "next": "Pokračovať",
     "back": "Späť",
     "finish": "Zobraziť plán",
-    "progress": "{total, select, 5 {Krok {step} z 5} other {Krok {step} zo {total}}}",
+    "progress": "{total, select, 5 {Krok {step} z 5} 8 {Krok {step} z 8} other {Krok {step} zo {total}}}",
     "estimateNote": "Predvyplnené národným priemerom. Stačí odhad — presné čísla doplníte kedykoľvek neskôr.",
     "step1": {
       "title": "Kde žijete a čo zarábate",
@@ -213,6 +213,10 @@
       "completeness": "Vaše čísla: {done} z {total} · zvyšok je národný priemer",
       "recap": "Hotovo. Tri čísla, ktoré s vaším plánom urobili najviac:",
       "recapNone": "Hotovo. Zostali ste pri národných priemeroch — plán nižšie je priemerná domácnosť."
+    },
+    "country": {
+      "title": "V ktorej krajine to počítame?",
+      "body": "Rozhoduje krajina, kde pracujete a beriete dávky — nie jazyk, v ktorom appku čítate."
     }
   },
   "planner": {
@@ -334,7 +338,10 @@
     "personalInvesting": "Osobné investície",
     "autosave": "Zmeny sa ukladajú automaticky do tohto prehliadača.",
     "savedAuto": "Automaticky uložené v {when} — len vo vašom prehliadači.",
-    "saving": "Ukladám…"
+    "saving": "Ukladám…",
+    "countryHint": "Podľa krajiny sa do modelu dostanú správne dávky, limity a mena. Nemusí to byť krajina, v ktorej čítate túto stránku.",
+    "countryHintCZ": "Koruny, české dávky, limity ČNB",
+    "countryHintSK": "Eurá, slovenské dávky, limity NBS"
   },
   "compare": {
     "heading": "Porovnanie scenárov",

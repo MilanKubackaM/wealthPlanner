@@ -128,6 +128,31 @@ export function hasPlanFor(jurisdiction: JurisdictionCode): boolean {
   }
 }
 
+/*
+ * Which country the user last chose to plan IN — deliberately not derived from the interface
+ * language. Living in Czechia with a Slovak UI is a real and common case: same job, same
+ * mortgage, same benefits, different reading preference. Inferring the country from the locale
+ * gets that person wrong on every single number, so the choice is theirs and it is remembered.
+ */
+const COUNTRY_KEY = 'wealthplanner.country.v1';
+
+export function savePreferredCountry(jurisdiction: JurisdictionCode): void {
+  try {
+    localStorage.setItem(COUNTRY_KEY, jurisdiction);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function loadPreferredCountry(): JurisdictionCode | null {
+  try {
+    const raw = localStorage.getItem(COUNTRY_KEY);
+    return isJurisdictionCode(raw) ? raw : null;
+  } catch {
+    return null;
+  }
+}
+
 export function clearPlan(jurisdiction: JurisdictionCode): void {
   try {
     localStorage.removeItem(keyFor(jurisdiction));

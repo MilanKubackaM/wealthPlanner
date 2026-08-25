@@ -1253,6 +1253,12 @@ th {
   padding-block: 0;
 }
 
+/* Numbers are right-aligned so the value ends where its unit begins, and so that figures in
+   adjacent fields line up. Free text stays left-aligned. */
+.f-control[data-numeric='true'] input {
+  text-align: end;
+}
+
 .f-control input:focus-visible,
 .f-control select:focus-visible,
 .f-control textarea:focus-visible {
@@ -1272,14 +1278,20 @@ th {
 
 /* aria-hidden in the markup: the unit is duplicated into the accessible name by a
    visually-hidden span inside the <label>, so AT hears "Zůstatek v korunách". */
+/*
+ * The unit sits immediately after the digits, not at the far end of the field. It used to be
+ * pinned to the right edge of a 600px control with a hairline in front of it, which read as a
+ * separate widget rather than as part of the number — "39 000" and "Kč" were 500px apart. The
+ * number is right-aligned (see .f-control input) so the two now form one reading unit, which
+ * is also what makes tabular figures line up down a column.
+ */
 .f-unit {
   display: flex;
   align-items: center;
   flex: 0 0 auto;
-  padding-inline: var(--space-3);
-  border-inline-start: 1px solid var(--border);
-  color: var(--ink-muted);
-  font-size: var(--text-xs);
+  padding-inline: 0 var(--space-4);
+  color: var(--ink-secondary);
+  font-size: var(--text-sm);
   white-space: nowrap;
   user-select: none;
 }

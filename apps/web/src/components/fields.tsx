@@ -170,7 +170,12 @@ export function NumberField({
         {affix ? <span className="sr-only">{` (${affix})`}</span> : null}
         {estimate && estimateLabel ? <span className="f-badge">{estimateLabel}</span> : null}
       </label>
-      <div className="f-control" data-invalid={shown ? 'true' : undefined} data-disabled={disabled ? 'true' : undefined}>
+      <div
+        className="f-control"
+        data-numeric="true"
+        data-invalid={shown ? 'true' : undefined}
+        data-disabled={disabled ? 'true' : undefined}
+      >
         <input
           id={id}
           type="text"
@@ -408,7 +413,7 @@ export function MonthYearField({
             </select>
           </div>
         ) : null}
-        <div className="f-control" style={{ flex: '0 1 7.5em', minWidth: '5.5em' }}>
+        <div className="f-control" data-numeric="true" style={{ flex: '0 1 7.5em', minWidth: '5.5em' }}>
           <input
             id={`${id}-year`}
             type="text"
