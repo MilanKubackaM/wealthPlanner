@@ -789,6 +789,32 @@ v jedinom riadku (`engineVersion` 3 → 4), tri nové goldeny pribudli. Zo 72 po
    `overflow-x: hidden` a každý tap pod zlomom dopadal na iný prvok, než na aký mieril. §6.3 to
    zakazuje výslovne; teraz to hlídá aj e2e na mobilnom projekte.
 
+**Nič už nevynáša verdikt o domácnosti, ktorú nikto nezadal.** Robili to dve miesta. Pás vo
+wizarde vypisoval „Plán drží — najnižšia rezerva 200 000 Kč v auguste 2026" na prvej obrazovke
+úplne novej session, čo je súd o národnom priemere prezlečenom za plán používateľa; kým nie je
+jeho ani jedno číslo, pás teraz povie len to, na čo sa pozerá. A graf na landingu bol
+nepomenovaná projekcia ničích dát — čo je horší prvý dojem než žiadny graf, pretože návštevník
+nevie, či sú to jeho čísla, vzorka, alebo dekorácia. Teraz je to **pomenovaný príklad** s tromi
+vetami: kto tá domácnosť je, čo v nej model našiel, a čo návštevník dostane, keď odpovie na tie
+isté otázky. Každé číslo v tom texte je interpolované zo scenára, z ktorého je nakreslený graf,
+takže sa text a obrázok nemôžu rozísť.
+
+Pri tom sa opravilo aj „najnižšia rezerva 200 000 Kč v auguste 2026" — to bol doslova otváracií
+zostatok v otváracom mesiaci. `simulate()` seeduje minimum prvým dňom, takže `minReserveAt` je
+`null`, keď rezerva nikdy neklesne; tento prípad má teraz vlastnú vetu namiesto mesiaca.
+
+**„Plán drží" je vonku**, na tvoju žiadosť. Zdravý verdikt je **„Rezerva vydrží"** — pomenúva to,
+čo sa naozaj meria, a číta sa ako rovnocenný s ďalšími dvoma stavmi, ktoré boli o rezerve vždy.
+
+**Klik do predvyplneného poľa a písanie odhad prepíše, nie zmrší.** Dve chyby za sebou. Pole si
+pri fokuse prepisovalo vlastný buffer, a priradenie `value` do inputu zruší označenie — takže
+select-all urobený riadok predtým bol pri prvom stisku klávesy už dávno preč a písanie
+**pripájalo**: 39 000 plus 52000 dalo 3900052000. Po oprave tohto obyčajný klik stále len
+umiestnil kurzor, takže písanie vkladalo — 61000 do 39 000 dalo 6100052000. Pri poliach
+predvyplnených národným priemerom je „kliknem a napíšem" najčastejšia interakcia v celom
+produkte, takže prichádzajúci klik teraz označí všetko, kým druhý klik vnútri kurzor stále
+umiestni tam, kam si klikol.
+
 **Zvolená téma prežije prepnutie jazyka.** Zmena locale mení segment `[locale]`, takže sa root
 layout vykreslí znovu a React zladí `<html>` späť na server-renderované atribúty — `data-theme`
 zmizol a stránka padla na `prefers-color-scheme`. Kto má tmavý systém a vybral si svetlý režim,
@@ -853,7 +879,7 @@ nezanechá a tvrdenie „uložený plán preskočí wizard" zostáva pravdivé) 
 je okno, v ktorom zmena existuje iba v pamäti — preto je viditeľné („Ukládám…") a flushuje sa na
 `pagehide` aj `visibilitychange`; `beforeunload` sa pri prepnutí aplikácie na telefóne nespustí.
 
-**Čo pribudlo navrch plánu:** `scripts/style-guard.mjs` — dva ratchety (161 inline štýlov, 115
+**Čo pribudlo navrch plánu:** `scripts/style-guard.mjs` — dva ratchety (160 inline štýlov, 114
 číselných literálov), ktoré môžu iba klesať, zapojené do CI aj do `ship.sh`; parita kľúčov medzi
 `cs.json` a `sk.json` ako test; a `sk.json` zjednotené na vykanie.
 

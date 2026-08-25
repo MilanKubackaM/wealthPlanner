@@ -81,6 +81,17 @@ test.describe('landing', () => {
     await expect(headline).toContainText(/20\d\d/);
     await expect(headline).toContainText(/Kč/);
 
+    /*
+     * The chart is nobody's real data, so it has to say so. An unlabelled projection is a worse
+     * first impression than none: the visitor cannot tell whether it is theirs, a sample, or
+     * decoration.
+     */
+    await expect(page.locator('.example-badge')).toContainText(/Příklad/);
+    await expect(page.locator('.example-title')).toContainText('Jana');
+    /* And the story's figures come from the scenario the chart is drawn from. */
+    await expect(page.locator('.example-story')).toContainText(/4\s?510\s?000/);
+    await expect(page.locator('.example-foot')).toContainText(/vaší domácnosti/);
+
     /* The privacy promise belongs above the fold. */
     await expect(page.getByText('Vaše data zůstávají ve vašem prohlížeči.')).toBeVisible();
 
@@ -177,6 +188,15 @@ test.describe('the wizard', () => {
     await expect(page.locator('svg[role="img"]')).toHaveCount(0);
     await expect(page.getByText('Zatím to vypadá takto')).toBeVisible();
 
+    /*
+     * And it passes no verdict yet. A fresh session used to be told "the reserve holds — lowest
+     * 200 000 Kč in August 2026" on the first screen, which is a judgement about a household
+     * the visitor has not described.
+     */
+    await expect(page.locator('.ribbon')).toHaveAttribute('data-verdict', 'pristine');
+    /* `.ribbon-pristine`, not the text: the same sentence is also in the sr-only live region. */
+    await expect(page.locator('.ribbon-pristine')).toContainText(/Zatím počítáme s národním průměrem/);
+
     /* The shape restructures every screen after it, so unlike the country it gets no default:
        nothing is pre-selected and the wizard will not advance until it is answered. */
     await expect(page.getByRole('button', { name: 'Pokračovat' })).toBeDisabled();
@@ -187,6 +207,10 @@ test.describe('the wizard', () => {
     await expect(page.getByRole('heading', { name: /Kolik čistého/ })).toBeVisible();
     /* One adult means one income field, not two. */
     await expect(page.getByLabel(/Čistý měsíční příjem/)).toHaveCount(1);
+
+    /* One real number, and the band starts answering. */
+    await page.getByLabel(/Čistý měsíční příjem/).fill('52000');
+    await expect(page.locator('.ribbon')).not.toHaveAttribute('data-verdict', 'pristine');
 
     expect(errors, errors.join('\n')).toEqual([]);
   });
@@ -375,6 +399,17 @@ test.describe('planner', () => {
     await income.fill('41 500 Kč');
     await income.blur();
     await expect(income).toHaveValue(/41\s?500/);
+
+    /*
+     * And clicking in and typing REPLACES the prefilled estimate rather than inserting into it.
+     * It used to insert, so clicking into 39 000 and typing 61000 gave 6100052000 — on a field
+     * prefilled with a national average, click-and-type is the commonest interaction there is.
+     */
+    await income.click();
+    await page.keyboard.type('61000');
+    await expect(income).toHaveValue('61000');
+    await income.blur();
+    await expect(income).toHaveValue(/61\s?000/);
   });
 });
 

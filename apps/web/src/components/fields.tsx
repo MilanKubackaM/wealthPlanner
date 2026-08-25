@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { YearMonth } from '@wealthplanner/engine';
 import type { CurrencyCode } from '@wealthplanner/jurisdictions';
 import { CURRENCY_SYMBOL, groupNumber, parseNumber, type UiLocale } from '@/lib/format';
@@ -133,6 +133,8 @@ export function NumberField({
   const [text, setText] = useState(() => groupNumber(value, locale, spec.precision));
   const [focused, setFocused] = useState(false);
   const [bound, setBound] = useState<string | null>(null);
+  /* Whether this focus came from the click that is still in progress. See onPointerUp. */
+  const arriving = useRef(false);
 
   useEffect(() => {
     if (!focused) setText(groupNumber(value, locale, spec.precision));
@@ -187,14 +189,40 @@ export function NumberField({
           value={text}
           aria-invalid={shown ? true : undefined}
           aria-describedby={describedBy}
+          onPointerUp={(event) => {
+            /*
+             * The first click into the field selects everything; a second click inside it puts
+             * the caret where you clicked.
+             *
+             * A browser normally just positions the caret on click, so typing INSERTS — and on
+             * a field prefilled with a national average, "click and type" is the commonest
+             * interaction there is. It produced 6100052000 from an estimate of 39 000. Tab
+             * already selected all; this makes the mouse behave the same way on arrival,
+             * without taking away the ability to click into the middle of a number afterwards.
+             */
+            if (arriving.current) {
+              arriving.current = false;
+              event.currentTarget.select();
+            }
+          }}
           onFocus={(event) => {
             setFocused(true);
-            /* Raw digits while the caret is in the field: grouping fights the cursor. */
-            setText(value === 0 ? '' : String(Number(value.toFixed(spec.precision))));
+            arriving.current = true;
+            /*
+             * Select, and change nothing else.
+             *
+             * This used to also rewrite the buffer to raw digits on focus. That triggered a
+             * React re-render, and assigning `value` to an input collapses its selection to the
+             * end — so the selection made a line earlier was gone by the time the first
+             * keystroke arrived, and typing APPENDED: clicking into "39 000" and typing 52000
+             * gave 3900052000. Grouped text is fine to type over, because our own parser strips
+             * the separators anyway.
+             */
             event.currentTarget.select();
           }}
           onBlur={() => {
             setFocused(false);
+            arriving.current = false;
             const parsed = parseNumber(text);
             if (parsed !== null) commit(Number(parsed.toFixed(spec.precision)));
             setText(groupNumber(parsed ?? value, locale, spec.precision));

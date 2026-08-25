@@ -6,6 +6,7 @@ import { analyse, criterionFor, detectProblems, simulate, type YearMonth } from 
 import { jurisdictionFor } from '@wealthplanner/jurisdictions';
 import { countryFor, demoScenario } from '@/lib/defaults';
 import { money, monthPhrase, type UiLocale } from '@/lib/format';
+import { Link } from '@/i18n/navigation';
 import { ReserveChart } from './ReserveChart';
 import { chartLabels } from './PlannerClient';
 
@@ -13,6 +14,13 @@ import { chartLabels } from './PlannerClient';
  * The landing page shows a working projection, already populated, above the fold — not a
  * blank form and not a stock photograph. A stranger has to see the payoff before deciding
  * whether to spend a single minute on this.
+ *
+ * But an unlabelled chart of numbers nobody entered is a worse first impression than no chart:
+ * the visitor cannot tell whether it is their data, sample data, or decoration. So it is named
+ * as an example, given the household it belongs to, and told as three sentences — who they are,
+ * what the model found, and what the visitor gets if they answer the same questions. Every
+ * figure in that story is interpolated from the scenario the chart is drawn from, so the prose
+ * and the picture cannot drift apart.
  *
  * The scenario is the national-average household plus a child in three years. That one
  * addition is what turns a comfortable plan into a cash trough.
@@ -45,6 +53,16 @@ export function LandingHero({ locale, startMonth }: { locale: UiLocale; startMon
 
   const currency = scenario.currency;
 
+  /* Read off the scenario, never typed into the copy: the story cannot contradict the chart. */
+  const mortgage = scenario.housing.kind === 'own' ? scenario.housing.mortgages[0] : undefined;
+  const story = {
+    income: money(scenario.people[0]?.netMonthlyIncome ?? 0, currency, locale),
+    mortgage: money(mortgage?.balance ?? 0, currency, locale),
+    reserve: money(scenario.reserve.balance, currency, locale),
+    invest: money(scenario.jointInvesting.monthlyContribution, currency, locale),
+    childYear: scenario.children[0]?.birth.year ?? scenario.assumptions.start.year + 3,
+  };
+
   const headlineSentence = headline
     ? t(`problems.${headline.id}.title`, {
         when: monthPhrase(headline.facts.at ?? null, monthsIn),
@@ -66,7 +84,13 @@ export function LandingHero({ locale, startMonth }: { locale: UiLocale; startMon
     isMonths ? t('planner.months', { count: Math.round(v) }) : money(v, currency, locale);
 
   return (
-    <div className="card" style={{ display: 'grid', gap: 16 }}>
+    <div className="card example" style={{ display: 'grid', gap: 16 }}>
+      <header className="example-head">
+        <p className="example-badge">{t('landing.exampleBadge')}</p>
+        <h2 className="example-title">{t('landing.exampleTitle')}</h2>
+        <p className="example-story">{t('landing.exampleStory', story)}</p>
+      </header>
+
       <ReserveChart
         result={result}
         currency={currency}
@@ -159,9 +183,12 @@ export function LandingHero({ locale, startMonth }: { locale: UiLocale; startMon
         </div>
       )}
 
-      <p className="muted" style={{ margin: 0, fontSize: 13 }}>
-        {t('landing.demoNote')}
-      </p>
+      <footer className="example-foot">
+        <p>{t('landing.exampleYours')}</p>
+        <Link href="/plan" className="btn btn-primary">
+          {t('landing.cta')}
+        </Link>
+      </footer>
     </div>
   );
 }

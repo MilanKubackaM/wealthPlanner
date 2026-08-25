@@ -21,12 +21,11 @@
   "landing": {
     "h1": "Kdy si můžeme dovolit dítě?",
     "lead": "Simulátor, který nepočítá po letech, ale po měsících — takže vám řekne konkrétní měsíc, ve kterém vaše rezerva narazí na dno, a kolik korun v ten moment bude chybět.",
-    "demoNote": "Ukázka na průměrné české domácnosti s hypotékou a dítětem za tři roky. Všechna čísla si můžete přepsat.",
     "cta": "Vyzkoušet — bez registrace",
     "ctaMethodology": "Jak to počítá",
     "privacy": "Vaše data zůstávají ve vašem prohlížeči.",
     "free": "Zdarma navždy. Žádné reklamy. Žádné affiliate odkazy.",
-    "healthy": "V téhle podobě plán drží: rezerva nikdy neklesne pod {floor}.",
+    "healthy": "Rezerva v téhle podobě nikdy neklesne pod {floor}.",
     "whyMonthlyTitle": "Proč měsíčně",
     "whyMonthly": "Roční model neumí říct „v lednu 2032“. Osmadvacetitýdenní mateřská, splátkový kalendář hypotéky i propad rezervy jsou podměsíční jevy — a právě v nich se plán láme.",
     "verifiedTitle": "Každé doporučení je dokázané",
@@ -40,7 +39,11 @@
       "Přežije rozpočet jeden příjem?",
       "Kdy nám rezerva klesne na dno?",
       "Nájem, nebo vlastní byt?"
-    ]
+    ],
+    "exampleBadge": "Příklad — ne vaše čísla",
+    "exampleTitle": "Jana a Petr, oba 34 let",
+    "exampleStory": "Bezdětní, právě si vzali hypotéku {mortgage} a každý bere {income} čistého. Na spořicím účtu mají {reserve} a přebytek posílají do ETF — {invest} měsíčně. Dítě plánují v roce {childYear}.",
+    "exampleYours": "Model jim našel slabé místo: investují všechno, co zbyde, ale rezervu nechávají téměř na místě — a rodičovská ji vyčerpá. Projděte stejné otázky a tenhle graf bude o vaší domácnosti, s vaším měsícem a vaší nejnižší rezervou."
   },
   "chart": {
     "title": "Hotovostní rezerva",
@@ -60,7 +63,7 @@
   },
   "problems": {
     "heading": "Co model našel",
-    "noneTitle": "Plán drží",
+    "noneTitle": "Rezerva vydrží celou projekci",
     "noneBody": "Rezerva v celé projekci neklesne pod doporučené minimum a investování se nikde nepřeruší.",
     "reserve-deficit": {
       "title": "Rezerva se vyčerpá {when}. Nejhlubší je {worstWhen}, kdy bude chybět {amount}.",
@@ -202,7 +205,7 @@
     },
     "ribbon": {
       "label": "Zatím to vypadá takto",
-      "holds": "Plán drží",
+      "holds": "Rezerva vydrží",
       "belowFloor": "Rezerva klesne pod minimum",
       "deficit": "Rezerva se vyčerpá",
       "trough": "Nejnižší rezerva {amount} — {when}",
@@ -212,7 +215,9 @@
       "stepFlat": "Tento krok: na dno nemá vliv",
       "completeness": "Vaše čísla: {done} ze {total} · zbytek je národní průměr",
       "recap": "Hotovo. Tři čísla, která s vaším plánem udělala nejvíc:",
-      "recapNone": "Hotovo. Zůstali jste u národních průměrů — plán níž je průměrná domácnost."
+      "recapNone": "Hotovo. Zůstali jste u národních průměrů — plán níž je průměrná domácnost.",
+      "neverDips": "Rezerva nikde neklesne pod dnešních {amount}.",
+      "pristine": "Zatím počítáme s národním průměrem. Jak začnete zadávat svoje čísla, uvidíte tady, co s plánem dělají."
     },
     "country": {
       "title": "V které zemi to počítáme?",

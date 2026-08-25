@@ -1986,3 +1986,72 @@ th {
 .saved-line[data-saving='true'] > span[aria-hidden] {
   color: var(--ink-muted);
 }
+
+/* Before any of the user's own numbers exist there is no verdict, so the band is neutral. */
+.ribbon[data-verdict='pristine'] {
+  border-inline-start-color: var(--border-strong);
+}
+
+.ribbon-pristine {
+  color: var(--ink-secondary);
+  max-width: 66ch;
+}
+
+/* ----------------------------------------------------------- the landing example ----
+ * A chart of numbers nobody entered has to say so. The badge names it, the story says whose
+ * household it is, and the footer says what the visitor gets for answering the same questions.
+ */
+
+.example {
+  border-color: var(--border-strong);
+}
+
+.example-head {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.example-badge {
+  justify-self: start;
+  margin: 0;
+  padding: 3px var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--plane);
+  font-size: var(--text-2xs);
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+
+.example-title {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 650;
+  letter-spacing: var(--tracking-tight);
+}
+
+.example-story {
+  margin: 0;
+  max-width: 72ch;
+  font-size: var(--text-sm);
+  color: var(--ink-secondary);
+}
+
+.example-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  padding-block-start: var(--space-4);
+  border-block-start: 1px solid var(--border);
+}
+
+.example-foot > p {
+  flex: 1 1 32ch;
+  margin: 0;
+  max-width: 72ch;
+  font-size: var(--text-sm);
+  color: var(--ink-secondary);
+}

@@ -95,6 +95,34 @@ raises the "computed by another version" banner once rather than twice):
   rail stretched the page to 1450px inside a 412px viewport, `overflow-x: hidden` clipped it,
   and every tap below the fold landed on the wrong element.
 
+**Nothing claims a verdict about a household nobody has described.** Two places did. The
+wizard's band printed "the reserve holds — lowest 200 000 Kč in August 2026" on the very first
+screen of a brand-new session, which is a judgement about the national average wearing the
+user's plan as a costume; until one number is theirs it now says only what it is looking at.
+And the landing chart was an unlabelled projection of nobody's data, which is a worse first
+impression than no chart at all — the visitor cannot tell whether it is theirs, a sample, or
+decoration. It is now a named example with a three-sentence story: who the household is, what
+the model found in it, and what the visitor gets for answering the same questions. Every figure
+in that story is interpolated from the scenario the chart is drawn from, so prose and picture
+cannot drift apart.
+
+Also fixed there: "lowest reserve 200 000 Kč in August 2026" was literally the opening balance
+in the opening month. `simulate()` seeds the minimum with day one, so `minReserveAt` is null
+when the reserve never dips — that case now gets its own sentence instead of naming a month.
+
+**"Plán drží" is gone**, at the owner's request. The healthy verdict is "Rezerva vydrží" — it
+names the thing actually measured, and it reads as a peer of the other two states, which were
+always about the reserve.
+
+**Clicking into a prefilled field and typing replaced the estimate instead of mangling it.**
+Two bugs, one behind the other. The field rewrote its own buffer on focus, and assigning `value`
+to an input collapses the selection — so the select-all made a line earlier was gone by the time
+the first keystroke landed, and typing appended: 39 000 plus 52000 gave 3900052000. Then, with
+that fixed, a plain click still only positioned the caret, so typing inserted — 61000 into
+39 000 gave 6100052000. On fields prefilled with a national average, click-and-type is the
+commonest interaction in the product, so the arriving click now selects all, while a second
+click inside still puts the caret where you clicked.
+
 **A chosen theme no longer survives only until you switch language.** Switching locale changes
 the `[locale]` segment, so the root layout re-renders and React reconciles `<html>` back to its
 server-rendered attributes — `data-theme` vanished and the page fell back to
@@ -166,7 +194,7 @@ window in which a change exists only in memory, so it is shown ("Ukládám…") 
 `pagehide` and on `visibilitychange` — `beforeunload` does not fire when a phone switches apps.
 
 **Guards added**, because a design system that is not measured decays back into a refactor:
-`scripts/style-guard.mjs` ratchets inline styles (161) and hardcoded pixel literals (115)
+`scripts/style-guard.mjs` ratchets inline styles (160) and hardcoded pixel literals (114)
 downwards only, in CI and in `ship.sh`; a test asserts key parity between `cs.json` and
 `sk.json`; and `sk.json` no longer switches between formal and informal address mid-file.
 

@@ -52,28 +52,50 @@ export function ConsequenceRibbon({
     belowFloor: string;
     deficit: string;
     trough: (amount: string, when: string) => string;
+    /** For a plan whose reserve never falls below where it started. */
+    neverDips: (amount: string) => string;
     troughDeficit: (amount: string, when: string) => string;
     stepDown: (amount: string) => string;
     stepUp: (amount: string) => string;
     stepFlat: string;
     completeness: (done: number, total: number) => string;
+    /** Shown instead of a verdict while the plan is still entirely the national average. */
+    pristine: string;
   };
 }) {
+  /*
+   * With no answers there is no consequence, so there is nothing to be a verdict about.
+   *
+   * This band used to print "the reserve holds — lowest 200 000 Kč in August 2026" on the very
+   * first screen of a brand-new session, which is a verdict on a household the user has not
+   * described. It is the same flaw the chart was removed for: confident before the inputs are.
+   * Until one number is theirs, the band says only what it is looking at.
+   */
+  const pristine = answered === 0;
+
   const verdict =
     result.deficitAt !== null ? 'deficit' : result.worstFloorGap < 0 ? 'belowFloor' : 'holds';
   const verdictWord =
     verdict === 'deficit' ? labels.deficit : verdict === 'belowFloor' ? labels.belowFloor : labels.holds;
 
+  /*
+   * `minReserveAt` is null when the reserve never drops below its opening balance — simulate()
+   * seeds the minimum with day one. Naming a month there produced "lowest reserve 200 000 Kč in
+   * August 2026", which is the starting balance in the starting month: true, and meaningless.
+   * That case gets a sentence of its own.
+   */
   const troughSentence =
     result.deficitAt !== null
       ? labels.troughDeficit(
           money(Math.abs(result.minReserve), currency, locale),
           monthPhrase(result.minReserveAt ?? result.deficitAt, monthsIn),
         )
-      : labels.trough(
-          money(result.minReserve, currency, locale),
-          monthPhrase(result.minReserveAt ?? result.monthly[0] ?? null, monthsIn),
-        );
+      : result.minReserveAt === null
+        ? labels.neverDips(money(result.minReserve, currency, locale))
+        : labels.trough(
+            money(result.minReserve, currency, locale),
+            monthPhrase(result.minReserveAt, monthsIn),
+          );
 
   const delta = baseline ? result.minReserve - baseline.minReserve : 0;
   const deltaSentence =
@@ -89,8 +111,23 @@ export function ConsequenceRibbon({
   latest.current = { verdictWord, troughSentence, deltaSentence };
   useEffect(() => {
     const { verdictWord: v, troughSentence: s, deltaSentence: d } = latest.current;
-    setAnnouncement(`${v}. ${s}. ${d}`);
+    setAnnouncement(pristine ? labels.pristine : `${v}. ${s}. ${d}`);
+    /* Announced per step, never per keystroke — a live region firing on every digit is unusable. */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stepKey]);
+
+  if (pristine) {
+    return (
+      <div className="ribbon" data-verdict="pristine">
+        <p className="ribbon-label muted">{labels.label}</p>
+        <p className="ribbon-line ribbon-pristine">{labels.pristine}</p>
+        <p className="ribbon-line ribbon-meta">{labels.completeness(answered, total)}</p>
+        <p className="sr-only" role="status" aria-live="polite">
+          {announcement}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="ribbon" data-verdict={verdict}>

@@ -1462,6 +1462,8 @@ export function PlannerClient({
               belowFloor: t('onboarding.ribbon.belowFloor'),
               deficit: t('onboarding.ribbon.deficit'),
               trough: (amount, when) => t('onboarding.ribbon.trough', { amount, when }),
+              neverDips: (amount) => t('onboarding.ribbon.neverDips', { amount }),
+              pristine: t('onboarding.ribbon.pristine'),
               troughDeficit: (amount, when) => t('onboarding.ribbon.troughDeficit', { amount, when }),
               stepDown: (amount) => t('onboarding.ribbon.stepDown', { amount }),
               stepUp: (amount) => t('onboarding.ribbon.stepUp', { amount }),
