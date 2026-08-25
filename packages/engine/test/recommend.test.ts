@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   czCoupleUnderStress,
   czCoupleWithMortgage,
+  czSingleRentingWithCarLoan,
   skCoupleWithChild,
 } from '@wealthplanner/engine-fixtures';
 import {
@@ -158,5 +159,40 @@ describe('recommend', () => {
       const lever = buildLevers(stressed).find((l) => l.id === fix.leverId)!;
       expect(fix.to % lever.step).toBeCloseTo(0, 6);
     }
+  });
+});
+
+describe('levers — other liabilities', () => {
+  it('never proposes a payment below interest-only, because that is a default, not a fix', () => {
+    const input = czSingleRentingWithCarLoan();
+    /* The fixture's own loan is suppressed (it is costlier than investing), so use a cheap one. */
+    const cheapLoan = {
+      ...input,
+      liabilities: input.liabilities.map((l) => ({ ...l, annualRatePct: 4 })),
+    };
+    const lever = buildLevers(cheapLoan).find((l) => l.id.startsWith('liabilities['));
+    expect(lever).toBeDefined();
+    const first = cheapLoan.liabilities[0];
+    const interestOnly = ((first?.balance ?? 0) * (first?.annualRatePct ?? 0)) / 100 / 12;
+    expect(lever?.min ?? 0).toBeGreaterThanOrEqual(interestOnly);
+
+    const problems = detectProblems(cheapLoan, simulate(cheapLoan));
+    const fixable = problems.find((p) => criterionFor(p) !== null);
+    if (fixable) {
+      for (const fix of recommend(cheapLoan, fixable)) {
+        if (fix.leverId.startsWith('liabilities[')) {
+          expect(fix.to).toBeGreaterThanOrEqual(lever?.min ?? 0);
+        }
+      }
+    }
+  });
+
+  it('offers no payment lever for a debt that already costs more than the assumed return', () => {
+    /*
+     * Otherwise the screen argues with itself: one card says "pay the 8.9 % loan down", the
+     * other says "pay less on it to protect the ETF standing order".
+     */
+    const input = czSingleRentingWithCarLoan();
+    expect(buildLevers(input).some((l) => l.id.startsWith('liabilities['))).toBe(false);
   });
 });

@@ -1,12 +1,101 @@
 @import 'tailwindcss';
 
 /*
+ * Tailwind is installed and was producing zero utilities. The plan commits to it rather than
+ * leaving a build step that signals nothing, so the design tokens are mapped onto Tailwind's
+ * theme namespaces here. `inline` is deliberate: the utility emits `var(--plane)` rather than a
+ * copy of the value, so `bg-plane` re-resolves per theme at the use site and dark mode keeps
+ * being nothing but a value override. Where a token name collides with a Tailwind namespace
+ * (--radius-*, --text-*) the entry looks self-referential; it is safe because everything Tailwind
+ * emits lives in @layer theme, and the unlayered :root blocks below always win the cascade.
+ */
+@theme inline {
+  --color-plane: var(--plane);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+
+  --color-ink: var(--ink);
+  --color-ink-secondary: var(--ink-secondary);
+  --color-ink-muted: var(--ink-muted);
+
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+  --color-grid: var(--grid);
+  --color-axis: var(--axis);
+
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
+
+  --color-danger: var(--danger);
+  --color-danger-ink: var(--danger-ink);
+
+  --color-control: var(--control-bg);
+  --color-control-ink: var(--control-ink);
+  --color-control-border: var(--control-border);
+
+  --color-series-reserve: var(--series-reserve);
+  --color-series-invest: var(--series-invest);
+
+  --color-status-good: var(--status-good-text);
+  --color-status-warning: var(--status-warning-text);
+  --color-status-serious: var(--status-serious-text);
+  --color-status-critical: var(--status-critical-text);
+
+  --spacing-1: var(--space-1);
+  --spacing-2: var(--space-2);
+  --spacing-3: var(--space-3);
+  --spacing-4: var(--space-4);
+  --spacing-5: var(--space-5);
+  --spacing-6: var(--space-6);
+  --spacing-7: var(--space-7);
+  --spacing-8: var(--space-8);
+
+  --radius-xs: var(--radius-xs);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius-lg);
+  --radius-pill: var(--radius-pill);
+
+  --text-2xs: var(--text-2xs);
+  --text-xs: var(--text-xs);
+  --text-sm: var(--text-sm);
+  --text-base: var(--text-base);
+  --text-lg: var(--text-lg);
+  --text-xl: var(--text-xl);
+  --text-2xl: var(--text-2xl);
+  --text-display: var(--text-display);
+
+  /* Overriding --text-* drops Tailwind's built-in line-height companions, and a text-* utility
+     that references a missing companion resets line-height to `normal` instead of inheriting
+     1.55. Pairing them explicitly is what keeps `text-sm` from breaking the vertical rhythm. */
+  --text-2xs--line-height: var(--lh-body);
+  --text-xs--line-height: var(--lh-body);
+  --text-sm--line-height: var(--lh-body);
+  --text-base--line-height: var(--lh-body);
+  --text-lg--line-height: var(--lh-tight);
+  --text-xl--line-height: var(--lh-tight);
+  --text-2xl--line-height: var(--lh-tight);
+  --text-display--line-height: var(--lh-tight);
+
+  --font-sans: var(--font-sans);
+}
+
+/*
  * Design tokens. The light palette is defined on bare :root; dark redefines only the
  * tokens, under both the OS media query and an explicit [data-theme] stamp, so a manual
  * toggle wins in either direction. Chart series colours come from a validated
  * categorical palette — blue and aqua clear the CVD, normal-vision and lightness gates
  * in both modes. Aqua sits below 3:1 on the light surface, so the chart carries direct
  * labels and a table view (the relief rule) and never leans on hue alone.
+ *
+ * Both dark blocks are wrapped in `@media screen`. That is what forces the light palette when
+ * printing — without it, printing from dark mode would need a fourth copy of every colour inside
+ * @media print, and the "declared exactly three times" invariant would rot immediately.
+ *
+ * Contrast figures for every pair below are computed in design.md §C.4; the ones that changed a
+ * value carry the ratio in a comment.
  */
 
 :root {
@@ -18,7 +107,8 @@
 
   --ink: #0b0b0b;
   --ink-secondary: #52514e;
-  --ink-muted: #898781;
+  /* was #898781 = 3.50:1 on --surface, a live 1.4.3 failure at the 12px hint size. Now 5.11:1. */
+  --ink-muted: #6e6c66;
 
   --grid: #e1e0d9;
   --axis: #c3c2b7;
@@ -35,14 +125,100 @@
   --status-serious: #ec835a;
   --status-critical: #d03b3b;
 
+  /* status as text. The fills above are chart/dot colours and several fail as type
+     (#fab219 = 1.79:1); StatTile renders them at 22px, so text gets its own 7:1 set. */
+  --status-good-text: #0e550e;
+  --status-warning-text: #6a4a00;
+  --status-serious-text: #8f3f1c;
+  --status-critical-text: #a11616;
+
+  /* --accent stays the link and series colour (4.30:1, passes as text) but is no longer a
+     button fill: white on it is 4.42:1. Fills use --accent-strong (6.29:1). */
   --accent: #2a78d6;
   --accent-ink: #ffffff;
+  --accent-strong: #1a5fb4;
+  --accent-strong-hover: #14539f;
+  --accent-strong-active: #0f4c95;
+  --accent-soft: #e5ebf1;
 
-  --radius: 12px;
+  --danger: #b31d1d;
+  --danger-hover: #a11616;
+  --danger-active: #8e1414;
+  --danger-ink: #ffffff;
+  --danger-ring: #6d0f0f;
+
+  --control-bg: #ffffff;
+  --control-bg-hover: #f2f1ec;
+  --control-bg-active: #eae8e1;
+  --control-ink: #0b0b0b;
+  /* Heavier than --border-strong on purpose: 0.18 alpha flattens to 1.4:1, which is why
+     secondary buttons and inputs currently disappear. 0.5 reaches 3.65:1 (1.4.11). */
+  --control-border: rgba(11, 11, 11, 0.5);
+  --control-bg-disabled: #f2f1ec;
+  --control-ink-disabled: #8a8a87;
+  --control-border-disabled: rgba(11, 11, 11, 0.16);
+
+  --ring: #0f4c95;
+  /* Fills the outline-offset gap, so the ring separates from a solid fill as well as the page. */
+  --ring-inset: #ffffff;
+  --ring-w: 2px;
+  --ring-gap: 2px;
+
+  --nav-h: 64px;
+  --nav-bg: #fcfcfb;
+  --nav-bg-scrolled: rgba(252, 252, 251, 0.86);
+
+  --shadow-1: 0 1px 2px rgba(11, 11, 11, 0.06), 0 1px 1px rgba(11, 11, 11, 0.04);
+  --shadow-2: 0 2px 4px rgba(11, 11, 11, 0.07), 0 4px 12px rgba(11, 11, 11, 0.06);
+  --shadow-3: 0 8px 24px rgba(11, 11, 11, 0.1), 0 2px 6px rgba(11, 11, 11, 0.06);
+  --shadow-press: inset 0 1px 2px rgba(11, 11, 11, 0.14);
+  --shadow-hi: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+
+  --radius-xs: 6px;
   --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 48px;
+
+  --control-h-sm: 34px;
+  --control-h-md: 40px;
+  --control-h-lg: 48px;
+  --tap-min: 44px;
+
+  /* font-src 'self' in the CSP forbids a webfont, so the system stack is the design, not a
+     fallback. Promoted to a token so nothing re-types it. */
+  --font-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-num: tabular-nums;
+
+  --text-2xs: 12px;
+  --text-xs: 13px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-display: clamp(1.75rem, 5.2vw, 2.75rem);
+
+  --lh-tight: 1.15;
+  --lh-body: 1.55;
+  --tracking-tight: -0.015em;
+
+  --dur-fast: 120ms;
+  --dur: 200ms;
+  --dur-slow: 380ms;
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
-@media (prefers-color-scheme: dark) {
+@media screen and (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     color-scheme: dark;
 
@@ -52,7 +228,7 @@
 
     --ink: #ffffff;
     --ink-secondary: #c3c2b7;
-    --ink-muted: #898781;
+    --ink-muted: #9a9892;
 
     --grid: #2c2c2a;
     --axis: #383835;
@@ -62,33 +238,210 @@
     --series-reserve: #3987e5;
     --series-invest: #199e70;
 
+    --status-good: #0ca30c;
+    --status-warning: #fab219;
+    --status-serious: #ec835a;
+    --status-critical: #d03b3b;
+
+    --status-good-text: #79e079;
+    --status-warning-text: #ffd166;
+    --status-serious-text: #ffb37a;
+    --status-critical-text: #ff8a8a;
+
     --accent: #3987e5;
     --accent-ink: #06131f;
+    --accent-strong: #5a9cf0;
+    --accent-strong-hover: #7db4f5;
+    --accent-strong-active: #4b93ea;
+    --accent-soft: #171c22;
+
+    --danger: #ff8a8a;
+    --danger-hover: #ffa3a3;
+    --danger-active: #ef7676;
+    --danger-ink: #240707;
+    --danger-ring: #ffc2c2;
+
+    --control-bg: #232322;
+    --control-bg-hover: #2f2f2c;
+    --control-bg-active: #363633;
+    --control-ink: #ffffff;
+    --control-border: rgba(255, 255, 255, 0.4);
+    --control-bg-disabled: #232322;
+    --control-ink-disabled: #7b7b7a;
+    --control-border-disabled: rgba(255, 255, 255, 0.14);
+
+    --ring: #8cc0f7;
+    --ring-inset: #0d0d0d;
+    --ring-w: 2px;
+    --ring-gap: 2px;
+
+    --nav-h: 64px;
+    --nav-bg: #1a1a19;
+    --nav-bg-scrolled: rgba(26, 26, 25, 0.86);
+
+    /* The one place dark is not a straight value swap: a black shadow on a black plane is
+       invisible, so dark elevation is carried by a lighter surface plus the top highlight, and
+       the alphas necessarily differ. */
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.6);
+    --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.55), 0 1px 2px rgba(0, 0, 0, 0.5);
+    --shadow-3: 0 12px 32px rgba(0, 0, 0, 0.6);
+    --shadow-press: inset 0 1px 2px rgba(0, 0, 0, 0.55);
+    --shadow-hi: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+
+    --radius-xs: 6px;
+    --radius-sm: 8px;
+    --radius: 12px;
+    --radius-lg: 16px;
+    --radius-pill: 999px;
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-7: 32px;
+    --space-8: 48px;
+
+    --control-h-sm: 34px;
+    --control-h-md: 40px;
+    --control-h-lg: 48px;
+    --tap-min: 44px;
+
+    --font-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-num: tabular-nums;
+
+    --text-2xs: 12px;
+    --text-xs: 13px;
+    --text-sm: 14px;
+    --text-base: 16px;
+    --text-lg: 18px;
+    --text-xl: 20px;
+    --text-2xl: 24px;
+    --text-display: clamp(1.75rem, 5.2vw, 2.75rem);
+
+    --lh-tight: 1.15;
+    --lh-body: 1.55;
+    --tracking-tight: -0.015em;
+
+    --dur-fast: 120ms;
+    --dur: 200ms;
+    --dur-slow: 380ms;
+    --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
   }
 }
 
-:root[data-theme='dark'] {
-  color-scheme: dark;
+@media screen {
+  :root[data-theme='dark'] {
+    color-scheme: dark;
 
-  --plane: #0d0d0d;
-  --surface: #1a1a19;
-  --surface-raised: #232322;
+    --plane: #0d0d0d;
+    --surface: #1a1a19;
+    --surface-raised: #232322;
 
-  --ink: #ffffff;
-  --ink-secondary: #c3c2b7;
-  --ink-muted: #898781;
+    --ink: #ffffff;
+    --ink-secondary: #c3c2b7;
+    --ink-muted: #9a9892;
 
-  --grid: #2c2c2a;
-  --axis: #383835;
-  --border: rgba(255, 255, 255, 0.1);
-  --border-strong: rgba(255, 255, 255, 0.18);
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.1);
+    --border-strong: rgba(255, 255, 255, 0.18);
 
-  --series-reserve: #3987e5;
-  --series-invest: #199e70;
+    --series-reserve: #3987e5;
+    --series-invest: #199e70;
 
-  --accent: #3987e5;
-  --accent-ink: #06131f;
+    --status-good: #0ca30c;
+    --status-warning: #fab219;
+    --status-serious: #ec835a;
+    --status-critical: #d03b3b;
+
+    --status-good-text: #79e079;
+    --status-warning-text: #ffd166;
+    --status-serious-text: #ffb37a;
+    --status-critical-text: #ff8a8a;
+
+    --accent: #3987e5;
+    --accent-ink: #06131f;
+    --accent-strong: #5a9cf0;
+    --accent-strong-hover: #7db4f5;
+    --accent-strong-active: #4b93ea;
+    --accent-soft: #171c22;
+
+    --danger: #ff8a8a;
+    --danger-hover: #ffa3a3;
+    --danger-active: #ef7676;
+    --danger-ink: #240707;
+    --danger-ring: #ffc2c2;
+
+    --control-bg: #232322;
+    --control-bg-hover: #2f2f2c;
+    --control-bg-active: #363633;
+    --control-ink: #ffffff;
+    --control-border: rgba(255, 255, 255, 0.4);
+    --control-bg-disabled: #232322;
+    --control-ink-disabled: #7b7b7a;
+    --control-border-disabled: rgba(255, 255, 255, 0.14);
+
+    --ring: #8cc0f7;
+    --ring-inset: #0d0d0d;
+    --ring-w: 2px;
+    --ring-gap: 2px;
+
+    --nav-h: 64px;
+    --nav-bg: #1a1a19;
+    --nav-bg-scrolled: rgba(26, 26, 25, 0.86);
+
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.6);
+    --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.55), 0 1px 2px rgba(0, 0, 0, 0.5);
+    --shadow-3: 0 12px 32px rgba(0, 0, 0, 0.6);
+    --shadow-press: inset 0 1px 2px rgba(0, 0, 0, 0.55);
+    --shadow-hi: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+
+    --radius-xs: 6px;
+    --radius-sm: 8px;
+    --radius: 12px;
+    --radius-lg: 16px;
+    --radius-pill: 999px;
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-7: 32px;
+    --space-8: 48px;
+
+    --control-h-sm: 34px;
+    --control-h-md: 40px;
+    --control-h-lg: 48px;
+    --tap-min: 44px;
+
+    --font-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-num: tabular-nums;
+
+    --text-2xs: 12px;
+    --text-xs: 13px;
+    --text-sm: 14px;
+    --text-base: 16px;
+    --text-lg: 18px;
+    --text-xl: 20px;
+    --text-2xl: 24px;
+    --text-display: clamp(1.75rem, 5.2vw, 2.75rem);
+
+    --lh-tight: 1.15;
+    --lh-body: 1.55;
+    --tracking-tight: -0.015em;
+
+    --dur-fast: 120ms;
+    --dur: 200ms;
+    --dur-slow: 380ms;
+    --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
 }
+
+/* --------------------------------------------------------------------------- base ---- */
 
 * {
   box-sizing: border-box;
@@ -102,9 +455,9 @@ body {
   margin: 0;
   background: var(--plane);
   color: var(--ink);
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-  font-size: 16px;
-  line-height: 1.55;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--lh-body);
   /* Dense numeric pages must never scroll sideways. */
   overflow-x: hidden;
 }
@@ -112,8 +465,8 @@ body {
 h1,
 h2,
 h3 {
-  line-height: 1.2;
-  letter-spacing: -0.015em;
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tracking-tight);
   margin: 0;
 }
 
@@ -122,10 +475,14 @@ a {
   text-underline-offset: 3px;
 }
 
+/* Two-tone ring: --ring-inset fills the offset gap (so the ring separates from any solid fill),
+   --ring sits outside it (so it separates from the page). The old rule also set
+   border-radius: 4px, which reshaped the focused element itself — an 8px button became a 4px
+   button while focused. That is why the radius is gone rather than retuned. */
 :focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-  border-radius: 4px;
+  outline: var(--ring-w) solid var(--ring);
+  outline-offset: var(--ring-gap);
+  box-shadow: 0 0 0 var(--ring-gap) var(--ring-inset);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -135,20 +492,28 @@ a {
   }
 }
 
-/* ------------------------------------------------------------------ utility ---- */
+/* Figures align everywhere by default instead of by opt-in — a numeric product cannot afford
+   proportional digits in a table it did not remember to tag. */
+td,
+th {
+  font-variant-numeric: var(--font-num);
+}
+
+/* ------------------------------------------------------------------------ utility ---- */
 
 .wrap {
   width: 100%;
   max-width: 1120px;
   margin-inline: auto;
-  padding-inline: 20px;
+  padding-inline: var(--space-5);
 }
 
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 20px;
+  padding: var(--space-5);
+  box-shadow: var(--shadow-1);
 }
 
 .muted {
@@ -156,7 +521,12 @@ a {
 }
 
 .tabular {
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: var(--font-num);
+}
+
+.hint {
+  font-size: var(--text-2xs);
+  color: var(--ink-muted);
 }
 
 /* A wide table or chart scrolls inside its own box, never the page. */
@@ -165,59 +535,1386 @@ a {
   max-width: 100%;
 }
 
+/* Both names are live: .visually-hidden is used by the headline's live region, .sr-only by the
+   field layer. Same declarations, so either is safe to reach for. */
+.sr-only,
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.stat-label {
+  font-size: var(--text-2xs);
+  color: var(--ink-secondary);
+  margin-block-end: var(--space-1);
+}
+
+.stat-value {
+  font-size: var(--text-2xl);
+  font-weight: 650;
+  line-height: var(--lh-tight);
+  font-variant-numeric: var(--font-num);
+}
+
+/* Headline-grade numbers are text, so they take the 7:1 text tokens, not the chart fills. */
+.stat-value[data-tone='critical'] {
+  color: var(--status-critical-text);
+}
+.stat-value[data-tone='serious'] {
+  color: var(--status-serious-text);
+}
+.stat-value[data-tone='warning'] {
+  color: var(--status-warning-text);
+}
+.stat-value[data-tone='good'] {
+  color: var(--status-good-text);
+}
+
+/* ------------------------------------------------------------------------ buttons ---- */
+
 .btn {
+  /* per-instance knobs the variants and sizes write into */
+  --btn-bg: var(--control-bg);
+  --btn-bg-hover: var(--control-bg-hover);
+  --btn-bg-active: var(--control-bg-active);
+  --btn-ink: var(--control-ink);
+  --btn-border: var(--control-border);
+  --btn-shadow: var(--shadow-1);
+  --btn-h: var(--control-h-md);
+  --btn-px: var(--space-4);
+  --btn-fs: var(--text-sm);
+
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  border: 1px solid var(--border-strong);
-  background: var(--surface-raised);
-  color: var(--ink);
+  justify-content: center;
+  gap: var(--space-2);
+  min-block-size: var(--btn-h);
+  padding-inline: var(--btn-px);
+  padding-block: 0;
+  border: 1px solid var(--btn-border);
   border-radius: var(--radius-sm);
-  padding: 9px 14px;
-  font: inherit;
-  font-weight: 500;
+  background: var(--btn-bg);
+  color: var(--btn-ink);
+  box-shadow: var(--btn-shadow), var(--shadow-hi);
+  font-family: inherit;
+  font-size: var(--btn-fs);
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none; /* so <Link className="btn"> needs no inline override */
+  white-space: nowrap;
   cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
 }
 
 .btn:hover {
-  border-color: var(--accent);
+  background: var(--btn-bg-hover);
+  border-color: var(--btn-border);
+  box-shadow: var(--shadow-2), var(--shadow-hi);
 }
+
+/* The press is acknowledged: the fill deepens, the elevation collapses inward, and the button
+   travels 1px. That 1px is most of what "finished" means. */
+.btn:active {
+  background: var(--btn-bg-active);
+  box-shadow: var(--shadow-press);
+  transform: translateY(1px);
+}
+
+.btn:focus-visible {
+  outline: var(--ring-w) solid var(--ring);
+  outline-offset: var(--ring-gap);
+  box-shadow:
+    0 0 0 var(--ring-gap) var(--ring-inset),
+    var(--shadow-2);
+}
+
+/* All variants collapse to one disabled treatment — a disabled primary that stays blue still
+   invites the click. */
+.btn:disabled,
+.btn[aria-disabled='true'] {
+  background: var(--control-bg-disabled);
+  border-color: var(--control-border-disabled);
+  color: var(--control-ink-disabled);
+  box-shadow: none;
+  transform: none;
+  cursor: not-allowed;
+}
+
+.btn[data-loading='true'] {
+  cursor: progress;
+}
+
+/* The spinner takes the reserved icon slot, so the label never moves and the row never reflows.
+   The state itself is carried by aria-busy + disabled, not by this swap. */
+.btn[data-loading='true'] .btn-spinner {
+  display: block;
+}
+.btn[data-loading='true'] .btn-icon-slot {
+  display: none;
+}
+
+.btn > svg,
+.btn-spinner {
+  flex: 0 0 auto;
+  inline-size: 1.15em;
+  block-size: 1.15em;
+}
+
+.btn-spinner {
+  display: none;
+  animation: btn-spin 720ms linear infinite;
+}
+
+@keyframes btn-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+.btn-spinner .btn-spinner-dots {
+  display: none;
+}
+
+/* The global reduced-motion rule stops the rotation, which would leave a frozen arc reading as
+   a bug. Swap in a static glyph instead. */
+@media (prefers-reduced-motion: reduce) {
+  .btn-spinner {
+    animation: none;
+  }
+  .btn-spinner .btn-spinner-arc {
+    display: none;
+  }
+  .btn-spinner .btn-spinner-dots {
+    display: block;
+  }
+}
+
+/* ----- variants ----- */
 
 .btn-primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--accent-ink);
+  --btn-bg: var(--accent-strong);
+  --btn-bg-hover: var(--accent-strong-hover);
+  --btn-bg-active: var(--accent-strong-active);
+  --btn-ink: var(--accent-ink);
+  --btn-border: var(--accent-strong);
+  --btn-shadow: var(--shadow-2);
 }
-
 .btn-primary:hover {
-  filter: brightness(1.08);
+  border-color: var(--accent-strong-hover);
 }
 
+.btn-secondary {
+  /* the defaults; declared so the class can be written explicitly at call sites */
+  --btn-bg: var(--control-bg);
+  --btn-bg-hover: var(--control-bg-hover);
+  --btn-bg-active: var(--control-bg-active);
+}
+
+.btn-ghost {
+  --btn-bg: transparent;
+  --btn-bg-hover: var(--control-bg-hover);
+  --btn-bg-active: var(--control-bg-active);
+  --btn-ink: var(--ink-secondary);
+  --btn-border: transparent;
+  --btn-shadow: none;
+}
+.btn-ghost:hover {
+  --btn-ink: var(--ink);
+  border-color: var(--border);
+  box-shadow: none;
+}
+
+.btn-danger {
+  --btn-bg: var(--danger);
+  --btn-bg-hover: var(--danger-hover);
+  --btn-bg-active: var(--danger-active);
+  --btn-ink: var(--danger-ink);
+  --btn-border: var(--danger);
+  --btn-shadow: var(--shadow-1);
+}
+.btn-danger:hover {
+  border-color: var(--danger-hover);
+}
+/* The blue ring on a destructive button reads as "focused", not as "destructive". */
+.btn-danger:focus-visible {
+  outline-color: var(--danger-ring);
+}
+
+/* ----- sizes ----- */
+
+.btn-sm {
+  --btn-h: var(--control-h-sm);
+  --btn-px: var(--space-3);
+  --btn-fs: var(--text-xs);
+  border-radius: var(--radius-xs);
+}
+
+.btn-lg {
+  --btn-h: var(--control-h-lg);
+  --btn-px: var(--space-5);
+  --btn-fs: var(--text-base);
+}
+
+/* Square; requires aria-label, because an aria-hidden icon contributes no accessible name. */
+.btn-icon {
+  --btn-px: 0;
+  aspect-ratio: 1;
+  inline-size: var(--btn-h);
+}
+.btn-icon > svg {
+  inline-size: 1.25em;
+  block-size: 1.25em;
+}
+
+/* One rule repairs every one of today's six ~32px touch targets. */
+@media (pointer: coarse) {
+  .btn {
+    min-block-size: max(var(--btn-h), var(--tap-min));
+  }
+  .btn-icon {
+    inline-size: max(var(--btn-h), var(--tap-min));
+  }
+}
+
+/* Theme-driven icon choice, so the toggle needs no React state to disagree with the server. */
+.i-sun {
+  display: none;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .i-moon {
+    display: none;
+  }
+  :root:not([data-theme='light']) .i-sun {
+    display: block;
+  }
+}
+:root[data-theme='dark'] .i-moon {
+  display: none;
+}
+:root[data-theme='dark'] .i-sun {
+  display: block;
+}
+:root[data-theme='light'] .i-moon {
+  display: block;
+}
+:root[data-theme='light'] .i-sun {
+  display: none;
+}
+
+/* ---------------------------------------------------------------------------- nav ---- */
+
+.skip-link {
+  position: absolute;
+  inset-inline-start: var(--space-3);
+  inset-block-start: var(--space-3);
+  z-index: 100;
+  transform: translateY(-200%);
+  background: var(--surface-raised);
+  color: var(--ink);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: var(--shadow-2);
+}
+.skip-link:focus-visible {
+  transform: none;
+}
+
+.nav {
+  background: var(--nav-bg);
+  border-block-end: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  transition:
+    background-color var(--dur) var(--ease-out),
+    border-color var(--dur) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out);
+}
+
+/* Background, border and shadow — never height. A sticky box that changes height reflows
+   everything under it and over-scrolls every in-page anchor. */
+.nav[data-scrolled='true'] {
+  background: var(--nav-bg-scrolled);
+  border-block-end-color: var(--border-strong);
+  box-shadow: var(--shadow-1);
+  backdrop-filter: saturate(1.4) blur(10px);
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .nav[data-scrolled='true'] {
+    background: var(--surface);
+  }
+}
+
+/* Fixed block-size and no flex-wrap: the old wrapping flex row grew the sticky header to
+   116–174px on a narrow viewport. */
+.nav-inner {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  column-gap: var(--space-6);
+  block-size: var(--nav-h);
+}
+
+.nav-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--ink);
+  text-decoration: none;
+  font-size: var(--text-base);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  border-radius: var(--radius-sm);
+}
+.nav-brand svg {
+  flex: 0 0 auto;
+}
+
+.nav-routes ul {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nav-link {
+  position: relative;
+  display: block;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--ink-secondary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  text-decoration: none;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+/* Reserve the bold width up front, so promoting a link to active never shifts its siblings. */
+.nav-link::after {
+  content: attr(data-label);
+  display: block;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  font-weight: 650;
+  pointer-events: none;
+}
+
+.nav-link:hover {
+  color: var(--ink);
+  background: var(--control-bg-hover);
+}
+
+/* Active = three signals: aria-current (machine), a 2px rail (shape), weight 650 (mass).
+   Colour is a redundant fourth; strip it and the state is still unambiguous. */
+.nav-link[data-active='true'] {
+  color: var(--ink);
+  font-weight: 650;
+  background: var(--accent-soft);
+}
+.nav-link[data-active='true']::before {
+  content: '';
+  position: absolute;
+  inset-inline: var(--space-3);
+  inset-block-end: -1px;
+  block-size: 2px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-strong);
+}
+
+.nav-utils {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.nav-utils::before {
+  content: '';
+  align-self: stretch;
+  inline-size: 1px;
+  margin-inline-end: var(--space-1);
+  margin-block: var(--space-3);
+  background: var(--border);
+}
+
+/* Two segments, not a menu. */
+.seg {
+  display: inline-flex;
+  padding: 2px;
+  gap: 2px;
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-sm);
+  background: var(--control-bg);
+}
+.seg > a {
+  padding: 3px var(--space-2);
+  border-radius: var(--radius-xs);
+  color: var(--ink-secondary);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1.4;
+  text-decoration: none;
+  font-variant-numeric: var(--font-num);
+}
+.seg > a:hover {
+  color: var(--ink);
+  background: var(--control-bg-hover);
+}
+.seg > a[aria-current='true'] {
+  color: var(--accent-ink);
+  background: var(--accent-strong);
+  box-shadow: var(--shadow-hi);
+}
+
+.main {
+  padding-block: var(--space-7) var(--space-8);
+}
+
+/* ------------------------------------------------------------- nav, small screens ---- */
+
+@media (max-width: 719px) {
+  /* 102px of permanent chrome on a 640px viewport is a sixth of a page whose value is a chart.
+     Two static rows instead: identity + utilities, then a scrollable destination rail. */
+  .nav {
+    position: static;
+  }
+  .nav-inner {
+    grid-template-columns: auto auto;
+    grid-template-areas:
+      'brand utils'
+      'routes routes';
+    row-gap: 0;
+    column-gap: var(--space-3);
+    justify-content: space-between;
+    block-size: auto;
+  }
+  .nav-brand {
+    grid-area: brand;
+    block-size: 56px;
+  }
+  .nav-utils {
+    grid-area: utils;
+    block-size: 56px;
+  }
+  .nav-utils::before {
+    display: none;
+  }
+  .nav-routes {
+    grid-area: routes;
+    border-block-start: 1px solid var(--border);
+    margin-inline: calc(var(--space-5) * -1);
+    padding-inline: var(--space-5);
+    overflow-x: auto;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    /* Edge fade tells you the rail scrolls, with no JS and no scrollbar. */
+    mask-image: linear-gradient(
+      90deg,
+      transparent 0,
+      #000 16px,
+      #000 calc(100% - 16px),
+      transparent 100%
+    );
+  }
+  .nav-routes::-webkit-scrollbar {
+    display: none;
+  }
+  .nav-routes ul {
+    gap: var(--space-2);
+    block-size: 46px;
+    min-inline-size: max-content;
+  }
+  .nav-routes li {
+    scroll-snap-align: start;
+  }
+  .nav-link {
+    font-size: var(--text-base);
+    white-space: nowrap;
+  }
+  .nav-cta {
+    /* The rail already carries the destinations; the CTA rides at its end. */
+    margin-inline-start: var(--space-2);
+  }
+}
+
+/* ------------------------------------------------------------------ rotating h1 ---- */
+
+.headline {
+  display: grid;
+  /* Every slot lands in this one cell, so the row is as tall as the tallest slogan. */
+  align-content: start;
+  justify-items: start;
+  font-size: var(--text-display);
+  font-weight: 700;
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tracking-tight);
+  text-wrap: balance;
+  max-width: 22ch;
+  min-inline-size: 0;
+}
+
+.headline-stack {
+  display: grid;
+  grid-area: 1 / 1;
+  align-content: start;
+}
+
+.headline-slot {
+  grid-area: 1 / 1;
+  opacity: 0;
+  transform: translateY(0.34em);
+  transition:
+    opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out);
+  will-change: opacity, transform;
+  pointer-events: none;
+}
+
+.headline-slot[data-state='current'] {
+  opacity: 1;
+  transform: none;
+}
+
+/* The outgoing line leaves upward; the next one arrives from below. That direction is what
+   makes it read as one question changing rather than two questions crossfading. */
+.headline-slot[data-state='leaving'] {
+  opacity: 0;
+  transform: translateY(-0.34em);
+}
+
+/* Idle slots have never been shown and must not animate into view when they become current
+   from a distance — they already sit at the incoming position, which is the default above. */
+.headline-slot[data-state='idle'] {
+  transition: none;
+}
+
+/* Reduced motion: the global rule already zeroes the transition and the interval never starts.
+   This makes the intent explicit at the component level too. */
+@media (prefers-reduced-motion: reduce) {
+  .headline-slot {
+    transition: none;
+    will-change: auto;
+  }
+}
+
+/* --------------------------------------------------------------------------- grid ---- */
+
+/* auto-fit is banned product-wide: it is what makes the stat row reflow from 3 to 4 columns and
+   drags the whole page with it. Every field declares an explicit span instead, and a group's
+   spans sum to a multiple of 12, so ragged tails and orphans are structurally impossible. */
+.grid-12 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.span-2,
+.span-3,
+.span-4,
+.span-6,
+.span-12 {
+  grid-column: span 1;
+  min-inline-size: 0;
+}
+
+/* 6 columns at tablet: spans halve, except the quarter-width span-3, which snaps up to a half
+   rather than resolving to an impossible 1.5 columns. */
+@media (min-width: 600px) {
+  .grid-12 {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+  .span-2 {
+    grid-column: span 2;
+  }
+  .span-3 {
+    grid-column: span 3;
+  }
+  .span-4 {
+    grid-column: span 2;
+  }
+  .span-6,
+  .span-12 {
+    grid-column: span 6;
+  }
+}
+
+@media (min-width: 900px) {
+  .grid-12 {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+  .span-2 {
+    grid-column: span 2;
+  }
+  .span-3 {
+    grid-column: span 3;
+  }
+  .span-4 {
+    grid-column: span 4;
+  }
+  .span-6 {
+    grid-column: span 6;
+  }
+  .span-12 {
+    grid-column: span 12;
+  }
+}
+
+/* -------------------------------------------------------------------------- field ---- */
+
+/* One anatomy everywhere: label (+ provenance badge), control with the unit as an affix inside
+   its border, then hint-or-error, then note. Order never varies. */
+.f {
+  display: grid;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+
+.f-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--ink-secondary);
+}
+
+.f-badge {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--ink-secondary);
+  padding-inline: var(--space-2);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+/* The border lives on the wrapper, not on the input, because the unit affix sits inside it. */
+.f-control {
+  display: flex;
+  align-items: stretch;
+  min-block-size: var(--control-h-md);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-sm);
+  background: var(--control-bg);
+  overflow: hidden;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.f-control:hover {
+  background: var(--control-bg-hover);
+}
+
+/* The ring belongs to the whole control, so the inner input suppresses its own. */
+.f-control:focus-within {
+  outline: var(--ring-w) solid var(--ring);
+  outline-offset: var(--ring-gap);
+  box-shadow: 0 0 0 var(--ring-gap) var(--ring-inset);
+}
+
+.f-control input,
+.f-control select,
+.f-control textarea {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-base);
+  font-variant-numeric: var(--font-num);
+  padding-inline: var(--space-3);
+  padding-block: 0;
+}
+
+.f-control input:focus-visible,
+.f-control select:focus-visible,
+.f-control textarea:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.f-control[data-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.f-control[data-disabled='true'] {
+  background: var(--control-bg-disabled);
+  border-color: var(--control-border-disabled);
+  color: var(--control-ink-disabled);
+}
+
+/* aria-hidden in the markup: the unit is duplicated into the accessible name by a
+   visually-hidden span inside the <label>, so AT hears "Zůstatek v korunách". */
+.f-unit {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  padding-inline: var(--space-3);
+  border-inline-start: 1px solid var(--border);
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.f-hint {
+  font-size: var(--text-2xs);
+  color: var(--ink-muted);
+}
+
+/* Occupies the same slot as the hint and replaces it, so showing an error never reflows the row. */
+.f-error {
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  color: var(--status-critical-text);
+}
+
+.f-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-1);
+  font-size: var(--text-2xs);
+  color: var(--ink-secondary);
+}
+.f-note[data-tone='warning'] {
+  color: var(--status-warning-text);
+}
+.f-note svg {
+  flex: 0 0 auto;
+  inline-size: 1.1em;
+  block-size: 1.1em;
+  margin-block-start: 0.15em;
+}
+
+/* DEPRECATED — superseded by .f / .f-label / .f-control. Kept working because live components
+   still render it; delete only when grep for className="field" is empty. */
 .field {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: var(--space-1);
 }
 
 .field label {
-  font-size: 13px;
+  font-size: var(--text-xs);
   color: var(--ink-secondary);
   font-weight: 500;
 }
 
 .field input,
 .field select {
-  background: var(--surface-raised);
+  background: var(--control-bg);
   color: var(--ink);
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--control-border);
   border-radius: var(--radius-sm);
   padding: 9px 11px;
   font: inherit;
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: var(--font-num);
   width: 100%;
 }
 
 .field .hint {
-  font-size: 12px;
+  font-size: var(--text-2xs);
   color: var(--ink-muted);
+}
+
+/* --------------------------------------------------------------------- disclosure ---- */
+
+/* Disclosure per card, not tabs and not a single-open accordion: sections open independently,
+   Ctrl+F still crosses the whole plan, and "expand all" stays a coherent operation. */
+.disc {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-1);
+}
+
+/* The heading stays a real h2 for the document outline; the button is only the control. */
+.disc-h {
+  margin: 0;
+  font-size: var(--text-xl);
+}
+
+.disc-h > button {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: var(--space-3);
+  inline-size: 100%;
+  padding: var(--space-4) var(--space-5);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 650;
+  text-align: start;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.disc-h > button:hover {
+  background: var(--control-bg-hover);
+}
+
+.disc-chev {
+  inline-size: 1em;
+  block-size: 1em;
+  color: var(--ink-muted);
+  transition: transform var(--dur) var(--ease-out);
+}
+.disc[data-open='true'] .disc-chev {
+  transform: rotate(90deg);
+}
+
+.disc-title {
+  font-size: var(--text-lg);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tracking-tight);
+}
+
+/* Visible in both states — collapsing a section must cost no information. */
+.disc-sum {
+  grid-column: 2;
+  font-size: var(--text-xs);
+  font-weight: 400;
+  line-height: var(--lh-body);
+  color: var(--ink-secondary);
+  font-variant-numeric: var(--font-num);
+}
+
+.disc-panel {
+  padding: 0 var(--space-5) var(--space-5);
+}
+
+/*
+ * `content-visibility: auto` was here to make a collapsed forty-field editor free to lay out.
+ * It is deliberately GONE, and this comment is the reason: a collapsed panel is already
+ * `hidden`, so it already costs nothing, while on an open panel the render/unrender as it
+ * crosses the viewport changes its height mid-scroll. Measured consequence on a Pixel-7
+ * viewport: every click on a section header below the chart landed on the chart instead,
+ * because the layout moved between the scroll and the click. `contain-intrinsic-size` cannot
+ * fix that — these panels' real heights differ from any placeholder by hundreds of pixels.
+ *
+ * `contain: layout` keeps the useful half: a panel's internals cannot reflow the page.
+ */
+.disc-panel:not([hidden]) {
+  contain: layout;
+}
+
+/* -------------------------------------------------------------------------- print ---- */
+
+/* The light palette needs no re-declaration here: both dark blocks are scoped to @media screen,
+   so print always resolves the bare :root values. */
+@media print {
+  body {
+    background: #ffffff;
+  }
+
+  .nav,
+  .skip-link,
+  .plan-rail,
+  .disc-rail,
+  [data-print='hide'] {
+    display: none !important;
+  }
+
+  /* Belt and braces behind the React state that force-opens every panel on beforeprint: this
+     alone cannot recover content React never rendered, but it catches hidden="until-found". */
+  .disc-panel[hidden] {
+    display: block !important;
+    content-visibility: visible !important;
+  }
+
+  /* Nothing is clickable on paper, so the header button must read as the heading it is. */
+  .disc-h > button {
+    padding: 0;
+    background: none;
+    border: 0;
+    box-shadow: none;
+  }
+  .disc-chev,
+  .btn {
+    display: none !important;
+  }
+
+  .card,
+  .disc,
+  .problem-card {
+    break-inside: avoid;
+    box-shadow: none;
+  }
+
+  /* A table may break; its header must then repeat, or the numbers lose their meaning. */
+  table {
+    break-inside: auto;
+  }
+  thead {
+    display: table-header-group;
+  }
+  tr,
+  th,
+  td {
+    break-inside: avoid;
+  }
+}
+
+/* ---------------------------------------------- field groups, choices, repeaters ----
+ * Added with the field library. These are the containers the 12-column `.grid-12` and the
+ * `.f*` classes above are used inside: a group heading that can collapse, the two choice
+ * shapes the wizard's branch questions need, and one repeater to replace the four
+ * hand-rolled "card with a remove button" implementations.
+ */
+
+.fg {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.fg-h {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 650;
+  letter-spacing: var(--tracking-tight);
+  color: var(--ink);
+}
+
+.fg-h > button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  width: 100%;
+  min-height: var(--tap-min);
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.fg-h > button[aria-expanded='true'] .disc-chev {
+  transform: rotate(90deg);
+}
+
+.fg-title {
+  color: var(--ink);
+}
+
+.fg-sum {
+  font-size: var(--text-sm);
+  font-weight: 400;
+  color: var(--ink-secondary);
+  font-variant-numeric: var(--font-num);
+}
+
+.fg-sub {
+  margin: 0;
+  max-width: 66ch;
+  font-size: var(--text-sm);
+}
+
+.f-row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: stretch;
+}
+
+/* A branch question. Big enough to be the only thing on a wizard step. */
+.choice-cards {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+}
+
+.choice-card {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-4);
+  min-height: var(--tap-min);
+  text-align: start;
+  cursor: pointer;
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius);
+  background: var(--control-bg);
+  box-shadow: var(--shadow-1);
+  font: inherit;
+  color: var(--control-ink);
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.choice-card:hover {
+  background: var(--control-bg-hover);
+}
+
+.choice-card:active {
+  box-shadow: var(--shadow-press);
+}
+
+/* Selected is carried by a 2px border and a wash, never by colour alone: the label also
+   gains weight, so the state survives being printed in greyscale. */
+.choice-card[data-selected='true'] {
+  border-color: var(--accent-strong);
+  box-shadow: inset 0 0 0 1px var(--accent-strong);
+  background: var(--accent-soft);
+}
+
+.choice-card[data-selected='true'] .choice-label {
+  font-weight: 650;
+}
+
+.choice-label {
+  font-size: var(--text-base);
+}
+
+.choice-hint {
+  font-size: var(--text-sm);
+  color: var(--ink-secondary);
+}
+
+.choice-seg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.choice-seg .btn[data-selected='true'] {
+  border-color: var(--accent-strong);
+  box-shadow: inset 0 0 0 1px var(--accent-strong);
+  background: var(--accent-soft);
+  font-weight: 650;
+}
+
+.rep {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.rep-empty {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.rep-item {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.rep-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.rep-title {
+  font-size: var(--text-sm);
+  font-weight: 650;
+  color: var(--ink-secondary);
+}
+
+.rep-head .btn {
+  margin-inline-start: auto;
+}
+
+.rep-add {
+  justify-self: start;
+}
+
+.adv {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.stat {
+  min-width: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+/* --------------------------------------------------- wizard consequence ribbon ----
+ * Pinned between the step body and its buttons. Two lines, no SVG, so it is above the fold
+ * on a 360px phone — which the chart it replaced never was.
+ */
+
+.ribbon {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-inline-start: 3px solid var(--ink-muted);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.ribbon[data-verdict='holds'] {
+  border-inline-start-color: var(--status-good-text);
+}
+
+.ribbon[data-verdict='belowFloor'] {
+  border-inline-start-color: var(--status-warning-text);
+}
+
+.ribbon[data-verdict='deficit'] {
+  border-inline-start-color: var(--status-critical-text);
+}
+
+.ribbon-label {
+  margin: 0;
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ribbon-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-sm);
+  font-variant-numeric: var(--font-num);
+}
+
+.ribbon-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 650;
+}
+
+/* Colour is never the only signal: the glyph and the word carry it too. */
+.ribbon[data-verdict='holds'] .ribbon-chip {
+  color: var(--status-good-text);
+}
+
+.ribbon[data-verdict='belowFloor'] .ribbon-chip {
+  color: var(--status-warning-text);
+}
+
+.ribbon[data-verdict='deficit'] .ribbon-chip {
+  color: var(--status-critical-text);
+}
+
+.ribbon-trough {
+  color: var(--ink);
+}
+
+.ribbon-meta {
+  font-size: var(--text-xs);
+  color: var(--ink-secondary);
+}
+
+/* ------------------------------------------------------------------ plan rail ----- */
+
+.plan-rail {
+  position: sticky;
+  top: var(--nav-h);
+  z-index: 5;
+  margin-inline: calc(var(--space-5) * -1);
+  padding-inline: var(--space-5);
+  background: var(--plane);
+  border-block-end: 1px solid var(--border);
+}
+
+@media (max-width: 719px) {
+  .plan-rail {
+    /* The header is static on a phone, so the rail has nothing to hang beneath. */
+    position: static;
+  }
+}
+
+.plan-rail-inner {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-block: var(--space-2);
+}
+
+.plan-rail-inner::-webkit-scrollbar {
+  display: none;
+}
+
+.plan-rail-spacer {
+  flex: 1 0 var(--space-4);
+}
+
+.plan-rail-inner .btn {
+  flex: 0 0 auto;
+}
+
+/* ------------------------------------------------------- layout and page pieces ----
+ * `.stack` and `.row` exist so that a vertical or horizontal gap is a class rather than the
+ * sixtieth `style={{ display: 'grid', gap: N }}` wrapper. Everything here uses the spacing
+ * scale; no raw pixel gaps.
+ */
+
+.stack,
+.stack-lg {
+  display: grid;
+  /*
+   * `minmax(0, 1fr)`, not the implicit `auto`. An auto-sized grid track is as wide as its
+   * widest item's MAX-CONTENT, so one horizontally-scrollable child — the section rail, with
+   * nine chips — stretched the whole page to 1450px inside a 412px viewport. `overflow-x` on
+   * the child does not prevent that; only a track that is allowed to be zero-width does.
+   * The visible symptom was a body clipped by `overflow-x: hidden`, with every tap below the
+   * fold landing on the wrong element.
+   */
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+.stack {
+  gap: var(--space-4);
+}
+
+.stack-lg {
+  gap: var(--space-5);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* A short banner: a link was opened, a plan is stale, the other country has a plan. The tone
+   is carried by the leading border AND by the wording, never by the border alone. */
+.notice {
+  display: grid;
+  gap: var(--space-3);
+  border-inline-start: 3px solid var(--accent-strong);
+}
+
+.notice[data-tone='warning'] {
+  border-inline-start-color: var(--status-warning-text);
+}
+
+.notice[data-tone='good'] {
+  border-inline-start-color: var(--status-good-text);
+}
+
+.recap {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+}
+
+.recap li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  border-block-end: 1px solid var(--border);
+  padding-block-end: var(--space-2);
+}
+
+.recap li:last-child {
+  border-block-end: 0;
+  padding-block-end: 0;
+}
+
+.wizard {
+  display: grid;
+  gap: var(--space-4);
+}
+
+/* The pips double as a promise that this is short. */
+.wizard-pips {
+  display: flex;
+  gap: 4px;
+}
+
+.wizard-pips > span {
+  flex: 1;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--grid);
+}
+
+.wizard-pips > span[data-done='true'] {
+  background: var(--accent-strong);
+}
+
+/* Exactly three tiles, fixed. The old four-across-when-non-zero row reflowed the whole grid. */
+.stat-row {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 600px) {
+  .stat-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* A checkbox with a label and an optional hint under it, on one 44px row. */
+.check {
+  display: flex;
+  align-items: start;
+  gap: var(--space-3);
+  min-height: var(--tap-min);
+  padding-block: var(--space-2);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.check input[type='checkbox'] {
+  inline-size: 1.15em;
+  block-size: 1.15em;
+  margin-block-start: 0.15em;
+  accent-color: var(--accent-strong);
+  flex: 0 0 auto;
+}
+
+.check > span {
+  display: grid;
+  gap: 2px;
 }

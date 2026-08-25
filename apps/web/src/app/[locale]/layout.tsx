@@ -2,11 +2,18 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { NextIntlClientProvider, hasLocale } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { routing } from '@/i18n/routing';
+import { routing, type AppLocale } from '@/i18n/routing';
 import { Link } from '@/i18n/navigation';
-import { ThemeToggle } from '@/components/ThemeToggle';
+import { SiteNav } from '@/components/SiteNav';
 import { RegisterServiceWorker } from '@/components/RegisterServiceWorker';
 import '../globals.css';
+
+/* Stamped before first paint, so a stored theme that disagrees with the OS never flashes.
+   Legal under the CSP in next.config.ts: script-src includes 'unsafe-inline'. It only writes an
+   attribute on <html>, which React does not hydrate, so it cannot cause a mismatch. */
+const THEME_BOOT =
+  "try{var t=localStorage.getItem('wealthplanner.theme');" +
+  "if(t==='dark'||t==='light')document.documentElement.dataset.theme=t}catch(e){}";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -40,74 +47,43 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
+      </head>
       <body>
         <NextIntlClientProvider>
           <RegisterServiceWorker />
-          <header
-            style={{
-              borderBottom: '1px solid var(--border)',
-              background: 'var(--surface)',
-              position: 'sticky',
-              top: 0,
-              zIndex: 10,
-            }}
-          >
-            <div
-              className="wrap"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 16,
-                minHeight: 58,
-                flexWrap: 'wrap',
-              }}
-            >
-              <Link
-                href="/"
-                style={{
-                  fontWeight: 700,
-                  color: 'var(--ink)',
-                  textDecoration: 'none',
-                  fontSize: 16,
-                  letterSpacing: '-0.02em',
-                }}
-              >
-                {t('brand.name')}
-              </Link>
-              <nav
-                style={{
-                  display: 'flex',
-                  gap: 14,
-                  fontSize: 14,
-                  marginInlineStart: 'auto',
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                }}
-              >
-                <Link href="/plan">{t('nav.plan')}</Link>
-                <Link href="/parametre">{t('nav.parameters')}</Link>
-                <Link href="/metodika">{t('nav.methodology')}</Link>
-                <Link href="/zasady">{t('nav.privacy')}</Link>
-                <Link href="/" locale={locale === 'cs' ? 'sk' : 'cs'} hrefLang={locale === 'cs' ? 'sk' : 'cs'}>
-                  {locale === 'cs' ? 'SK' : 'CZ'}
-                </Link>
-                <ThemeToggle toDark={t('nav.toDark')} toLight={t('nav.toLight')} />
-              </nav>
-            </div>
-          </header>
 
-          <main className="wrap" style={{ paddingBlock: '28px 56px' }}>
+          <SiteNav
+            locale={locale as AppLocale}
+            labels={{
+              brand: t('brand.name'),
+              plan: t('nav.plan'),
+              parameters: t('nav.parameters'),
+              methodology: t('nav.methodology'),
+              cta: t('nav.cta'),
+              navLabel: t('nav.label'),
+              langLabel: t('nav.langLabel'),
+              themeLabel: t('nav.theme'),
+              skip: t('nav.skip'),
+            }}
+          />
+
+          <main id="main" className="wrap main">
             {children}
           </main>
 
-          <footer
-            style={{ borderTop: '1px solid var(--border)', paddingBlock: 24, fontSize: 13 }}
-          >
+          <footer style={{ borderTop: '1px solid var(--border)', paddingBlock: 24, fontSize: 13 }}>
             <div className="wrap" style={{ display: 'grid', gap: 8 }}>
               <p className="muted" style={{ margin: 0, maxWidth: '72ch' }}>
                 {t('disclaimer.long')}
               </p>
-              <p className="muted" style={{ margin: 0 }}>
+              <p
+                className="muted"
+                style={{ margin: 0, display: 'flex', gap: 14, flexWrap: 'wrap' }}
+              >
+                {/* /zasady lives here, not in the nav — a legal document, not a destination. */}
+                <Link href="/zasady">{t('nav.privacy')}</Link>
                 <a href="https://github.com/MilanKubackaM/wealthPlanner">
                   {t('methodology.sourceCode')}
                 </a>

@@ -1,7 +1,12 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { czCoupleWithChild, czCoupleWithMortgage } from '@wealthplanner/engine-fixtures';
-import { simulate, monthsBetween, type ScenarioInput } from '@wealthplanner/engine';
+import {
+  czCoupleRenting,
+  czCoupleWithChild,
+  czCoupleWithMortgage,
+  czSingleRentingWithCarLoan,
+} from '@wealthplanner/engine-fixtures';
+import { simulate, monthsBetween, type Mortgage, type ScenarioInput } from '@wealthplanner/engine';
 
 /**
  * Property tests catch "is the behaviour still sane" across input combinations nobody
@@ -27,7 +32,7 @@ describe('properties — determinism and causality', () => {
         const resetAt = { year: base.assumptions.start.year + Math.floor(offset / 12), month: offset % 12 };
         const withReset: ScenarioInput = {
           ...base,
-          mortgages: base.mortgages.map((m) => ({
+          housing: withMortgages(base, (m) => ({
             ...m,
             rateResets: [{ at: resetAt, newAnnualRatePct: newRate }],
           })),
@@ -64,7 +69,58 @@ describe('properties — determinism and causality', () => {
   });
 });
 
+/** Maps over the mortgages of an owning household, leaving a renter untouched. */
+function withMortgages(
+  input: ScenarioInput,
+  fn: (m: Mortgage) => Mortgage,
+): ScenarioInput['housing'] {
+  if (input.housing.kind !== 'own') return input.housing;
+  return { kind: 'own', mortgages: input.housing.mortgages.map(fn) };
+}
+
 describe('properties — monotonicity', () => {
+  it('a higher rent never improves the reserve trough', () => {
+    fc.assert(
+      fc.property(fc.integer({ min: 0, max: 60_000 }), fc.integer({ min: 0, max: 60_000 }), (x, y) => {
+        const low = Math.min(x, y);
+        const high = Math.max(x, y);
+        const base = czCoupleRenting();
+        if (base.housing.kind !== 'rent') throw new Error('fixture invariant: renting');
+        const rent = base.housing.rent;
+        const at = (amount: number) =>
+          simulate({ ...base, housing: { kind: 'rent', rent: { ...rent, monthlyAmount: amount } } });
+        expect(at(high).minReserve).toBeLessThanOrEqual(at(low).minReserve + 1e-6);
+      }),
+      FAST,
+    );
+  });
+
+  /*
+   * Deliberately NOT "a higher payment never improves the trough" — that is false, and the
+   * counter-example is instructive: a bigger payment clears the loan sooner, the payment
+   * then stops, and in a household whose trough is late the late months come out ahead. The
+   * true invariant is on the balance, which is what the payment actually controls.
+   */
+  it('a higher debt payment never leaves a larger balance in any month', () => {
+    fc.assert(
+      fc.property(fc.integer({ min: 0, max: 40_000 }), fc.integer({ min: 0, max: 40_000 }), (x, y) => {
+        const low = Math.min(x, y);
+        const high = Math.max(x, y);
+        const base = czSingleRentingWithCarLoan();
+        const at = (payment: number) =>
+          simulate({ ...base, liabilities: base.liabilities.map((l) => ({ ...l, monthlyPayment: payment })) });
+        const a = at(low);
+        const b = at(high);
+        for (let i = 0; i < a.monthly.length; i++) {
+          expect(b.monthly[i]?.liabilityBalance ?? 0).toBeLessThanOrEqual(
+            (a.monthly[i]?.liabilityBalance ?? 0) + 1e-6,
+          );
+        }
+      }),
+      FAST,
+    );
+  });
+
   it('investing more each month never improves the reserve trough', () => {
     fc.assert(
       fc.property(
@@ -137,7 +193,7 @@ describe('properties — robustness', () => {
               netMonthlyIncome: p.income,
               incomeGrowthPct: p.growth,
             })),
-            mortgages: base.mortgages.map((m) => ({
+            housing: withMortgages(base, (m) => ({
               ...m,
               annualRatePct: p.rate,
               monthlyPayment: p.payment,

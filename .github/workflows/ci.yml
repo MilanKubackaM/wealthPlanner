@@ -26,6 +26,9 @@ jobs:
       # A changed formula without a version bump fails the build.
       - name: Engine version guard
         run: node scripts/engine-version-guard.mjs
+      # Ratchets: inline styles and hardcoded pixel literals may only ever go down.
+      - name: Style guard
+        run: node scripts/style-guard.mjs
 
   e2e:
     runs-on: ubuntu-latest

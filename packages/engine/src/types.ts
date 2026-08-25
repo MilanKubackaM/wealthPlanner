@@ -30,6 +30,15 @@ export interface Person {
   incomeGrowthPct: number;
   /** Monthly personal allowance ("pocket money"). */
   pocketMoney: number;
+  /**
+   * Birth YEAR only, and optional on purpose.
+   *
+   * A stored `age` is wrong the next January, and the one thing age is for here is the
+   * retirement horizon — precisely what a stale age corrupts. A year does not rot.
+   * Optional because filling it in during migration would make the engine invent a
+   * demographic fact about a real person; `ageAt()` returns null and the UI says so.
+   */
+  birthYear?: number;
   investments: InvestmentSleeve[];
 }
 
@@ -49,6 +58,65 @@ export interface Mortgage {
   /** Fixation-end events. The dominant risk in a real household's next decade. */
   rateResets: RateReset[];
 }
+
+export interface Rent {
+  id: string;
+  label: string;
+  /** Current monthly rent, before indexation. */
+  monthlyAmount: number;
+  /**
+   * Annual indexation, percent. Prefilled from the CPI assumption but kept SEPARATE from
+   * it: a lease's escalator is contractual, not the consumer price index. Reusing
+   * `cpiPct` here would hardcode "rent tracks inflation" and make this field decorative.
+   */
+  annualIndexationPct: number;
+  /**
+   * Whether the rent counts towards the reserve floor. True for a normal lease — rent is
+   * the most fixed outgoing a renter has. The escape hatch is a rent a flatmate splits.
+   */
+  countsTowardReserveFloor: boolean;
+}
+
+/**
+ * Housing is a CHOICE, encoded as a union rather than as a nullable mortgage beside a
+ * nullable rent. The nullable-pair encoding admits the incoherent state (a mortgage and a
+ * rent at once) that this type exists to exclude, and `housing.kind` gives the UI exactly
+ * one thing to switch on.
+ *
+ * `own` with an empty `mortgages` array means "owns outright", which is a real household
+ * and is deliberately distinct from renting.
+ */
+export type Housing =
+  | { kind: 'own'; mortgages: Mortgage[] }
+  | { kind: 'rent'; rent: Rent };
+
+export type LiabilityKind = 'car-loan' | 'consumer-loan' | 'credit-card' | 'other';
+
+export interface Liability {
+  id: string;
+  label: string;
+  kind: LiabilityKind;
+  balance: number;
+  annualRatePct: number;
+  monthlyPayment: number;
+  /**
+   * Remaining term in months, as printed on the contract. DERIVED, not authoritative: the
+   * engine amortises from balance/rate/payment and stops when the balance reaches zero,
+   * exactly as it does for a mortgage. Kept because it is the number the user can read off
+   * a statement, and because a term that disagrees with the amortisation is itself a fact
+   * worth reporting.
+   */
+  remainingTermMonths: number;
+  /** A revolving balance (credit card) has no term. `remainingTermMonths` is then ignored. */
+  revolving: boolean;
+}
+
+/**
+ * Whether the household intends children. Tri-state on purpose: 'undecided' is the honest
+ * state of a plan that was never asked, and it is NOT the same answer as 'no'. Descriptive
+ * only — `simulate()` must never read this, and a test asserts that.
+ */
+export type ChildrenIntent = 'yes' | 'no' | 'undecided';
 
 export type ExpenseKind = 'fixed' | 'variable';
 
@@ -132,11 +200,15 @@ export interface ScenarioInput {
   currency: CurrencyCode;
   assumptions: Assumptions;
   people: Person[];
-  mortgages: Mortgage[];
+  housing: Housing;
+  /** Debts other than the mortgage: car loan, consumer credit, a revolving card. */
+  liabilities: Liability[];
   expenses: Expense[];
   reserve: Reserve;
   jointInvesting: JointInvesting;
   children: Child[];
+  /** Descriptive. Selects what the comparison panel offers; changes no projected number. */
+  childrenIntent: ChildrenIntent;
   oneOffs: OneOff[];
   envelopes: Envelope[];
   /** Injected, never hardcoded. Comes from @wealthplanner/jurisdictions. */
@@ -150,11 +222,18 @@ export interface MonthlyPoint {
   income: number;
   spending: number;
   mortgagePayment: number;
+  /** Rent paid this month, indexed by the lease's own escalator. Zero for an owner. */
+  rentPayment: number;
+  /** mortgagePayment + rentPayment. What the chart and the floor actually care about. */
+  housingPayment: number;
+  /** Total contractual payment on all non-mortgage debts this month. */
+  liabilityPayment: number;
   childCost: number;
   reserve: number;
   jointInvestments: number;
   personalInvestments: number;
   mortgageBalance: number;
+  liabilityBalance: number;
   dcaTarget: number;
   dcaActual: number;
   /**
@@ -176,6 +255,7 @@ export interface YearlyPoint {
   jointInvestments: number;
   personalInvestments: Record<string, number>;
   mortgageBalance: number;
+  liabilityBalance: number;
   /** Reserve is included as-is, including negative values. Never clamped. */
   netWorth: number;
 }
@@ -199,6 +279,9 @@ export interface ProjectionResult {
 
   /** Year the mortgage is fully repaid, if within the horizon. */
   mortgagePaidYear: number | null;
+
+  /** Year the last non-mortgage debt is cleared, if within the horizon. */
+  liabilitiesClearedYear: number | null;
 
   /** Fixed outgoings in the first month, used for the reserve floor. */
   fixedMonthlyOutgoings: number;

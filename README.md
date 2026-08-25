@@ -66,7 +66,9 @@ is also why the running cost stays near zero.
    localisation lives in the UI. A rule must never name a bank, fund, broker or product —
    that is both a localisation dead end and a regulatory hazard.
 4. **Statutory constants live in `packages/jurisdictions` with a source URL and a
-   `verifiedAt` date.** The likeliest cause of a wrong projection is not a maths bug, it is
+   `verifiedAt` date.** Market averages live in `apps/web/src/lib/defaults.ts` with a source
+   of their own — including the single-household scaling coefficients, which are estimates and
+   say so. The likeliest cause of a wrong projection is not a maths bug, it is
    a stale legal constant. Re-verify every 1 January and 1 July.
 5. **Changing what a number means bumps `ENGINE_VERSION`.** Saved scenarios record the
    version they were computed with and are never silently re-simulated with newer logic.
@@ -88,11 +90,12 @@ committed here would be readable by strangers within seconds.
 
 ```bash
 pnpm install
-pnpm test          # 63 unit / golden / property / formatting tests
+pnpm test          # 122 unit / golden / property / formatting tests
 pnpm typecheck
 pnpm build
-pnpm --filter @wealthplanner/web e2e   # 14 end-to-end, desktop + mobile
+pnpm --filter @wealthplanner/web e2e   # 38 end-to-end, desktop + mobile
 node scripts/engine-version-guard.mjs
+node scripts/style-guard.mjs           # inline styles and pixel literals may only go down
 ```
 
 The end-to-end suite fails on any console error, which is how a hydration mismatch gets
@@ -109,8 +112,9 @@ node scripts/engine-version-guard.mjs --accept   # only for a genuine no-op refa
 
 ## Status
 
-Phases 1 and 2 of [`IMPLEMENTACIA.md`](./IMPLEMENTACIA.md) are done — the engine, and the
-public web app with no account required:
+Phases 1, 2 and 2.5 of [`IMPLEMENTACIA.md`](./IMPLEMENTACIA.md) are done — the engine, the
+public web app with no account required, and the UI/UX refactor that made it fit households
+other than a Czech couple with a mortgage:
 
 - landing page with a populated projection and the trough stated in a sentence
 - four-step onboarding with national-average defaults, not a wall of empty fields
@@ -127,8 +131,29 @@ public web app with no account required:
 - public `/parametre`, `/metodika` and `/zasady`
 - a strict CSP in `next.config.ts` — no third-party origins, because the app needs none
 
-**Phase 2 is complete: 21 of the 22 checklist items.** The one left is wiring Sentry and
-PostHog, which needs accounts rather than code.
+Phase 2.5 added the parts of a household the model could not previously describe, and rebuilt
+the two screens around them:
+
+- **rent as a first-class alternative to a mortgage** — its own escalator rather than the CPI,
+  in the reserve floor, and absent from net worth because it creates no asset
+- **other debts** — car loan, consumer credit, a revolving card — amortised alongside the
+  mortgage, in the floor, and subtracted from net worth
+- **one-adult households**, with defaults scaled on an equivalence scale rather than halved,
+  and the single-parent leave flag that existed but was never set
+- **age**, as a birth year rather than an age, which is what makes the horizon and the
+  under-36 mortgage limits usable at all
+- **"do you plan children?"** as a question with three honest answers, so a child-free
+  household stops being shown three columns about a child
+- a **seven-step wizard** with at most four controls a screen, and **no chart in the stepper**
+- the plan page as **collapsible sections with live summaries**, so collapsing costs no
+  information, plus `Ctrl+F` and print that still see everything
+- **one field component** for every editable value: units inside the border, one step table,
+  a 12-column grid instead of five different `auto-fit` minima, and parsing that accepts the
+  app's own output (`39 000 Kč` used to come back as NaN, silently)
+- a **rotating headline** and a real navigation and button system
+
+**Phase 2 is complete: 21 of the 22 checklist items**; the one left is wiring Sentry and
+PostHog, which needs accounts rather than code. **Phase 2.5 is 68 of 72.**
 
 Before launch, two things in this repo are deliberately holding the brakes on:
 `apps/web/src/app/robots.ts` disallows every crawler and the locale layout sets a page-level

@@ -107,4 +107,15 @@ export interface Jurisdiction {
   readonly typicalTopSavingsRatePct: SourcedValue<number>;
   /** Typical new mortgage rate, used only as a default suggestion, never as advice. */
   readonly typicalMortgageRatePct: SourcedValue<number>;
+  /**
+   * Statutory retirement age in years. Rising in both countries, which is exactly why it
+   * belongs here with a verification date rather than as a constant in the UI.
+   * Also what finally makes `ltvMaxPctUnder36` / `dstiMaxPctUnder36` reachable — until the
+   * model knew anyone's age, the under-36 limits could never be selected.
+   */
+  readonly statutoryRetirementAgeYears: SourcedValue<number>;
+  /** Typical consumer-loan APR. A default suggestion for a new debt, never advice. */
+  readonly typicalConsumerLoanRatePct: SourcedValue<number>;
+  /** Typical revolving credit-card rate. Same standing as the line above. */
+  readonly typicalCreditCardRatePct: SourcedValue<number>;
 }

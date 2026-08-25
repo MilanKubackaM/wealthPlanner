@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { analyse, criterionFor, detectProblems, simulate, type YearMonth } from '@wealthplanner/engine';
 import { jurisdictionFor } from '@wealthplanner/jurisdictions';
-import { demoScenario } from '@/lib/defaults';
+import { countryFor, demoScenario } from '@/lib/defaults';
 import { money, monthPhrase, type UiLocale } from '@/lib/format';
 import { ReserveChart } from './ReserveChart';
 import { chartLabels } from './PlannerClient';
@@ -24,11 +24,12 @@ export function LandingHero({ locale, startMonth }: { locale: UiLocale; startMon
   const [showProof, setShowProof] = useState(false);
 
   const { scenario, result, headline, fix, fixAfter } = useMemo(() => {
-    const code = locale === 'sk' ? 'SK' : 'CZ';
+    const code = countryFor(locale);
     const s = demoScenario(code, startMonth);
     const r = simulate(s);
     const problems = detectProblems(s, r, {
       typicalSavingsRatePct: jurisdictionFor(code).typicalTopSavingsRatePct.value,
+      retirementAgeYears: jurisdictionFor(code).statutoryRetirementAgeYears.value,
     });
     const fixable = problems.filter((p) => criterionFor(p) !== null);
     const analysed = fixable.length > 0 ? analyse(s, [fixable[0]!]) : [];
@@ -54,6 +55,8 @@ export function LandingHero({ locale, startMonth }: { locale: UiLocale; startMon
         months: headline.facts.months ?? 0,
         rate: '',
         suggested: '',
+        shareNow: '',
+        shareEnd: '',
       })
     : t('landing.healthy', { floor: money(result.reserveFloor, currency, locale) });
 
@@ -111,8 +114,7 @@ export function LandingHero({ locale, startMonth }: { locale: UiLocale; startMon
             </span>
             <button
               type="button"
-              className="btn"
-              style={{ padding: '5px 10px', fontSize: 13 }}
+              className="btn btn-secondary btn-sm"
               onClick={() => setShowProof((v) => !v)}
               aria-expanded={showProof}
             >

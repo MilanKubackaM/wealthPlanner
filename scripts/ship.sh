@@ -91,6 +91,12 @@ step 'Engine version guard'
 node scripts/engine-version-guard.mjs
 ok 'engine fingerprint matches its version'
 
+step 'Style guard'
+# Inline styles and hardcoded pixel literals may only ever go down. Cheap, and the difference
+# between a design system and a one-off refactor.
+node scripts/style-guard.mjs
+ok 'style baselines holding'
+
 step 'Production build'
 pnpm build
 ok 'build passed'

@@ -25,9 +25,16 @@ export interface ProblemCardProps {
    * reader should not have to go looking for that.
    */
   assumptions?: string;
+  /**
+   * Which "nothing fixes this" sentence to use. A one-income household needs a different one:
+   * cutting its free spending to zero genuinely does not close the gap, and the generic
+   * sentence reads as a shrug.
+   */
+  noneKey?: string;
   onApply: (fix: Recommendation) => void;
 }
 
+/* The left border is a fill, so the chart tokens are right here; the TEXT tones are not. */
 const SEVERITY_COLOR: Record<Problem['severity'], string> = {
   critical: 'var(--status-critical)',
   warning: 'var(--status-warning)',
@@ -59,6 +66,7 @@ export function ProblemCard({
   monthsIn,
   t,
   assumptions,
+  noneKey = 'fixes.none',
   onApply,
 }: ProblemCardProps) {
   const [openProof, setOpenProof] = useState<string | null>(null);
@@ -73,6 +81,8 @@ export function ProblemCard({
     months: f.months ?? 0,
     rate: percent(f.ratePct ?? 0, locale),
     suggested: percent(f.suggestedRatePct ?? 0, locale),
+    shareNow: percent(f.sharePctNow ?? 0, locale),
+    shareEnd: percent(f.sharePctEnd ?? 0, locale),
   };
 
   return (
@@ -234,7 +244,7 @@ export function ProblemCard({
 
       {fixes.length === 0 && problem.severity !== 'info' && (
         <p className="muted" style={{ margin: 0, fontSize: 13 }}>
-          {t('fixes.none')}
+          {t(noneKey)}
         </p>
       )}
 

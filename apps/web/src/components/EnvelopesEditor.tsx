@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import type { Envelope, Person, ProjectionResult } from '@wealthplanner/engine';
 import type { CurrencyCode } from '@wealthplanner/jurisdictions';
 import { money, type UiLocale } from '@/lib/format';
-import { NumberInput, SelectInput } from './fields';
+import { ChoiceField, NumberField, TextField } from './fields';
 
 /**
  * Envelopes are what make a reserve figure believable rather than naïve: "we have 200 000" is
@@ -18,6 +18,7 @@ export function EnvelopesEditor({
   result,
   currency,
   locale,
+  soloLabel,
   onChange,
 }: {
   envelopes: Envelope[];
@@ -25,15 +26,22 @@ export function EnvelopesEditor({
   result: ProjectionResult;
   currency: CurrencyCode;
   locale: UiLocale;
+  /** Set for a one-adult household, where "Osoba 1" is the wrong name for the only person. */
+  soloLabel?: string;
   onChange: (next: Envelope[]) => void;
 }) {
   const t = useTranslations();
 
+  /*
+   * The shared/personal control stays even for one adult. It looks like a distinction without
+   * a difference, but it is load-bearing: it decides whether the envelope backs the household
+   * reserve, which is what `sharedEnvelopeTotal` reports.
+   */
   const ownerOptions = [
     { value: 'shared', label: t('envelopes.shared') },
     ...people.map((person, index) => ({
       value: person.id,
-      label: person.label || t('planner.person', { n: index + 1 }),
+      label: person.label || soloLabel || t('planner.person', { n: index + 1 }),
     })),
   ];
 
@@ -83,46 +91,43 @@ export function EnvelopesEditor({
                 gap: 10,
               }}
             >
-              <div
-                style={{
-                  display: 'grid',
-                  gap: 10,
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-                }}
-              >
-                <div className="field">
-                  <label htmlFor={`env-name-${envelope.id}`}>{t('envelopes.name')}</label>
-                  <input
-                    id={`env-name-${envelope.id}`}
-                    value={envelope.label}
-                    onChange={(event) => update(index, { label: event.target.value })}
-                  />
-                </div>
-                <NumberInput
+              <div className="grid-12">
+                <TextField
+                  id={`env-name-${envelope.id}`}
+                  label={t('envelopes.name')}
+                  value={envelope.label}
+                  span={6}
+                  onChange={(label) => update(index, { label })}
+                />
+                <NumberField
                   id={`env-amount-${envelope.id}`}
+                  kind="money.balance"
                   label={t('envelopes.amount')}
                   value={envelope.amount}
-                  min={0}
-                  step={currency === 'CZK' ? 1_000 : 50}
+                  span={3}
+                  locale={locale}
+                  currency={currency}
                   onChange={(amount) => update(index, { amount })}
                 />
-                <NumberInput
+                <NumberField
                   id={`env-target-${envelope.id}`}
+                  kind="money.balance"
                   label={t('envelopes.target')}
                   value={envelope.target}
-                  min={0}
-                  step={currency === 'CZK' ? 5_000 : 250}
+                  span={3}
+                  locale={locale}
+                  currency={currency}
                   onChange={(target) => update(index, { target })}
                 />
-                <SelectInput
+                <ChoiceField<string>
                   id={`env-owner-${envelope.id}`}
                   label={t('envelopes.owner')}
+                  variant="select"
                   value={envelope.owner}
                   options={ownerOptions}
-                  onChange={(owner) =>
-                    update(index, { owner, countsTowardReserve: owner === 'shared' })
-                  }
+                  span={6}
                   hint={t('envelopes.countsHint')}
+                  onChange={(owner) => update(index, { owner, countsTowardReserve: owner === 'shared' })}
                 />
               </div>
 
@@ -156,8 +161,8 @@ export function EnvelopesEditor({
                 </span>
                 <button
                   type="button"
-                  className="btn"
-                  style={{ padding: '4px 10px', fontSize: 13, marginInlineStart: 'auto' }}
+                  className="btn btn-ghost btn-sm"
+                  style={{ marginInlineStart: 'auto' }}
                   onClick={() => onChange(envelopes.filter((_, i) => i !== index))}
                 >
                   {t('envelopes.remove')}
@@ -169,7 +174,7 @@ export function EnvelopesEditor({
 
         <button
           type="button"
-          className="btn"
+          className="btn btn-secondary btn-sm"
           style={{ justifySelf: 'start' }}
           onClick={() =>
             onChange([

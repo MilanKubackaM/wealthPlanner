@@ -106,4 +106,25 @@ export const czechia: Jurisdiction = {
     unverified: true,
     note: 'ČBA Hypomonitor average for new loans. Default suggestion only.',
   },
+  statutoryRetirementAgeYears: {
+    value: 65,
+    verifiedAt: VERIFIED_AT,
+    source: 'https://www.zakonyprolidi.cz/cs/1995-155',
+    unverified: true,
+    note: 'Rising towards 67 under the 2024 amendment; the schedule depends on birth year. Confirm before any claim about a pension.',
+  },
+  typicalConsumerLoanRatePct: {
+    value: 9.5,
+    verifiedAt: VERIFIED_AT,
+    source: 'https://www.cnb.cz/arad/',
+    unverified: true,
+    note: 'ČNB ARAD, new business in household consumer credit. Default suggestion only.',
+  },
+  typicalCreditCardRatePct: {
+    value: 22.0,
+    verifiedAt: VERIFIED_AT,
+    source: 'https://www.cnb.cz/arad/',
+    unverified: true,
+    note: 'Revolving credit. Default suggestion only.',
+  },
 };

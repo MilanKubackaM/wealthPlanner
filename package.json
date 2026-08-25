@@ -12,7 +12,8 @@
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
     "check": "turbo run typecheck test lint",
-    "engine:version-guard": "node scripts/engine-version-guard.mjs"
+    "engine:version-guard": "node scripts/engine-version-guard.mjs",
+    "style-guard": "node scripts/style-guard.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",

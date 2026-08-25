@@ -23,12 +23,16 @@ export function Compare({
   locale,
   months,
   onApply,
+  /* The plan page renders the section heading now, so this component must not render a
+     second one inside it. The long body paragraph is cut to one line either way. */
+  hideHeading = false,
 }: {
   scenario: ScenarioInput;
   currency: CurrencyCode;
   locale: UiLocale;
   months: string[];
   onApply: (next: ScenarioInput) => void;
+  hideHeading?: boolean;
 }) {
   const t = useTranslations();
   const variants = useMemo(() => comparisonVariants(scenario), [scenario]);
@@ -51,12 +55,18 @@ export function Compare({
 
   return (
     <section style={{ display: 'grid', gap: 14 }}>
-      <div>
-        <h2 style={{ fontSize: 20 }}>{t('compare.heading')}</h2>
-        <p className="muted" style={{ margin: '6px 0 0', fontSize: 14, maxWidth: '68ch' }}>
+      {hideHeading ? (
+        <p className="muted" style={{ margin: 0, fontSize: 14, maxWidth: '68ch' }}>
           {t('compare.body')}
         </p>
-      </div>
+      ) : (
+        <div>
+          <h2 style={{ fontSize: 20 }}>{t('compare.heading')}</h2>
+          <p className="muted" style={{ margin: '6px 0 0', fontSize: 14, maxWidth: '68ch' }}>
+            {t('compare.body')}
+          </p>
+        </div>
+      )}
 
       <div
         style={{

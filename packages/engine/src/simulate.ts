@@ -11,6 +11,13 @@ import type {
   YearlyPoint,
 } from './types';
 
+interface LiabilityState {
+  id: string;
+  balance: number;
+  annualRatePct: number;
+  monthlyPayment: number;
+}
+
 interface MortgageState {
   id: string;
   balance: number;
@@ -35,11 +42,19 @@ interface SleeveState {
  *   1. grow incomes (per person) and expenses (CPI)
  *   2. resolve leave phases per person, taking the most favourable ACTIVE benefit and
  *      never falling back to full salary while any leave window is open
- *   3. amortise mortgages, applying any rate reset effective this month
+ *   3. amortise debts: mortgages (applying any rate reset effective this month), then
+ *      every other liability by the same arithmetic minus the fixation
  *   4. accrue reserve interest on the OPENING balance, then apply net cash flow
  *   5. throttle the joint DCA to whatever cash is actually available
  *   6. sweep any reserve above the cap into joint investing
  *   7. grow investment balances
+ *
+ * Rent is deliberately NOT a step of its own. It has no balance, no interest, no fixation
+ * and no payoff, so it is an expense: it joins `fixedExpenses`, which means it enters both
+ * `spending` (ahead of the DCA throttle — a household does not skip rent to keep a standing
+ * order) and the reserve floor, with no further edits. It indexes by its OWN escalator, not
+ * by the CPI. It creates neither an asset nor a liability, so it cannot reach net worth
+ * even by accident.
  *
  * Step 4 accrues interest before cash flow. This slightly overstates interest in
  * surplus months and understates it in deficit months; it matches the original
@@ -52,12 +67,23 @@ export function simulate(input: ScenarioInput): ProjectionResult {
   const lastMonthAbs = toAbsolute({ year: assumptions.horizonYear, month: 11 });
   const totalMonths = Math.max(1, lastMonthAbs - toAbsolute(start) + 1);
 
-  const mortgages: MortgageState[] = input.mortgages.map((m) => ({
+  /* Housing is a union; only the owning branch has anything to amortise. */
+  const mortgageDefs: Mortgage[] = input.housing.kind === 'own' ? input.housing.mortgages : [];
+  const rent = input.housing.kind === 'rent' ? input.housing.rent : null;
+
+  const mortgages: MortgageState[] = mortgageDefs.map((m) => ({
     id: m.id,
     balance: m.balance,
     annualRatePct: m.annualRatePct,
     monthlyPayment: m.monthlyPayment,
     appliedResets: new Set<number>(),
+  }));
+
+  const liabilities: LiabilityState[] = input.liabilities.map((l) => ({
+    id: l.id,
+    balance: l.balance,
+    annualRatePct: l.annualRatePct,
+    monthlyPayment: l.monthlyPayment,
   }));
 
   const sleeves: SleeveState[] = [];
@@ -96,6 +122,7 @@ export function simulate(input: ScenarioInput): ProjectionResult {
   let pausedAmount = 0;
   let pausedFrom: YearMonth | null = null;
   let mortgagePaidYear: number | null = null;
+  let liabilitiesClearedYear: number | null = null;
   let foregoneIncome = 0;
   let worstFloorGap = Number.POSITIVE_INFINITY;
   let worstFloorGapAt: YearMonth | null = null;
@@ -167,7 +194,7 @@ export function simulate(input: ScenarioInput): ProjectionResult {
     let mortgagePayment = 0;
     let mortgageBalance = 0;
     for (const state of mortgages) {
-      const def = input.mortgages.find((m) => m.id === state.id);
+      const def = mortgageDefs.find((m) => m.id === state.id);
       if (def) applyRateResets(state, def, ym);
       if (state.balance > 0) {
         const interest = (state.balance * state.annualRatePct) / 100 / 12;
@@ -182,6 +209,28 @@ export function simulate(input: ScenarioInput): ProjectionResult {
       mortgageBalance += state.balance;
     }
 
+    /*
+     * ---- 3 (continued): every other debt ----
+     * Same arithmetic as a mortgage, minus the fixation resets. Kept inside step 3 rather
+     * than added as an eighth step: /metodika renders exactly seven steps from both message
+     * catalogues, and this is definitionally the same operation as the line above it.
+     */
+    let liabilityPayment = 0;
+    let liabilityBalance = 0;
+    for (const state of liabilities) {
+      if (state.balance > 0) {
+        const interest = (state.balance * state.annualRatePct) / 100 / 12;
+        const pay = Math.min(state.monthlyPayment, state.balance + interest);
+        state.balance = state.balance + interest - pay;
+        liabilityPayment += pay;
+        if (state.balance < 1) state.balance = 0;
+      }
+      liabilityBalance += state.balance;
+    }
+    if (liabilityBalance === 0 && liabilitiesClearedYear === null && liabilities.length > 0) {
+      liabilitiesClearedYear = ym.year;
+    }
+
     /* ---- expenses, pocket money, child costs, one-offs ---- */
     let fixedExpenses = 0;
     let variableExpenses = 0;
@@ -189,6 +238,14 @@ export function simulate(input: ScenarioInput): ProjectionResult {
       const amount = e.monthlyAmount * (e.inflates ? cpiFactor : 1);
       if (e.kind === 'fixed') fixedExpenses += amount;
       else variableExpenses += amount;
+    }
+
+    let rentPayment = 0;
+    if (rent) {
+      /* The lease's own escalator. growthFactor already handles the compounding. */
+      rentPayment = rent.monthlyAmount * growthFactor(rent.annualIndexationPct, t);
+      if (rent.countsTowardReserveFloor) fixedExpenses += rentPayment;
+      else variableExpenses += rentPayment;
     }
 
     let pocketTotal = 0;
@@ -230,6 +287,7 @@ export function simulate(input: ScenarioInput): ProjectionResult {
     income += oneOffIncome;
     const spending =
       mortgagePayment +
+      liabilityPayment +
       fixedExpenses +
       variableExpenses +
       pocketTotal +
@@ -238,7 +296,12 @@ export function simulate(input: ScenarioInput): ProjectionResult {
       oneOffExpense;
 
     if (t === 0) {
-      fixedMonthlyOutgoings = mortgagePayment + fixedExpenses;
+      /*
+       * A contractual debt payment is as fixed as a mortgage payment, so it belongs in the
+       * reserve target. Omitting it understates the floor by reserveFloorMonths × payment,
+       * i.e. the model would tell a household with a car loan to hold less cash than it needs.
+       */
+      fixedMonthlyOutgoings = mortgagePayment + liabilityPayment + fixedExpenses;
       reserveFloor = assumptions.reserveFloorMonths * fixedMonthlyOutgoings;
     }
 
@@ -263,7 +326,7 @@ export function simulate(input: ScenarioInput): ProjectionResult {
     if (reserve < 0 && deficitAt === null) deficitAt = ym;
 
     const floorThisMonth =
-      assumptions.reserveFloorMonths * (mortgagePayment + fixedExpenses);
+      assumptions.reserveFloorMonths * (mortgagePayment + liabilityPayment + fixedExpenses);
     const gap = reserve - floorThisMonth;
     if (gap < worstFloorGap) {
       worstFloorGap = gap;
@@ -295,11 +358,15 @@ export function simulate(input: ScenarioInput): ProjectionResult {
       income,
       spending,
       mortgagePayment,
+      rentPayment,
+      housingPayment: mortgagePayment + rentPayment,
+      liabilityPayment,
       childCost,
       reserve,
       jointInvestments: joint,
       personalInvestments: personalTotal,
       mortgageBalance,
+      liabilityBalance,
       dcaTarget,
       dcaActual,
       floor: floorThisMonth,
@@ -320,8 +387,13 @@ export function simulate(input: ScenarioInput): ProjectionResult {
         jointInvestments: joint,
         personalInvestments: personalByPerson,
         mortgageBalance,
-        /* Reserve enters at face value, including negative. Never clamped to zero. */
-        netWorth: reserve + joint + personalTotal - mortgageBalance,
+        liabilityBalance,
+        /*
+         * Reserve enters at face value, including negative. Never clamped to zero.
+         * Other debts are subtracted for the same reason the mortgage is: a car loan is a
+         * real claim on the household. Rent is absent because it creates no liability.
+         */
+        netWorth: reserve + joint + personalTotal - mortgageBalance - liabilityBalance,
       });
     }
   }
@@ -352,6 +424,7 @@ export function simulate(input: ScenarioInput): ProjectionResult {
     pausedAmount,
     pausedFrom,
     mortgagePaidYear,
+    liabilitiesClearedYear,
     fixedMonthlyOutgoings,
     reserveFloor,
     firstSurplus: firstMonth ? firstMonth.surplus : 0,

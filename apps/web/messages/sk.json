@@ -11,10 +11,12 @@
     "plan": "Môj plán",
     "parameters": "Parametre",
     "methodology": "Metodika",
-    "toDark": "Tmavý režim",
-    "toLight": "Svetlý režim",
-    "language": "Jazyk",
-    "privacy": "Súkromie"
+    "privacy": "Súkromie",
+    "label": "Hlavná navigácia",
+    "skip": "Prejsť na obsah",
+    "theme": "Prepnúť svetlý a tmavý režim",
+    "langLabel": "Jazyk",
+    "cta": "Vyskúšať bez registrácie"
   },
   "landing": {
     "h1": "Kedy si môžeme dovoliť dieťa?",
@@ -30,7 +32,15 @@
     "verifiedTitle": "Každé odporúčanie je dokázané",
     "verified": "Návrh sa nevymýšľa. Model hľadá binárnym polením najmenšiu zmenu, ktorá problém odstráni, potom spustí celú simuláciu znova a ukáže vám oba priebehy. Keď sa zmena nepreukáže, nezobrazí sa.",
     "openSourceTitle": "Celý model je verejný",
-    "openSource": "Kód, testy aj zdroje zákonných parametrov. Môžete si skontrolovať, ako sa dopočítalo každé číslo."
+    "openSource": "Kód, testy aj zdroje zákonných parametrov. Môžete si skontrolovať, ako sa dopočítalo každé číslo.",
+    "slogans": [
+      "Kedy si môžeme dovoliť dieťa?",
+      "Utiahneme hypotéku po refixácii?",
+      "Investujem si dosť na dôchodok?",
+      "Prežije rozpočet jeden príjem?",
+      "Kedy nám rezerva klesne na dno?",
+      "Nájom, alebo vlastný byt?"
+    ]
   },
   "chart": {
     "title": "Hotovostná rezerva",
@@ -46,8 +56,6 @@
     "tableInvest": "Investície",
     "tableMortgage": "Hypotéka",
     "tableNetWorth": "Čisté bohatstvo",
-    "axisYear": "Rok",
-    "empty": "Zadajte príjmy a výdavky a graf sa dopočíta.",
     "exportPng": "Stiahnuť ako obrázok"
   },
   "problems": {
@@ -80,11 +88,39 @@
     },
     "child-outside-horizon": {
       "title": "Dieťa s dátumom {when} je mimo horizont projekcie",
-      "body": "Model ho nepočíta vôbec. Posuň dátum, alebo predĺž horizont v predpokladoch."
+      "body": "Model ho nepočíta vôbec. Posuňte dátum, alebo predĺžte horizont v predpokladoch."
     },
     "oneoff-outside-horizon": {
       "title": "Jednorazová položka s dátumom {when} je mimo horizont projekcie",
-      "body": "Model ju nepočíta. Posuň dátum, alebo predĺž horizont."
+      "body": "Model ju nepočíta. Posuňte dátum, alebo predĺžte horizont."
+    },
+    "child-leave-unassigned": {
+      "title": "Pri dieťati narodenom {when} nie je určené, kto pôjde na rodičovskú",
+      "body": "Model počíta náklady na dieťa, ale žiadny výpadok príjmu — projekcia je preto nižšia, než bude realita. Priraďte rodičovskú konkrétnej osobe."
+    },
+    "liability-rate-exceeds-return": {
+      "title": "Dlh úročený {rate} je drahší než predpokladaný výnos {suggested}",
+      "body": "Zaplatiť tento dlh skôr je bezrizikový výnos vyšší než ten, ktorý od investícií čakáte. Model neodporúča konkrétny produkt, len ukazuje rozdiel medzi dvoma vašimi číslami."
+    },
+    "liability-never-repaid": {
+      "title": "Splátka nepokryje ani úrok — zostatok {amount} sa nikdy neumorí",
+      "body": "Pri tejto splátke dlh v projekcii nikdy nezmizne a bude rásť. Skontrolujte splátku aj úrok."
+    },
+    "children-intended-but-absent": {
+      "title": "Plánujete deti, ale v pláne žiadne nie je",
+      "body": "To, čo vidíte, je projekcia bez dieťaťa. Pridajte plánovaný rok narodenia, nech sa počíta aj materská, rodičovská a náklady."
+    },
+    "housing-cost-outgrowing-income": {
+      "title": "Nájom zdražuje o {rate} ročne, teda rýchlejšie než rastú vaše príjmy",
+      "body": "Dnes je to {shareNow} čistého príjmu, na konci horizontu {shareEnd}. To nie je tvrdenie o vašej zmluve, len dôsledok dvoch čísel, ktoré ste zadali."
+    },
+    "horizon-before-retirement": {
+      "title": "Horizont končí skôr, než prestanete pracovať",
+      "body": "Majetok na konci horizontu je teda číslo z roku, v ktorom ešte máte príjem. Predĺžte horizont v predpokladoch."
+    },
+    "envelope-owner-missing": {
+      "title": "Obálka patrí osobe, ktorá už v domácnosti nie je",
+      "body": "Model ju preto nezapočítava do rezervy. Priraďte ju znovu, alebo ju zmažte."
     }
   },
   "fixes": {
@@ -105,16 +141,18 @@
       "reserve_sweepCap": "Zvýšiť strop rezervy (nechať viac v hotovosti)",
       "expenses_variableTotal": "Znížiť voľné výdavky",
       "reserve_balance": "Mať dnes vyššiu rezervu",
-      "children_parentalMonths": "Skrátiť čerpanie rodičovskej"
-    }
+      "children_parentalMonths": "Skrátiť čerpanie rodičovskej",
+      "liabilities_monthlyPayment": "Rozložiť splátku dlhu na dlhší čas"
+    },
+    "noneSingle": "Žiadna jednotlivá páka problém nevyrieši. Pri domácnosti s jedným príjmom to obvykle znamená kratšiu rodičovskú alebo nižšie fixné výdavky — samotné voľné výdavky na to nestačia."
   },
   "onboarding": {
-    "skip": "Preskočiť — chcem vidieť priemernú domácnosť",
+    "skip": "Preskočiť zvyšok — chcem vidieť plán",
     "next": "Pokračovať",
     "back": "Späť",
     "finish": "Zobraziť plán",
-    "progress": "Krok {step} z {total}",
-    "estimateNote": "Predvyplnené národným priemerom. Stačí odhad, presné čísla doplníš kedykoľvek neskôr.",
+    "progress": "{total, select, 5 {Krok {step} z 5} other {Krok {step} zo {total}}}",
+    "estimateNote": "Predvyplnené národným priemerom. Stačí odhad — presné čísla doplníte kedykoľvek neskôr.",
     "step1": {
       "title": "Kde žijete a čo zarábate",
       "body": "Podľa krajiny sa do modelu dostanú správne dávky, limity a mena."
@@ -130,6 +168,51 @@
     "step4": {
       "title": "Deti",
       "body": "Toto je tá časť, kvôli ktorej celý model existuje. Nechaj prázdne, ak deti neplánujete."
+    },
+    "estimate": "Odhadnúť za mňa",
+    "badgeEstimate": "odhad",
+    "backToAverage": "Späť na priemer",
+    "shape": {
+      "title": "Plánujete za seba, alebo za dvoch?",
+      "body": "Toto je jediná odpoveď, ktorá mení všetky ďalšie obrazovky, tak ju vyberieme hneď."
+    },
+    "income": {
+      "title": "Koľko čistého mesačne príde",
+      "body": "Čistý príjem po zdanení, tak ako ho vidíte na účte."
+    },
+    "housing": {
+      "title": "Ako riešite bývanie",
+      "body": "Hypotéka sa umoruje a raz skončí. Nájom neskončí a rastie — model to počíta inak."
+    },
+    "debts": {
+      "title": "Máte okrem bývania ďalšie dlhy?",
+      "body": "Auto na úver, spotrebiteľský úver, kreditka. Úrok pri nich býva vyšší než výnos investícií."
+    },
+    "expenses": {
+      "title": "Pravidelné výdavky",
+      "body": "Fixné výdavky určujú, aká vysoká má byť vaša rezerva."
+    },
+    "cash": {
+      "title": "Rezerva a investovanie",
+      "body": "Koľko máte v hotovosti a koľko mesačne posielate do investícií."
+    },
+    "children": {
+      "title": "Deti",
+      "body": "Nič tu nie je povinné. Model vie spočítať aj domácnosť, ktorá deti neplánuje."
+    },
+    "ribbon": {
+      "label": "Zatiaľ to vyzerá takto",
+      "holds": "Plán drží",
+      "belowFloor": "Rezerva klesne pod minimum",
+      "deficit": "Rezerva sa vyčerpá",
+      "trough": "Najnižšia rezerva {amount} — {when}",
+      "troughDeficit": "Rezerva sa vyčerpá {when}, chýbať bude {amount}",
+      "stepDown": "Tento krok: dno o {amount} nižšie",
+      "stepUp": "Tento krok: dno o {amount} vyššie",
+      "stepFlat": "Tento krok: na dno nemá vplyv",
+      "completeness": "Vaše čísla: {done} z {total} · zvyšok je národný priemer",
+      "recap": "Hotovo. Tri čísla, ktoré s vaším plánom urobili najviac:",
+      "recapNone": "Hotovo. Zostali ste pri národných priemeroch — plán nižšie je priemerná domácnosť."
     }
   },
   "planner": {
@@ -145,8 +228,6 @@
     "mortgageBalance": "Zostatok",
     "mortgageRate": "Úroková sadzba",
     "mortgagePayment": "Mesačná splátka",
-    "refix": "Refixácia",
-    "refixNone": "Neuvažovať",
     "refixAdd": "Pridať refixáciu",
     "refixAt": "Kedy",
     "refixRate": "Nová sadzba",
@@ -158,7 +239,6 @@
     "expenseOther": "Voľné výdavky",
     "expenseFixed": "Fixné",
     "expenseVariable": "Voľné",
-    "expenseKindHint": "Fixné výdavky sa počítajú do odporúčanej rezervy, voľné nie.",
     "reserve": "Hotovostná rezerva",
     "reserveBalance": "Koľko máte teraz",
     "reserveRate": "Úrok",
@@ -182,7 +262,6 @@
     "horizon": "Horizont",
     "reserveFloorMonths": "Odporúčaná rezerva",
     "months": "{count, plural, one {# mesiac} few {# mesiace} other {# mesiacov}}",
-    "years": "{count, plural, one {# rok} few {# roky} other {# rokov}}",
     "monthUnit": "mesiacov",
     "computedAt": "Počítané podľa právneho stavu k {date}.",
     "recomputing": "Prepočítavam odporúčania…",
@@ -193,12 +272,68 @@
     "reset": "Začať znova",
     "resetConfirm": "Zmazať plán a začať znova s priemernou domácnosťou?",
     "importFailed": "Súbor sa nepodarilo prečítať.",
-    "staleEngine": "Model sa od uloženia tohto plánu spresnil. Čísla sa neprepočítali automaticky — skontroluj ich.",
+    "staleEngine": "Model sa od uloženia tohto plánu spresnil. Čísla sa neprepočítali automaticky — skontrolujte ich.",
     "summaryNetWorth": "Čisté bohatstvo v roku {year}",
     "summaryMinReserve": "Najnižšia rezerva",
     "summaryMortgagePaid": "Hypotéka splatená",
     "summaryMortgageNever": "nie do horizontu",
-    "summaryForegone": "Nezarobený príjem kvôli rodičovskej"
+    "summaryForegone": "Nezarobený príjem kvôli rodičovskej",
+    "householdShape": "Domácnosť",
+    "shapeSingle": "Jeden dospelý",
+    "shapeCouple": "Dvaja dospelí",
+    "shapeHint": "Podľa toho sa prispôsobia aj predvyplnené výdavky a rezerva.",
+    "personSolo": "Vy",
+    "birthYear": "Rok narodenia",
+    "birthYearHint": "Kvôli horizontu plánu a limitom pre mladších ako 36 rokov. Nikam sa neposiela.",
+    "ageUnknown": "vek nezadaný",
+    "age": "{years} rokov",
+    "housing": "Bývanie",
+    "housingKind": "Ako bývate",
+    "housingMortgage": "Vlastné na hypotéku",
+    "housingRent": "V nájme",
+    "housingOwn": "Vlastné bez hypotéky",
+    "housingOwnHint": "Bez splátky bývania je vaše odporúčané minimum rezervy nižšie — počíta sa len z ostatných fixných výdavkov.",
+    "rentAmount": "Nájom mesačne",
+    "rentIndexation": "Ročné zdraženie nájmu",
+    "rentIndexationHint": "Predvyplnené infláciou, ale je to váš odhad — zdraženie nájmu je vec zmluvy, nie inflácie.",
+    "rentFloor": "Počítať nájom do minimálnej rezervy",
+    "rentFloorHint": "Nechajte zapnuté, ak nájom platíte celý sami.",
+    "debts": "Ostatné dlhy",
+    "debtsHas": "Máte ďalšie dlhy?",
+    "debtsYes": "Áno",
+    "debtsNo": "Nie",
+    "debtAdd": "Pridať dlh",
+    "debtRemove": "Odobrať",
+    "debtKind": "Typ",
+    "debtKindCar": "Auto na úver",
+    "debtKindConsumer": "Spotrebiteľský úver",
+    "debtKindCard": "Kreditná karta",
+    "debtKindOther": "Iný",
+    "debtBalance": "Zostáva zaplatiť",
+    "debtRate": "Úrok",
+    "debtPayment": "Splátka mesačne",
+    "debtTerm": "Zostáva mesiacov",
+    "debtRevolving": "Revolvingový (bez pevnej splatnosti)",
+    "childrenIntent": "Plánujete deti?",
+    "childrenIntentYes": "Áno — máme alebo plánujeme",
+    "childrenIntentUndecided": "Ešte nevieme",
+    "childrenIntentNo": "Nie, neplánujeme",
+    "childrenIntentHint": "Keď neviete, model vám ukáže obe varianty. Nič sa tým nezaväzuje.",
+    "childrenNone": "Žiadne dieťa v pláne. Porovnanie nižšie ukazuje, čo by dieťa urobilo.",
+    "childrenNoneNo": "Bez detí. Porovnanie nižšie namiesto toho ukazuje vyšší vklad a druhú variantu bývania.",
+    "leaveBySingle": "Na materskej a rodičovskej budete vy.",
+    "summaryRentAt": "Nájom v roku {year}",
+    "summaryInvestAt": "Investície v roku {year}",
+    "summaryDebtCleared": "Dlhy splatené",
+    "summaryDebtNever": "V horizonte nesplatené",
+    "summaryNoDebt": "Bez ďalších dlhov",
+    "otherCountryPlan": "Máte uložený plán pre druhú krajinu. Otvoriť ho tam, kam patrí?",
+    "otherCountryOpen": "Otvoriť uložený plán",
+    "otherCountryDismiss": "Zostať tu",
+    "linkOtherCountry": "Tento odkaz je plán pre inú krajinu ({country}). Čísla zostávajú jeho, menu ani dávky neprepisujeme.",
+    "changeCountry": "Zmeniť krajinu",
+    "changeCountryConfirm": "Zmena krajiny začne s novými predvyplnenými číslami pre tú krajinu. Vaše zadané hodnoty sa stratia. Pokračovať?",
+    "personalInvesting": "Osobné investície"
   },
   "compare": {
     "heading": "Porovnanie scenárov",
@@ -212,7 +347,11 @@
     "colDeficit": "Pod nulou",
     "colNetWorth": "Čisté bohatstvo {year}",
     "deficitNo": "nie",
-    "apply": "Použiť tento scenár"
+    "apply": "Použiť tento scenár",
+    "asEntered": "Ako to máte",
+    "investMore": "Vyšší vklad",
+    "ifRenting": "Keby ste boli v nájme",
+    "ifOwning": "Keby ste mali hypotéku"
   },
   "parameters": {
     "title": "Parametre, s ktorými model počíta",
@@ -234,7 +373,7 @@
     "orderTitle": "Poradie operácií v jednom mesiaci",
     "order1": "Príjmy vyrastú podľa vlastného tempa každej osoby, výdavky podľa inflácie.",
     "order2": "Vyriešia sa fázy materskej a rodičovskej. Pri prekrytí dvoch detí sa berie najvýhodnejšia aktívna dávka a príjem nikdy neskočí späť na plný plat, kým je nejaké okno otvorené.",
-    "order3": "Umorí sa hypotéka, vrátane prípadnej refixácie platnej od daného mesiaca.",
+    "order3": "Umoria sa dlhy: hypotéka vrátane prípadnej refixácie platnej od daného mesiaca, a po nej každý ďalší úver rovnakou aritmetikou.",
     "order4": "Rezerve sa pripíše úrok z počiatočného zostatku, potom sa uplatní čistý peňažný tok.",
     "order5": "Pravidelný vklad sa zastropuje tým, čo je reálne k dispozícii.",
     "order6": "Prebytok nad stropom rezervy sa presunie do investícií.",
@@ -244,7 +383,7 @@
     "search1": "Model nájde problém — napríklad že rezerva klesne pod nulu.",
     "search2": "Pre každú páku (vklad, voľné výdavky, strop rezervy, dĺžka rodičovskej, dnešná rezerva) sa binárnym polením hľadá najmenšia hodnota, pri ktorej problém zmizne.",
     "search3": "Nájdená hodnota sa zaokrúhli na použiteľný krok a celá simulácia sa spustí znova.",
-    "search4": "Keď sa po zaokrúhlení problém nevyrieši, model ide o krok ďalej a skúsi znova. Keď ho páka nevyrieši vôbec, nezobrazí sa — nikdy nedostaneš návrh, ktorý nefunguje.",
+    "search4": "Keď sa po zaokrúhlení problém nevyrieši, model ide o krok ďalej a skúsi znova. Keď ho páka nevyrieši vôbec, nezobrazí sa — nikdy nedostanete návrh, ktorý nefunguje.",
     "limitsTitle": "Čo model nerobí",
     "limits": [
       "Nepočíta dane z investičných výnosov ani zdanenie príjmu — pracuje s čistými príjmami, ktoré zadáte.",
@@ -254,7 +393,7 @@
       "Neodporúča žiadny fond, banku ani produkt a nikdy nebude."
     ],
     "engineVersion": "Verzia modelu: {version}",
-    "engineVersionNote": "Uložený plán si pamätá, ktorou verziou bol spočítaný. Keď sa model spresní, starý plán sa nikdy neprepočíta bez tvojho vedomia.",
+    "engineVersionNote": "Uložený plán si pamätá, ktorou verziou bol spočítaný. Keď sa model spresní, starý plán sa nikdy neprepočíta bez vášho vedomia.",
     "sourceCode": "Zdrojový kód"
   },
   "disclaimer": {
@@ -305,7 +444,10 @@
     "deficitNo": "nie",
     "colNetWorth": "Čisté bohatstvo {year}",
     "colPaid": "Hypotéka splatená",
-    "notPaid": "nesplatená"
+    "notPaid": "nesplatená",
+    "rentUp": "Nájom zdražuje o 2 pb rýchlejšie",
+    "liabilityRateUp": "Úrok ostatných dlhov o 3 pb vyššie",
+    "incomeDownSingle": "Váš príjem o 30 % nižší"
   },
   "privacy": {
     "title": "Zásady ochrany osobných údajov",
@@ -331,7 +473,6 @@
     "target": "Cieľ",
     "owner": "Čia je",
     "shared": "Spoločná",
-    "counts": "Súčasť rezervy",
     "countsHint": "Spoločné obálky tvoria časť hotovostnej rezervy, osobné nie.",
     "sharedTotal": "V spoločných obálkach",
     "personalTotal": "V osobných obálkach",
@@ -357,5 +498,41 @@
   },
   "assumptions": {
     "inline": "Počítané s: výnos {return}, inflácia {cpi}, rezerva {floor} mesiacov fixných výdavkov, právny stav {date}."
+  },
+  "planSections": {
+    "railLabel": "Časti plánu",
+    "expandAll": "Rozbaliť všetko",
+    "collapseAll": "Zbaliť všetko",
+    "printPdf": "Vytlačiť / uložiť ako PDF",
+    "verdikt": "Verdikt",
+    "nalezy": "Čo model našiel",
+    "srovnani": "Porovnanie scenárov",
+    "citlivost": "Čo keď sa predpoklady nevyplnia",
+    "cisla": "Čísla plánu",
+    "predpoklady": "Predpoklady a horizont",
+    "export": "Uložiť, zdieľať, exportovať",
+    "summary": {
+      "nalezyNone": "Plán drží",
+      "nalezy": "{count} nálezov",
+      "srovnani": "{count} scenárov na rovnakej osi",
+      "citlivost": "Najhorší predpoklad: {label} — dno {amount}",
+      "cisla": "{total} čísel · {user} vašich, zvyšok národný priemer",
+      "predpoklady": "Výnos {ret} · inflácia {cpi} · horizont {year}"
+    },
+    "solo": "Shift+klik otvorí len túto časť"
+  },
+  "fieldError": {
+    "max": "Najviac {max}.",
+    "min": "Najmenej {min}.",
+    "debtPaymentBelowInterest": "Splátka nepokryje ani úrok — dlh by rástol.",
+    "pocketOvercommitted": "Vklady z vreckového prevyšujú vreckové o {amount}.",
+    "refixBeforeStart": "Fixácia končí v minulosti.",
+    "childOutsideHorizon": "Tento dátum je mimo horizont projekcie ({year})."
+  },
+  "units": {
+    "months": "mes.",
+    "years": "rokov",
+    "percent": "%",
+    "percentPerYear": "% ročne"
   }
 }

@@ -125,4 +125,25 @@ export const slovakia: Jurisdiction = {
     source: 'NBS statistics',
     unverified: true,
   },
+  statutoryRetirementAgeYears: {
+    value: 64,
+    verifiedAt: VERIFIED_AT,
+    source: 'https://www.socpoist.sk/',
+    unverified: true,
+    note: 'Indexed to life expectancy, so it moves by cohort. Confirm before any claim about a pension.',
+  },
+  typicalConsumerLoanRatePct: {
+    value: 8.5,
+    verifiedAt: VERIFIED_AT,
+    source: 'https://nbs.sk/statisticke-udaje/',
+    unverified: true,
+    note: 'NBS statistics, new business in household consumer credit. Default suggestion only.',
+  },
+  typicalCreditCardRatePct: {
+    value: 19.0,
+    verifiedAt: VERIFIED_AT,
+    source: 'https://nbs.sk/statisticke-udaje/',
+    unverified: true,
+    note: 'Revolving credit. Default suggestion only.',
+  },
 };

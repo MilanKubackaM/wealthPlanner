@@ -40,6 +40,9 @@ export function allParameters() {
       ['securities.exemptionMonths', j.securitiesExemptionMonths],
       ['savings.typicalTopRatePct', j.typicalTopSavingsRatePct],
       ['mortgage.typicalRatePct', j.typicalMortgageRatePct],
+      ['retirement.statutoryAgeYears', j.statutoryRetirementAgeYears],
+      ['credit.typicalConsumerLoanRatePct', j.typicalConsumerLoanRatePct],
+      ['credit.typicalCreditCardRatePct', j.typicalCreditCardRatePct],
     ];
     for (const [key, v] of entries) {
       if (!v) continue;

@@ -54,6 +54,7 @@ export function money(value: number, currency: CurrencyCode, locale: UiLocale): 
  */
 const SYMBOL: Record<CurrencyCode, string> = { CZK: 'Kč', EUR: '€' };
 
+
 export type AxisScale = 'units' | 'thousands' | 'millions';
 
 /**
@@ -140,3 +141,37 @@ export function monthPhrase(at: YearMonth | null, monthsIn: string[]): string {
 export function currentYearMonth(now: Date = new Date()): YearMonth {
   return { year: now.getFullYear(), month: now.getMonth() };
 }
+
+/**
+ * Digits grouped the local way, with no currency symbol — the unit is an affix inside the
+ * field's border, not part of the number. Goes through `canonicalSpaces` for the same
+ * hydration reason every other formatter here does.
+ */
+export function groupNumber(value: number, locale: UiLocale, precision = 0): string {
+  return canonicalSpaces(
+    nf(locale, { minimumFractionDigits: 0, maximumFractionDigits: precision }).format(value),
+  );
+}
+
+/**
+ * Parses what a Czech or Slovak user actually types, and — just as importantly — what this
+ * product itself prints. `money()` groups with U+00A0, so before this existed a user could
+ * copy `39 000 Kč` out of the app, paste it back into the app, and get NaN, which the old
+ * field silently swallowed. A decimal comma did the same. So: strip every space variant and
+ * the currency symbols, accept a comma as the separator, accept the real minus sign, and
+ * refuse anything with two separators rather than guessing which one was meant.
+ */
+export function parseNumber(text: string): number | null {
+  const cleaned = text
+    .replace(/[\s\u00a0\u202f\u2009]/g, '')
+    .replace(/[Kk]\u010d|\u20ac|%/g, '')
+    .replace(/\u2212/g, '-')
+    .replace(/,/g, '.');
+  if (cleaned === '' || cleaned === '-' || cleaned === '.') return null;
+  if ((cleaned.match(/\./g) ?? []).length > 1) return null;
+  if (!/^-?\d*\.?\d*$/.test(cleaned)) return null;
+  const parsed = Number(cleaned);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+export const CURRENCY_SYMBOL: Record<CurrencyCode, string> = { CZK: 'Kč', EUR: '€' };

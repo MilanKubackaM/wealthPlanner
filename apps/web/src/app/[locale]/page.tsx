@@ -1,6 +1,7 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { LandingHero } from '@/components/LandingHero';
+import { RotatingHeadline } from '@/components/RotatingHeadline';
 import { currentYearMonth } from '@/lib/format';
 import type { AppLocale } from '@/i18n/routing';
 
@@ -14,13 +15,17 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
   return (
     <div style={{ display: 'grid', gap: 32 }}>
       <section style={{ display: 'grid', gap: 14, maxWidth: '58ch' }}>
-        <h1 style={{ fontSize: 'clamp(30px, 5vw, 44px)', fontWeight: 700 }}>{t('landing.h1')}</h1>
-        <p style={{ margin: 0, fontSize: 18, color: 'var(--ink-secondary)' }}>{t('landing.lead')}</p>
+        {/* The strings are resolved here, on the server, so the client component carries no
+            message dependency. t.raw is the house idiom for an array. */}
+        <RotatingHeadline slogans={t.raw('landing.slogans') as string[]} />
+        <p style={{ margin: 0, fontSize: 18, color: 'var(--ink-secondary)' }}>
+          {t('landing.lead')}
+        </p>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-          <Link href="/plan" className="btn btn-primary" style={{ textDecoration: 'none' }}>
+          <Link href="/plan" className="btn btn-primary btn-lg">
             {t('landing.cta')}
           </Link>
-          <Link href="/metodika" className="btn" style={{ textDecoration: 'none' }}>
+          <Link href="/metodika" className="btn btn-secondary btn-lg">
             {t('landing.ctaMethodology')}
           </Link>
         </div>

@@ -1,5 +1,6 @@
 import type { ScenarioInput } from '@wealthplanner/engine';
 import { withRegime } from './defaults';
+import { isJurisdictionCode } from './migrate';
 
 /**
  * A whole plan encoded into the URL fragment, so a projection can be shared without an account
@@ -55,6 +56,8 @@ export async function decodeScenario(fragment: string): Promise<ScenarioInput | 
     const inflated = await pipe(bytes, new DecompressionStream('deflate-raw'));
     const parsed = JSON.parse(new TextDecoder().decode(inflated)) as ScenarioInput;
     if (!parsed?.assumptions || !Array.isArray(parsed.people)) return null;
+    /* Same rule as storage: an unproven country silently becomes Czech otherwise. */
+    if (!isJurisdictionCode(parsed.jurisdiction)) return null;
     return withRegime(parsed);
   } catch {
     /* A truncated or hand-edited link must fall back to the normal flow, never crash. */

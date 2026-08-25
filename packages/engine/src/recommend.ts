@@ -17,6 +17,15 @@ export interface Lever {
   set(input: ScenarioInput, value: number): ScenarioInput;
   /** Hard upper bound for 'increase' levers. Omitted means "expand geometrically". */
   max?: number;
+  /**
+   * Hard lower bound for 'decrease' levers. Omitted means zero is a legitimate answer.
+   *
+   * Needed because zero is arithmetically fine and financially nonsense for some dials:
+   * "stop paying the car loan" balances the month and defaults the debt. A lever that has
+   * a floor states it here rather than clamping inside `set`, so the value the search
+   * REPORTS is a value the user could actually adopt.
+   */
+  min?: number;
 }
 
 export type Criterion = (result: ProjectionResult) => boolean;
@@ -78,23 +87,24 @@ export function searchLever(
   const current = lever.get(input);
 
   if (lever.direction === 'decrease') {
-    /* Can the most extreme setting fix it? If not, this lever is not the answer. */
-    if (!holds(0)) return null;
-    let lo = 0; // known to satisfy
+    const floor = lever.min ?? 0;
+    /* Can the most extreme allowed setting fix it? If not, this lever is not the answer. */
+    if (!holds(floor)) return null;
+    let lo = floor; // known to satisfy
     let hi = current; // known to fail (the current scenario has the problem)
     for (let i = 0; i < SEARCH_ITERATIONS; i++) {
       const mid = (lo + hi) / 2;
       if (holds(mid)) lo = mid;
       else hi = mid;
     }
-    let value = Math.floor(lo / lever.step) * lever.step;
-    for (let i = 0; i < REVERIFY_GUARD && value > 0; i++) {
+    let value = Math.max(floor, Math.floor(lo / lever.step) * lever.step);
+    for (let i = 0; i < REVERIFY_GUARD && value > floor; i++) {
       const r = holds(value);
       if (r) return { value, result: r };
-      value -= lever.step;
+      value = Math.max(floor, value - lever.step);
     }
-    const r = holds(Math.max(0, value));
-    return r ? { value: Math.max(0, value), result: r } : null;
+    const r = holds(value);
+    return r ? { value, result: r } : null;
   }
 
   /* direction === 'increase' */
@@ -176,6 +186,36 @@ export function buildLevers(input: ScenarioInput): Lever[] {
     step: input.currency === 'CZK' ? 10_000 : 500,
     get: (i) => i.reserve.balance,
     set: (i, value) => ({ ...i, reserve: { ...i.reserve, balance: value } }),
+  });
+
+  /*
+   * Lowering a debt payment stretches its term — the same convention RateReset already
+   * documents for a mortgage. Real-world action: refinance the car loan over longer.
+   *
+   * Two guards. The floor is the interest-only payment, so the search can never propose a
+   * number that lets the balance grow. And any liability already flagged as costing more
+   * than the household's assumed return is skipped entirely: recommending a SMALLER
+   * payment on a 14 % card while another card on screen says pay it down would put the
+   * product in an argument with itself.
+   */
+  input.liabilities.forEach((liability, index) => {
+    const costlierThanInvesting =
+      input.jointInvesting.monthlyContribution > 0 &&
+      liability.annualRatePct > input.jointInvesting.annualReturnPct + 0.5;
+    if (liability.balance <= 0 || costlierThanInvesting) return;
+    const interestOnly = (liability.balance * liability.annualRatePct) / 100 / 12;
+    levers.push({
+      id: `liabilities[${index}].monthlyPayment`,
+      direction: 'decrease',
+      step: input.currency === 'CZK' ? 500 : 20,
+      min: Math.ceil(interestOnly / (input.currency === 'CZK' ? 500 : 20)) *
+        (input.currency === 'CZK' ? 500 : 20),
+      get: (i) => i.liabilities[index]?.monthlyPayment ?? 0,
+      set: (i, value) => ({
+        ...i,
+        liabilities: i.liabilities.map((l, j) => (j === index ? { ...l, monthlyPayment: value } : l)),
+      }),
+    });
   });
 
   input.children.forEach((child, index) => {

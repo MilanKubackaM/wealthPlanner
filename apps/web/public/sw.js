@@ -38,7 +38,18 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE).then((cache) => cache.put(request, copy));
           return response;
         })
-        .catch(() => caches.match(request).then((hit) => hit ?? caches.match('/cs/plan'))),
+        .catch(() =>
+          caches.match(request).then((hit) => {
+            if (hit) return hit;
+            /*
+             * Fall back inside the requested locale. Hardcoding '/cs/plan' served the Czech
+             * page to an offline Slovak visitor — the same symptom as the storage bug, by a
+             * completely separate route.
+             */
+            const locale = url.pathname.split('/')[1] === 'sk' ? 'sk' : 'cs';
+            return caches.match(`/${locale}/plan`);
+          }),
+        ),
     );
     return;
   }

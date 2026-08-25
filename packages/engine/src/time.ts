@@ -41,3 +41,13 @@ export function monthlyRate(annualPct: number): number {
 export function growthFactor(annualPct: number, months: number): number {
   return Math.pow(1 + annualPct / 100, months / 12);
 }
+
+/**
+ * Age in whole years at a given month, or null when the birth year is unknown.
+ *
+ * Returns null rather than a fallback on purpose: every caller must decide what to render
+ * for "not told", and none of them may render a number the user never supplied.
+ */
+export function ageAt(birthYear: number | undefined, ym: YearMonth): number | null {
+  return birthYear === undefined ? null : ym.year - birthYear;
+}

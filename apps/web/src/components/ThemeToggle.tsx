@@ -1,50 +1,54 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-
 /**
- * Three states, not two: an explicit choice stamps data-theme on <html>; with nothing
- * stamped the OS setting decides. The stamp is remembered per browser, and every read and
- * write is guarded because storage throws in private windows.
+ * Stateless on purpose. The current theme is stamped on <html> before first paint by
+ * THEME_BOOT in the layout, and which icon shows is decided by CSS (.i-sun / .i-moon) from the
+ * same selectors the tokens use — so there is no React state to disagree with the server, no
+ * post-hydration label flip, and no aria-pressed that can lie. The accessible name is the
+ * action ("switch light/dark mode"), which is constant; the current theme is conveyed by the
+ * whole page.
  */
-export function ThemeToggle({ toDark, toLight }: { toDark: string; toLight: string }) {
-  const [dark, setDark] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    let stored: string | null = null;
-    try {
-      stored = localStorage.getItem('wealthplanner.theme');
-    } catch {
-      /* ignore */
-    }
-    if (stored === 'dark' || stored === 'light') {
-      document.documentElement.dataset.theme = stored;
-      setDark(stored === 'dark');
-      return;
-    }
-    setDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
-  }, []);
-
+export function ThemeToggle({ label }: { label: string }) {
   function toggle() {
-    const next = !dark;
-    setDark(next);
-    document.documentElement.dataset.theme = next ? 'dark' : 'light';
+    const root = document.documentElement;
+    const isDark = root.dataset.theme
+      ? root.dataset.theme === 'dark'
+      : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const next = isDark ? 'light' : 'dark';
+    root.dataset.theme = next;
     try {
-      localStorage.setItem('wealthplanner.theme', next ? 'dark' : 'light');
+      localStorage.setItem('wealthplanner.theme', next);
     } catch {
-      /* ignore */
+      /* private windows throw */
     }
   }
 
   return (
     <button
       type="button"
-      className="btn"
-      style={{ padding: '5px 10px', fontSize: 13 }}
+      className="btn btn-ghost btn-icon btn-sm"
       onClick={toggle}
-      aria-pressed={dark === true}
+      aria-label={label}
+      title={label}
     >
-      {dark ? toLight : toDark}
+      <svg className="i-moon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path
+          d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinejoin="round"
+        />
+      </svg>
+      <svg className="i-sun" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" strokeWidth="1.75" />
+        <path
+          d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.2 5.2l1.6 1.6M17.2 17.2l1.6 1.6M18.8 5.2l-1.6 1.6M6.8 17.2l-1.6 1.6"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+        />
+      </svg>
     </button>
   );
 }

@@ -17,11 +17,13 @@ export function Sensitivity({
   currency,
   locale,
   months,
+  hideHeading = false,
 }: {
   scenario: ScenarioInput;
   currency: CurrencyCode;
   locale: UiLocale;
   months: string[];
+  hideHeading?: boolean;
 }) {
   const t = useTranslations();
   const rows = useMemo(() => sensitivityRows(scenario), [scenario]);
@@ -29,12 +31,18 @@ export function Sensitivity({
 
   return (
     <section style={{ display: 'grid', gap: 12 }}>
-      <div>
-        <h2 style={{ fontSize: 20 }}>{t('sensitivity.heading')}</h2>
-        <p className="muted" style={{ margin: '6px 0 0', fontSize: 14, maxWidth: '68ch' }}>
+      {hideHeading ? (
+        <p className="muted" style={{ margin: 0, fontSize: 14, maxWidth: '68ch' }}>
           {t('sensitivity.body')}
         </p>
-      </div>
+      ) : (
+        <div>
+          <h2 style={{ fontSize: 20 }}>{t('sensitivity.heading')}</h2>
+          <p className="muted" style={{ margin: '6px 0 0', fontSize: 14, maxWidth: '68ch' }}>
+            {t('sensitivity.body')}
+          </p>
+        </div>
+      )}
 
       <div className="scroll-x">
         <table

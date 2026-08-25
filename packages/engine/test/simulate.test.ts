@@ -1,13 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
+  czCoupleRenting,
   czCoupleWithChild,
   czCoupleWithMortgage,
   czCoupleWithOverlappingChildren,
+  czSingleRentingWithCarLoan,
+  czSingleWithChild,
   paidOffNoChildren,
   skCoupleWithChild,
   zeroIncomeHousehold,
 } from '@wealthplanner/engine-fixtures';
-import { ENGINE_VERSION, simulate, addMonths, monthsBetween } from '@wealthplanner/engine';
+import { ENGINE_VERSION, ageAt, simulate, addMonths, monthsBetween } from '@wealthplanner/engine';
 import { czechia, slovakia } from '@wealthplanner/jurisdictions';
 
 describe('simulate — basics', () => {
@@ -66,13 +69,15 @@ describe('simulate — mortgage', () => {
 
   it('applies a rate reset at its effective month and not before', () => {
     const input = skCoupleWithChild();
-    const reset = input.mortgages[0]?.rateResets[0];
+    if (input.housing.kind !== 'own') throw new Error('fixture invariant: owning');
+    const mortgages = input.housing.mortgages;
+    const reset = mortgages[0]?.rateResets[0];
     expect(reset).toBeDefined();
     const withReset = simulate(input);
 
     const noReset = simulate({
       ...input,
-      mortgages: input.mortgages.map((m) => ({ ...m, rateResets: [] })),
+      housing: { kind: 'own', mortgages: mortgages.map((m) => ({ ...m, rateResets: [] })) },
     });
 
     const resetIndex = monthsBetween(input.assumptions.start, reset!.at);
@@ -214,7 +219,8 @@ describe('simulate — the bugs the prototype shipped', () => {
       (worstYear?.reserve ?? 0) +
       (worstYear?.jointInvestments ?? 0) +
       Object.values(worstYear?.personalInvestments ?? {}).reduce((s, v) => s + v, 0) -
-      (worstYear?.mortgageBalance ?? 0);
+      (worstYear?.mortgageBalance ?? 0) -
+      (worstYear?.liabilityBalance ?? 0);
     expect(worstYear?.netWorth).toBeCloseTo(expected, 6);
   });
 
@@ -297,5 +303,137 @@ describe('simulate — things the user typed that fall outside the window', () =
     /* Descriptive only: the projection itself must be identical. */
     expect(rich.minReserve).toBeCloseTo(bare.minReserve, 6);
     expect(rich.finalNetWorth).toBeCloseTo(bare.finalNetWorth, 6);
+  });
+});
+
+describe('simulate — renting', () => {
+  it('never lets rent reach net worth, because rent creates no asset and no liability', () => {
+    const r = simulate(czCoupleRenting());
+    for (const year of r.yearly) {
+      const personal = Object.values(year.personalInvestments).reduce((sum, v) => sum + v, 0);
+      expect(year.netWorth).toBeCloseTo(
+        year.reserve + year.jointInvestments + personal - year.mortgageBalance - year.liabilityBalance,
+        6,
+      );
+      expect(year.mortgageBalance).toBe(0);
+    }
+    /* "Not repaid within the horizon" must never be claimed of a mortgage that never existed. */
+    expect(r.mortgagePaidYear).toBeNull();
+  });
+
+  it('raises the reserve floor by reserveFloorMonths x the rent', () => {
+    const renting = czCoupleRenting();
+    if (renting.housing.kind !== 'rent') throw new Error('fixture invariant: renting');
+    const rent = renting.housing.rent;
+    const withRent = simulate(renting);
+    const withoutRent = simulate({
+      ...renting,
+      housing: { kind: 'rent', rent: { ...rent, monthlyAmount: 0 } },
+    });
+    expect(withRent.reserveFloor - withoutRent.reserveFloor).toBeCloseTo(
+      renting.assumptions.reserveFloorMonths * rent.monthlyAmount,
+      6,
+    );
+  });
+
+  it('indexes rent by its own escalator and not by the CPI', () => {
+    const base = czCoupleRenting();
+    if (base.housing.kind !== 'rent') throw new Error('fixture invariant: renting');
+    const rent = base.housing.rent;
+    /* CPI pinned to zero: any growth left in the rent line can only come from its own rate. */
+    const r = simulate({
+      ...base,
+      assumptions: { ...base.assumptions, cpiPct: 0 },
+      housing: { kind: 'rent', rent: { ...rent, annualIndexationPct: 5 } },
+    });
+    const first = r.monthly[0];
+    const afterAYear = r.monthly[12];
+    expect(first?.rentPayment).toBeCloseTo(rent.monthlyAmount, 6);
+    expect(afterAYear?.rentPayment).toBeCloseTo(rent.monthlyAmount * 1.05, 6);
+    expect(first?.housingPayment).toBeCloseTo(first?.rentPayment ?? -1, 6);
+  });
+
+  it('keeps rent out of the floor when it is explicitly excluded', () => {
+    const base = czCoupleRenting();
+    if (base.housing.kind !== 'rent') throw new Error('fixture invariant: renting');
+    const rent = base.housing.rent;
+    const excluded = simulate({
+      ...base,
+      housing: { kind: 'rent', rent: { ...rent, countsTowardReserveFloor: false } },
+    });
+    const included = simulate(base);
+    expect(excluded.reserveFloor).toBeLessThan(included.reserveFloor);
+    /* Excluding it from the FLOOR must not exclude it from spending. */
+    expect(excluded.monthly[0]?.spending).toBeCloseTo(included.monthly[0]?.spending ?? -1, 6);
+  });
+});
+
+describe('simulate — other liabilities', () => {
+  it('amortises a debt to exactly zero and then stops taking the payment', () => {
+    const r = simulate(czSingleRentingWithCarLoan());
+    const cleared = r.monthly.find((m) => m.liabilityBalance === 0);
+    expect(cleared).toBeDefined();
+    const after = r.monthly.filter((m) => m.index > (cleared?.index ?? 0));
+    expect(after.every((m) => m.liabilityPayment === 0)).toBe(true);
+    expect(r.liabilitiesClearedYear).toBe(cleared?.year);
+  });
+
+  it('lets a balance stand still when the payment only covers the interest', () => {
+    const base = czSingleRentingWithCarLoan();
+    const first = base.liabilities[0];
+    if (!first) throw new Error('fixture invariant: expected a liability');
+    const interestOnly = (first.balance * first.annualRatePct) / 100 / 12;
+    const r = simulate({
+      ...base,
+      liabilities: [{ ...first, monthlyPayment: interestOnly, revolving: true }],
+    });
+    for (const m of r.monthly) expect(m.liabilityBalance).toBeCloseTo(first.balance, 4);
+  });
+
+  it('counts a debt payment in the reserve floor, because a contract is as fixed as a mortgage', () => {
+    const base = czSingleRentingWithCarLoan();
+    const withDebt = simulate(base);
+    const withoutDebt = simulate({ ...base, liabilities: [] });
+    const payment = base.liabilities.reduce((sum, l) => sum + l.monthlyPayment, 0);
+    expect(withDebt.fixedMonthlyOutgoings - withoutDebt.fixedMonthlyOutgoings).toBeCloseTo(payment, 6);
+    expect(withDebt.reserveFloor - withoutDebt.reserveFloor).toBeCloseTo(
+      base.assumptions.reserveFloorMonths * payment,
+      6,
+    );
+  });
+
+  it('subtracts the outstanding debt from net worth', () => {
+    const r = simulate(czSingleRentingWithCarLoan());
+    const early = r.yearly.find((y) => y.liabilityBalance > 0);
+    expect(early).toBeDefined();
+    const personal = Object.values(early?.personalInvestments ?? {}).reduce((s, v) => s + v, 0);
+    expect(early?.netWorth).toBeCloseTo(
+      (early?.reserve ?? 0) +
+        (early?.jointInvestments ?? 0) +
+        personal -
+        (early?.mortgageBalance ?? 0) -
+        (early?.liabilityBalance ?? 0),
+      6,
+    );
+  });
+});
+
+describe('simulate — descriptive fields must stay descriptive', () => {
+  it('produces an identical projection whatever the children intent says', () => {
+    const base = czSingleWithChild();
+    const a = simulate({ ...base, childrenIntent: 'yes' });
+    const b = simulate({ ...base, childrenIntent: 'no' });
+    const c = simulate({ ...base, childrenIntent: 'undecided' });
+    for (const other of [b, c]) {
+      expect(other.minReserve).toBe(a.minReserve);
+      expect(other.finalNetWorth).toBe(a.finalNetWorth);
+      expect(other.worstFloorGap).toBe(a.worstFloorGap);
+    }
+  });
+
+  it('never invents an age for a person who did not give one', () => {
+    const at = { year: 2026, month: 8 };
+    expect(ageAt(undefined, at)).toBeNull();
+    expect(ageAt(1991, at)).toBe(35);
   });
 });

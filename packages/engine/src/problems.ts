@@ -14,7 +14,14 @@ export type ProblemId =
   | 'low-reserve-rate'
   | 'idle-surplus'
   | 'child-outside-horizon'
-  | 'oneoff-outside-horizon';
+  | 'oneoff-outside-horizon'
+  | 'child-leave-unassigned'
+  | 'liability-rate-exceeds-return'
+  | 'liability-never-repaid'
+  | 'children-intended-but-absent'
+  | 'housing-cost-outgrowing-income'
+  | 'horizon-before-retirement'
+  | 'envelope-owner-missing';
 
 export type Severity = 'critical' | 'warning' | 'info';
 
@@ -34,6 +41,9 @@ export interface Problem {
     itemId?: string;
     ratePct?: number;
     suggestedRatePct?: number;
+    /** Housing cost as a share of net household income, now and at the horizon. */
+    sharePctNow?: number;
+    sharePctEnd?: number;
   };
 }
 
@@ -43,6 +53,11 @@ export interface DetectOptions {
    * "your cash is earning far below what cash can earn". Passed in, never hardcoded.
    */
   typicalSavingsRatePct?: number;
+  /**
+   * Statutory retirement age, injected the same way, used only to notice that the horizon
+   * ends before the household stops earning. Never derived inside the engine.
+   */
+  retirementAgeYears?: number;
 }
 
 /**
@@ -168,6 +183,139 @@ export function detectProblems(
       severity: 'info',
       facts: { amount: result.firstSurplus },
     });
+  }
+
+  /*
+   * 8 — a child whose leave is assigned to nobody. CRITICAL, because the projection is
+   * quantitatively WRONG rather than merely incomplete: the child's cost is simulated while
+   * the leave is not, so foregone income silently reads zero. Deleting a person from a
+   * household is what creates this state, and nothing else in the engine reports it.
+   *
+   * Deliberately NOT repaired in simulate() or in the migration. Silent repair is the
+   * failure mode this whole engine was extracted to end.
+   */
+  const personIds = new Set(input.people.map((p) => p.id));
+  for (const child of input.children) {
+    if (!personIds.has(child.leaveTakenBy)) {
+      problems.push({
+        id: 'child-leave-unassigned',
+        severity: 'critical',
+        facts: { childId: child.id, at: child.birth },
+      });
+    }
+  }
+
+  /*
+   * 9 — a debt costing more than the household assumes its investments earn. Derived
+   * ENTIRELY from two numbers the user typed, so it asserts no market fact and names no
+   * product. The 0.5 pp tolerance mirrors the low-reserve-rate rule above.
+   */
+  for (const l of input.liabilities) {
+    if (
+      l.balance > 0 &&
+      input.jointInvesting.monthlyContribution > 0 &&
+      l.annualRatePct > input.jointInvesting.annualReturnPct + 0.5
+    ) {
+      problems.push({
+        id: 'liability-rate-exceeds-return',
+        severity: 'warning',
+        facts: {
+          itemId: l.id,
+          ratePct: l.annualRatePct,
+          suggestedRatePct: input.jointInvesting.annualReturnPct,
+          amount: l.balance,
+        },
+      });
+    }
+  }
+
+  /*
+   * 10 — the payment does not cover the interest, so the balance never amortises. The
+   * credit-card minimum-payment trap, and an arithmetic dead end the engine can prove.
+   * Without the rule the projection just carries a debt to the horizon unexplained.
+   */
+  for (const l of input.liabilities) {
+    const monthlyInterest = (l.balance * l.annualRatePct) / 100 / 12;
+    if (l.balance > 0 && l.monthlyPayment <= monthlyInterest + 0.01) {
+      problems.push({
+        id: 'liability-never-repaid',
+        severity: 'critical',
+        facts: { itemId: l.id, amount: l.balance, months: l.remainingTermMonths },
+      });
+    }
+  }
+
+  /*
+   * 11 — the user said they plan children and the projection contains none, so the plan on
+   * screen is not the plan they think they are reading. Same reasoning as the
+   * outside-horizon rules: never let the screen quietly omit what was just typed in.
+   */
+  if (input.childrenIntent === 'yes' && input.children.length === 0) {
+    problems.push({
+      id: 'children-intended-but-absent',
+      severity: 'info',
+      facts: { months: (input.assumptions.horizonYear - input.assumptions.start.year) * 12 },
+    });
+  }
+
+  /*
+   * 12 — rent indexed faster than every income grows. Then the rent share of net income
+   * rises monotonically to the horizon BY CONSTRUCTION, which is a fact about the inputs
+   * rather than an affordability threshold. A "rent above 30 % of income" rule would need a
+   * source it does not have and would be advice; this needs neither.
+   */
+  if (input.housing.kind === 'rent' && input.people.length > 0) {
+    const rent = input.housing.rent;
+    const slowestGrowth = Math.min(...input.people.map((p) => p.incomeGrowthPct));
+    if (rent.annualIndexationPct > slowestGrowth) {
+      const incomeNow = input.people.reduce((sum, p) => sum + p.netMonthlyIncome, 0);
+      const years = Math.max(0, input.assumptions.horizonYear - input.assumptions.start.year);
+      const rentEnd = rent.monthlyAmount * Math.pow(1 + rent.annualIndexationPct / 100, years);
+      const incomeEnd = input.people.reduce(
+        (sum, p) => sum + p.netMonthlyIncome * Math.pow(1 + p.incomeGrowthPct / 100, years),
+        0,
+      );
+      problems.push({
+        id: 'housing-cost-outgrowing-income',
+        severity: 'warning',
+        facts: {
+          amount: rent.monthlyAmount,
+          ratePct: rent.annualIndexationPct,
+          sharePctNow: incomeNow > 0 ? (rent.monthlyAmount / incomeNow) * 100 : 0,
+          sharePctEnd: incomeEnd > 0 ? (rentEnd / incomeEnd) * 100 : 0,
+        },
+      });
+    }
+  }
+
+  /*
+   * 13 — the horizon ends before the household stops earning, so the headline net-worth
+   * figure answers a question about a year in which they are still being paid.
+   */
+  if (typeof options.retirementAgeYears === 'number') {
+    for (const person of input.people) {
+      if (person.birthYear === undefined) continue;
+      const retiresIn = person.birthYear + options.retirementAgeYears;
+      if (retiresIn > input.assumptions.horizonYear) {
+        problems.push({
+          id: 'horizon-before-retirement',
+          severity: 'info',
+          facts: { personId: person.id, at: { year: retiresIn, month: 0 } },
+        });
+        break;
+      }
+    }
+  }
+
+  /* 14 — an envelope owned by a person who no longer exists mis-buckets the totals. */
+  for (const envelope of input.envelopes) {
+    if (envelope.owner !== 'shared' && !personIds.has(envelope.owner)) {
+      problems.push({
+        id: 'envelope-owner-missing',
+        severity: 'info',
+        facts: { itemId: envelope.id, amount: envelope.amount },
+      });
+    }
   }
 
   return problems;
