@@ -111,16 +111,51 @@ export function LandingHero({ locale, startMonth }: { locale: UiLocale; startMon
 
   /* Read off the scenario, never typed into the copy: the story cannot contradict the chart. */
   const mortgage = base.housing.kind === 'own' ? base.housing.mortgages[0] : undefined;
-  const story = {
-    income: money(base.people[0]?.netMonthlyIncome ?? 0, currency, locale),
-    mortgage: money(mortgage?.balance ?? 0, currency, locale),
-    reserve: money(base.reserve.balance, currency, locale),
-    invest: money(base.jointInvesting.monthlyContribution, currency, locale),
-    childYear: base.children[0]?.birth.year ?? base.assumptions.start.year + 3,
-  };
+  /*
+   * Bullets, not a paragraph. Five figures inside one block of prose is a block of prose the
+   * visitor skims past; the whole point of the example is that they can absorb the household
+   * in a glance and then look at the chart. Each entry is still interpolated from `base`.
+   */
+  const facts: string[] = [
+    t('landing.factIncome', { income: money(base.people[0]?.netMonthlyIncome ?? 0, currency, locale) }),
+    t('landing.factMortgage', { mortgage: money(mortgage?.balance ?? 0, currency, locale) }),
+    t('landing.factReserve', { reserve: money(base.reserve.balance, currency, locale) }),
+    t('landing.factInvest', {
+      invest: money(base.jointInvesting.monthlyContribution, currency, locale),
+    }),
+    t('landing.factChild', {
+      childYear: base.children[0]?.birth.year ?? base.assumptions.start.year + 3,
+    }),
+  ];
 
-  const headlineSentence = headline
-    ? t(`problems.${headline.id}.title`, {
+  /*
+   * The verdict over the chart, in three states.
+   *
+   * Keyed on the DEFICIT — the finding every option was proven against — and not on "no
+   * findings at all", which in this example never happens: each of the three options clears
+   * the reserve going below zero and each leaves the milder "below the recommended minimum"
+   * behind. A rule of "green only when nothing is left" would therefore never go green, and
+   * the visitor would press Apply, watch the chart lift clear of zero, and still be told off.
+   *
+   *   alarm    — the reserve goes below zero. Red, with an exclamation mark.
+   *   fixed    — applied, and nothing is left. Green, with a tick.
+   *   improved — applied, the deficit is gone, something milder remains. Green tick on what
+   *              was actually solved, and the remainder named underneath in a quieter voice
+   *              rather than shouted as the headline. Green because the claim the option made
+   *              came true, and the remainder is stated in the same breath, so nothing is hidden.
+   */
+  const cleared = appliedFix !== null && result.deficitAt === null;
+  const verdict: 'alarm' | 'fixed' | 'improved' = !cleared
+    ? 'alarm'
+    : headline === null
+      ? 'fixed'
+      : 'improved';
+
+  /** The one highlight, so `<hi>` in a message becomes the eye-catching part of the sentence. */
+  const hi = (chunks: React.ReactNode) => <strong className="verdict-amount">{chunks}</strong>;
+
+  const problemValues = headline
+    ? {
         when: monthPhrase(headline.facts.at ?? null, monthsIn),
         worstWhen: monthPhrase(headline.facts.worstAt ?? headline.facts.at ?? null, monthsIn),
         amount: money(headline.facts.amount ?? 0, currency, locale),
@@ -131,8 +166,24 @@ export function LandingHero({ locale, startMonth }: { locale: UiLocale; startMon
         suggested: '',
         shareNow: '',
         shareEnd: '',
-      })
-    : t('landing.healthy', { floor: money(result.reserveFloor, currency, locale) });
+      }
+    : null;
+
+  /*
+   * `reserve-deficit` gets its own landing-only copy so the closing amount can be wrapped in
+   * `<hi>`. The shared `problems.*.title` messages are rendered by the planner with a plain
+   * `t()`, so putting a tag in them would break that call — and this is the one sentence on
+   * the site that has to hit the reader in the face. Any other finding falls back to the
+   * shared sentence, unhighlighted, rather than being silently dropped.
+   */
+  const alarmSentence =
+    headline && problemValues ? (
+      headline.id === 'reserve-deficit' ? (
+        t.rich('landing.verdictDeficit', { ...problemValues, hi })
+      ) : (
+        t(`problems.${headline.id}.title`, problemValues)
+      )
+    ) : null;
 
   /* next-intl types keys literally; the lever labels are assembled. */
   const tx = (key: string) => t(key as never);
@@ -142,7 +193,12 @@ export function LandingHero({ locale, startMonth }: { locale: UiLocale; startMon
       <header className="example-head">
         <p className="example-badge">{t('landing.exampleBadge')}</p>
         <h2 className="example-title">{t('landing.exampleTitle')}</h2>
-        <p className="example-story">{t('landing.exampleStory', story)}</p>
+        <p className="example-story">{t('landing.exampleIntro')}</p>
+        <ul className="example-facts">
+          {facts.map((fact) => (
+            <li key={fact}>{fact}</li>
+          ))}
+        </ul>
       </header>
 
       <ReserveChart
@@ -153,17 +209,40 @@ export function LandingHero({ locale, startMonth }: { locale: UiLocale; startMon
         labels={chartLabels(t)}
       />
 
-      <p
-        style={{
-          margin: 0,
-          fontSize: 19,
-          fontWeight: 600,
-          lineHeight: 1.35,
-          letterSpacing: '-0.01em',
-        }}
-      >
-        {headlineSentence}
-      </p>
+      {/*
+        The one sentence a visitor reads. `role="status"` because pressing Apply changes it
+        without moving focus, and the change — red exclamation to green tick — is the whole
+        point of pressing the button.
+      */}
+      <div className="verdict" data-state={verdict} role="status" aria-live="polite">
+        <span className="verdict-mark" aria-hidden="true">
+          {verdict === 'alarm' ? '!' : '\u2713'}
+        </span>
+        <div className="verdict-body">
+          <p className="verdict-line">
+            {/* The colour and the glyph carry meaning, so it is also said in words. */}
+            <span className="sr-only">
+              {t(verdict === 'alarm' ? 'landing.verdictProblem' : 'landing.verdictSolved')}
+              {': '}
+            </span>
+            {verdict === 'alarm'
+              ? (alarmSentence ??
+                t.rich('landing.verdictHealthy', {
+                  floor: money(result.reserveFloor, currency, locale),
+                  hi,
+                }))
+              : t.rich('landing.verdictFixed', {
+                  amount: money(result.minReserve, currency, locale),
+                  hi,
+                })}
+          </p>
+          {verdict === 'improved' && alarmSentence ? (
+            <p className="verdict-rest">
+              {t('landing.verdictRest')} {alarmSentence}
+            </p>
+          ) : null}
+        </div>
+      </div>
 
       {fixes.length > 0 && (
         /* Highlighted as a unit: this is the thing the page most wants the visitor to look at. */
@@ -256,28 +335,12 @@ export function LandingHero({ locale, startMonth }: { locale: UiLocale; startMon
             })}
           </ul>
 
-          {/* Announced, because the visible consequence of pressing Apply is a redrawn chart
-              two hundred pixels away. */}
-          <p className="suggest-outcome" role="status" aria-live="polite">
-            {/*
-              Three outcomes, not two. Each option was proven against ONE finding — the deficit —
-              so clearing it can still leave the milder "below the recommended minimum". Saying
-              only "the reserve no longer goes below zero" while the sentence above the chart
-              reports a remaining finding would read as the model contradicting itself.
-            */}
-            {appliedFix
-              ? result.deficitAt !== null
-                ? t('fixes.appliedStill', { when: monthPhrase(result.deficitAt, monthsIn) })
-                : result.worstFloorGap < 0
-                  ? t('fixes.appliedClearButLow', {
-                      amount: money(result.minReserve, currency, locale),
-                    })
-                  : t('fixes.appliedClear', {
-                      amount: money(result.minReserve, currency, locale),
-                    })
-              : t('fixes.applyHint')}
-          </p>
+          {/* The verdict above the chart now reports the result of pressing Apply, so this
+              line is only the invitation to press it — kept, because without it the buttons
+              read as a filter rather than as something that redraws the picture. */}
+          {appliedFix ? null : <p className="suggest-outcome">{t('fixes.applyHint')}</p>}
         </section>
+
       )}
 
       <footer className="example-foot">

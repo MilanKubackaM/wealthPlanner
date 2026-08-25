@@ -12,3 +12,11 @@ export {
   criterionFor,
 } from './recommend';
 export type { Lever, Criterion, Recommendation, Proof } from './recommend';
+export { scorePlan } from './score';
+export type {
+  HealthScore,
+  ScoreDimension,
+  ScoreDimensionId,
+  ScoreAdviceId,
+  ScoreOptions,
+} from './score';

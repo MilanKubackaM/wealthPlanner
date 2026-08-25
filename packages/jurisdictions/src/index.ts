@@ -19,6 +19,11 @@ export function jurisdictionFor(code: JurisdictionCode): Jurisdiction {
  * Every statutory value in the package, flattened for the public /parametre page.
  * Anything with `unverified: true` must be confirmed against a primary source
  * before launch and re-checked every 1 January and 1 July.
+ *
+ * `sources` is a list, not a single string, because the leave regime rests on more than one
+ * page — maternity at one authority, the parental allowance at another — and this function
+ * used to emit `sources[0]` and drop the rest. That silently hid the source for the parental
+ * allowance, which is the constant in this package most likely to be out of date.
  */
 export function allParameters() {
   const rows: Array<{
@@ -26,7 +31,7 @@ export function allParameters() {
     key: string;
     value: unknown;
     verifiedAt: string;
-    source: string;
+    sources: string[];
     unverified: boolean;
     note?: string;
   }> = [];
@@ -51,7 +56,7 @@ export function allParameters() {
         key,
         value: v.value,
         verifiedAt: v.verifiedAt,
-        source: v.source,
+        sources: v.source ? [v.source] : [],
         unverified: v.unverified === true,
         ...(v.note ? { note: v.note } : {}),
       });
@@ -61,7 +66,7 @@ export function allParameters() {
       key: 'leave.regime',
       value: `${j.leave.id} v${j.leave.version}`,
       verifiedAt: j.leave.verifiedAt,
-      source: j.leave.sources[0] ?? '',
+      sources: [...j.leave.sources],
       unverified: false,
     });
   }

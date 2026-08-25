@@ -1046,6 +1046,208 @@ prehliadnuteľný a samostatne revertovateľný. `ReserveChart.tsx` sa nedotýka
 | Rotujúci h1 rozbije e2e alebo hydratáciu | `textContent` obsahuje šesť reťazcov; interval a listenery v efektoch | `toContainText`, slogan 1 na indexe 0, prvý slogan literál na oboch stranách |
 | Refaktor sa rozšíri na prepisovanie celej appky | 220 inline štýlov je pozvánka | Kategórie, nie súbory; grep guardy s klesajúcim baseline v CI |
 
+### Fáza 2.5c — Zdroje a verdikt na landing page (hotové 25. 8. 2026)
+
+Dve pripomienky z prevádzky, obe opravené a odmerané.
+
+#### 2.5c.1 Mŕtve odkazy na `/parametre`
+
+Používateľ nahlásil 404 na ČNB a NBS. Prešiel sa **každý** URL, ktorý sa dá dostať zo
+`allParameters()` a z `DEFAULTS_META` — 21 adries — a každá bola skutočne stiahnutá a prečítaná,
+nie odhadnutá podľa vzoru. Šesť z nich bolo mŕtvych:
+
+| Bolo | Je | Prečo padlo |
+|---|---|---|
+| `cnb.cz/cs/dohled-financni-trh/…/stanovovani-limitu-uverovych-ukazatelu/` | `cnb.cz/cs/financni-stabilita/makroobezretnostni-politika/stanoveni-horni-hranice-uverovych-ukazatelu/` | ČNB presunula stránku do inej sekcie |
+| `nbs.sk/dohlad-nad-financnym-trhom/politika-obozretnosti-na-makrourovni/` | `nbs.sk/financna-stabilita/nastroje-fs/{ltv,dsti,dti}/` | NBS nahradila jednu rozcestníkovú stránku stránkou na nástroj — a to je lepšie: každá uvádza svoj vlastný limit |
+| `mpsv.cz/-/rodicovsky-prispevek` | `up.gov.cz/rodicovsky-prispevek` | 302 na `mpsv.gov.cz`; dávku vypláca Úrad práce, tak odkazujeme naň — a stránka priamo potvrdila 350 000 Kč |
+| `socpoist.sk/materske` | `socpoist.sk/socialne-poistenie/nemocenske-poistenie/materske/dalsie-informacie-materske` | Presmerovanie prestalo existovať; nová stránka potvrdila 34 / 37 / 43 týždňov aj 75 % |
+| `upsvr.gov.sk/socialne-veci-a-rodina/rodicovsky-prispevok` | `slov-lex.sk/pravne-predpisy/SK/ZZ/2009/571/` | ÚPSVaR stránku presunul už viackrát; zákon sa nehýbe |
+| `oecd.org/economy/growth/OECD-Note-EquivalenceScales.pdf` | Eurostat glossary *Equivalised disposable income* | PDF z oecd.org zmizlo; Eurostat definuje tú istú škálu 1,0 / 0,5 / 0,3 |
+| `deloitte.com/cz/cs/issues/real-estate/property-index.html` | `deloitte.com/cz-sk/en/Industries/real-estate/research/property-index.html` | Deloitte prešiel na `cz-sk` doménovú štruktúru |
+| `cnb.cz/arad/` | `cnb.cz/cs/statistika/menova_bankovni_stat/harm_stat_data/mir_cs.htm` | ARAD odpovedal prázdnou SPA schránkou — odkaz na konkrétnu tabuľku (B3 vklady, B4 nové úvery) namiesto na aplikáciu |
+| `csu.gov.cz/rychle-informace/prumerne-mzdy-1-ctvrtleti-2026` | `csu.gov.cz/zamestnanci-a-mzdy` | Fungovalo, ale kvartálny URL je mŕtvy v momente, keď je číslo prekonané — stabilná stránka ukazovateľa |
+| `zakonyprolidi.cz/cs/1995-155` | `cssz.gov.cz/starobni-duchod-podrobne` | Bot-blokované; a stránka, ktorá číslo uvádza, je lepšia než zákon, ktorý si čitateľ musí nájsť |
+| `zakonyprolidi.cz/cs/1992-586` | `financnisprava.gov.cz/cs/dane/dane/dan-z-prijmu/fyzicke-osoby` | to isté |
+
+Zároveň sa opravili tri veci, ktoré tá kontrola odhalila:
+
+- **`allParameters()` zahadzovalo zdroje.** Riadok `leave.regime` posielal na stránku
+  `sources[0]` a zvyšok ticho vyhodil — takže zdroj rodičovského príspevku, teda konštanta
+  v tomto balíku najpravdepodobnejšie zastaraná, nebol na `/parametre` vidieť vôbec. Riadok
+  teraz nesie `sources: string[]` a stránka vypíše všetky.
+- **`note` sa nikde nezobrazoval.** Stránka tvrdila „neoverené" bez toho, aby povedala čo
+  presne nebolo overené. Poznámka je teraz pod názvom parametra.
+- **CZ DSTI a DTI dostali `unverified: true`.** Stránka ČNB uvádza výslovne iba hranice LTV;
+  45 / 50 / 8,5 pochádza z opatrenia z roku 2023 a treba ho prečítať. Predtým boli označené
+  ako overené, čo nebola pravda.
+
+Naopak, `unverified` **zmizlo** z SK `dtiMaxMultiple` — NBS stránka uvádza 8× ročného príjmu do
+veku 40 rokov, takže hodnota je potvrdená primárnym zdrojom.
+
+**`pnpm sources:check`** (`scripts/check-sources.mjs`) požiada o každý URL a vypíše mŕtve.
+Nie je v CI: potrebuje sieť a tretie strany nemajú padať cez náš build. Za egress proxy
+odpovedia všetky hosty 403 a skript to sám povie, aby sa taký beh nečítal ako 21 rozbitých
+odkazov.
+
+Zmena sa dotkla `packages/jurisdictions/src/{cz,sk}.ts`, ktoré engine guard sleduje — ale
+menili sa iba `source`, `note` a komentáre, žiadne číslo. Preto `--accept` a **žiadny bump**
+`ENGINE_VERSION`; potvrdzuje to 77 engine testov a 10 goldenov bez zmeny.
+
+#### 2.5c.2 Verdikt nad grafom: červený výkričník → zelená fajka
+
+Príkladová domácnosť má teraz **odrážky** namiesto odstavca — päť čísel v jednom bloku prózy je
+blok prózy, ktorý nikto nečíta.
+
+Veta nad grafom je nový blok `.verdict[data-state]` s tromi stavmi. Stav sa odvíja od **deficitu**,
+teda od nálezu, proti ktorému bola každá možnosť dokázaná — a nie od „žiadne nálezy", čo je
+rozhodnutie, ktoré si vyžiadalo meranie: v tomto príklade **každá** z troch možností deficit
+odstráni a **každá** za sebou nechá miernejší `reserve-below-floor`. Pravidlo „zelená, až keď
+nezostane nič" by sa teda nikdy nespustilo — používateľ by stlačil *Použiť*, videl graf vyskočiť
+nad nulu a aj tak by dostal vynadané.
+
+| Stav | Kedy | Ako vyzerá |
+|---|---|---|
+| `alarm` | rezerva ide pod nulu | červený `!` v krúžku, koniec vety („bude chýbať 91 729 Kč") červený a `nowrap` |
+| `fixed` | použité, nezostal žiadny nález | zelená `✓`, veta hovorí, čo sa vyriešilo |
+| `improved` | použité, deficit zmizol, zostáva miernejší nález | zelená `✓` na tom, čo sa naozaj vyriešilo, a zostatok pomenovaný pod tým o jednu veľkosť nižšie |
+
+`improved` je jediné miesto, kde sa dala urobiť chyba a nespraviť ju stálo rozhodnutie: zelená
+fajka je pravdivá (to, čo možnosť sľúbila, sa stalo), a to, čo zostáva, je povedané tou istou
+vetou, takže sa nič neskrýva.
+
+Zvýraznenie sumy je jediná landing-only kópia (`landing.verdictDeficit`) s tagom `<hi>`. Spoločné
+`problems.*.title` renderuje planner obyčajným `t()`, takže tag v nich by ten hovor rozbil; iný
+nález ako `reserve-deficit` padne späť na spoločnú vetu bez zvýraznenia, nezmizne.
+
+Riadok `.suggest-outcome` sa zredukoval na pozvánku stlačiť *Použiť* — výsledok hlási verdikt nad
+grafom a dve vety o tom istom by si konkurovali.
+
+Overené: 48 e2e (červená → zelená, `data-state`, glyf, `verdict-rest`), oba guardy, screenshoty
+v svetlom aj tmavom režime a na 412 px.
+
+### Fáza 2.5d — Skóre nastavenia financií a mená osôb (analýza + implementácia, 25. 8. 2026)
+
+#### 2.5d.1 Čo sa žiadalo
+
+Dve veci. Menšia: v kroku 2 sa rok narodenia ukazoval predtým, než si používateľ vybral, či
+plánuje sám alebo za dvoch, a osoba nemala meno. Väčšia: **po vyhodnotení nemá byť iba graf, ale
+aj percento „ideálnosti" nastavenia**, rozbaliteľné na jednotlivé rozmery s vysvetlením a smerom,
+kam sa má domácnosť pohnúť — vrátane rady „príliš si šetríš, investuj viac".
+
+#### 2.5d.2 Výskum: čo z „zlatých štandardov" vôbec obstojí
+
+Toto bolo treba zistiť skôr, než sa napíše jediné číslo, pretože väčšina pravidiel osobných
+financií, ktoré znejú ako výskum, výskum nie sú. Prehľad, ktorý stojí za celým skóre:
+
+| Pravidlo | Skutočný stav |
+|---|---|
+| **50/30/20** | Kniha z roku 2005 (Warren & Tyagi), **žiadne peer-reviewed overenie neexistuje**. Číslo 30 nemá odvodenie — je to zvyšok po 50 a 20. A strop 50 % je pre veľkú menšinu domácností aritmeticky nedosiahnuteľný: Harvard JCHS namerali, že **polovica amerických nájomníkov dáva na bývanie a energie viac než 30 %** príjmu. |
+| **3–6 mesiacov rezervy** | Konvencia, o ktorej **JPMorganChase Institute v tlači píše, že „nie je empiricky podložená"**. Ich vlastný stress test na transakčných dátach ~65 000 domácností vychádza na **~6 týždňov** čistého príjmu. Vanguard nezávisle nachádza prah pri **2 000 $**. Tri metódy, ten istý rád veličiny — a je to *výrazne menej* než konvencia. |
+| **8–12 mesiacov rezervy** | Suze Orman, ktorá pre to sama neuvádza výskum, ale „pokoj v duši". Nie je to zdroj. |
+| **15 % z hrubého na dôchodok** | Fidelity. Aritmeticky v poriadku, ale **predpokladá začiatok v 25 a započítava príspevok zamestnávateľa** — a ten tu ako norma neexistuje. |
+| **70–80 % náhradový pomer** | Profesionálny rozptyl je 60–85 %, takže tá presnosť je falošná. Biggs (Wharton Pension Research Council) ukazuje, že **wage-indexing vs price-indexing pohne odpoveďou o ~12 bodov** pri tej istej osobe. |
+| **4 % pravidlo** | Jediné s primárnym empirickým základom (Bengen 1994, SAFEMAX 4,15 %). Dnes: Bengen sám 4,7 %, Morningstar 3,7–3,9 % — a **nehádajú sa o predpoveď, ale o otázku**. Bengen sa pýta „čo prežilo najhoršiu historickú kohortu", Morningstar „čo prežije 90 % simulácií z dnešných valuácií". |
+| **Splať dlh, ktorého úrok prevyšuje výnos** | **Nemá primárny zdroj a nepotrebuje ho** — je to dedukcia: splatenie dlhu s úrokom *r* dá istý, bezrizikový výnos presne *r*. Najrobustnejšie pravidlo v celom výskume je práve to, ktoré nikto neskúmal. |
+| **Akcie vs hotovosť** | Dimson–Marsh–Staunton, **1900–2024, 35 trhov**: akcie 5,2 % reálne ročne, hotovosť 0,5 %. Prémia ~4,7 p. b. ročne. Toto je najlepšie podložené číslo z celého výskumu a je to celý kvantitatívny obsah pojmu „cash drag". |
+
+**A regionálne dáta, ktoré menia obraz úplne:**
+
+| | Česko | Slovensko | EU-27 |
+|---|---|---|---|
+| Miera úspor domácností (Eurostat `tec00131`) | **19,2 %** (2025) | **8,1 %** (2024) | 14,3 % (2025) |
+| Nedokáže zvládnuť neočakávaný výdavok (EU-SILC `ilc_mdes04`) | **18,7 %** (2025) | **26,0 %** (2025) | 29,2 % (2025) |
+| Náhradový pomer 1. piliera (EC Ageing Report 2024) | 42,7 % → ~40 % | 38 % → **33 %** (2070) | — |
+| Povinný fondový pilier | **žiadny** | áno, 4 % | — |
+
+České domácnosti šetria takmer 20 % disponibilného príjmu — jedna z najvyšších hodnôt v EU.
+Slovenské 8 % — polovica európskeho priemeru a jedna z najnižších. **Jeden „stredoeurópsky"
+benchmark pre obe krajiny by bol nezmysel**; sedia na opačných koncoch rozdelenia EU.
+
+#### 2.5d.3 Rozhodnutia, ktoré z toho vyplynuli
+
+1. **Skóre sa počíta výhradne z toho, čo `simulate()` už vrátil.** Žiadny paralelný model. Toto je
+   to isté pravidlo, ktoré drží landing page a graf v súlade: keby skóre malo vlastnú aritmetiku,
+   mohlo by tvrdiť „rezerva 90 %" nad grafom, ktorý ide pod nulu.
+2. **50/30/20 sa nepoužije.** Nie preto, že je populárne, ale preto, že strop 50 % je pri českej
+   a slovenskej cene bývania voči príjmu nedosiahnuteľný pre časť používateľov a 30 % nemá
+   odvodenie. Namiesto podielov na kategórie meriame **priestor v rozpočte** — či po všetkom
+   vôbec niečo zostáva.
+3. **Regulatórny limit nie je cieľ domácnosti.** NBS 60 % DSTI je hranica, za ktorou *banka musí
+   odmietnuť*, nie zdravý rozpočet. Skóre má vlastný, výrazne nižší poradný prah a **na
+   regulatórnom strope dáva nulu** — bod, v ktorom ťa banka musí odmietnuť, nie je prechodová
+   známka. (Mimochodom, 45 % DSTI a 8,5× DTI v ČR sú **deaktivované** od 1. 7. 2023; záväzné je
+   iba LTV. To si vyžiadalo opravu poznámok na `/parametre`, ktoré som pred hodinou označil len
+   ako „neoverené" — sú presnejšie ako to.)
+4. **Cieľová miera investovania ide do `packages/jurisdictions`, nie do skóre.** Je to per-country
+   konštanta s `verifiedAt`, zdrojom, `unverified: true` a poznámkou — presne ako každá iná
+   konštanta na `/parametre`. Dôvod: je to **benchmark, nie výstup dôchodkového výpočtu**, a keď
+   je viditeľná a datovaná, dá sa jej oponovať. Zahrabaná v skóre by sa jej oponovať nedalo.
+5. **Over-saving penalizuje rozmer „Investovanie", nie „Rezerva".** Domácnosť s 18 mesiacmi
+   v hotovosti nemá zlú rezervu — má zlé rozloženie. Vanguard číta tú istú konvenciu 3–6 mesiacov
+   ako **3 mesiace v hotovosti + zvyšok v dostupných, ale investovaných** aktívach, takže sa dá
+   povedať „máš priveľa hotovosti" bez toho, aby sme popreli pravidlo o rezerve.
+6. **Penalizácia hotovosti je podmienená tým, že rezerva neklesá pod podlahu.** Toto je etická
+   poistka, nie detail: pre finančne krehkú domácnosť je likvidita cennejšia než optimalizácia
+   (St. Louis Fed: +100 $ likvidných aktív znižuje delikvenciu na účtoch o 8,3 p. b.). Rada
+   „investuj namiesto šetrenia" daná niekomu, kto nemá na nečakaný výdavok, je škodlivá rada.
+7. **Váhy sa presúvajú podľa plánov.** Keď je v horizonte dieťa (alebo `childrenIntent === 'yes'`),
+   likvidita váži viac a dlhodobé investovanie menej. Cieľ rezervy sa **neposúva ručne** — engine
+   počíta podlahu z výdavkov *daného mesiaca*, takže rodičovská cieľ zdvihne sama. Nedá sa to
+   rozsynchronizovať, pretože je to to isté číslo.
+
+#### 2.5d.4 Rozmery a krivky
+
+| Rozmer | Meria | Váha (bez detí / s dieťaťom) |
+|---|---|---|
+| **Rezerva** | `reserveAtWorst / floorAtWorst` — 0 pri deficite, 100 na odporúčanej podlahe | 0,30 / **0,38** |
+| **Investovanie** | mesačné vklady / čistý príjem voči cieľu krajiny, mínus penalizácia za prebytočnú hotovosť | 0,30 / 0,22 |
+| **Dlhy** | podiel splátok na čistom príjme; **strop 55 bodov**, ak má akýkoľvek dlh vyšší úrok než očakávaný výnos | 0,20 / 0,20 |
+| **Priestor v rozpočte** | prebytok prvého mesiaca / čistý príjem, cieľ 10 % | 0,20 / 0,20 |
+
+Rozmer „Dlhy" má strop, nie odpočet: keď domácnosť platí 22 % na karte a čaká 7 % z ETF, je to
+istá strata proti neistému výnosu a žiadny iný dobrý parameter to nemá vyvážiť.
+
+#### 2.5d.5 Čo skóre nesmie robiť
+
+- **Nesmie porovnávať s inými používateľmi.** Nie je to kreditné skóre a nikdy sa tak nesmie čítať.
+- **Nesmie tvrdiť dôchodkový výsledok.** Nemodelujeme dekumuláciu, takže veta „toto vám zaručí
+  rovnaký životný štandard na dôchodku" v produkte **nebude** — je to presne to tvrdenie, na ktoré
+  nemáme model. Namiesto toho: cieľ je benchmark a je označený ako benchmark.
+- **Nesmie odporučiť produkt.** Ani banku, ani fond, ani poistku.
+- **Nesmie existovať bez rozpisu.** Jedno číslo bez dôvodov je veštba; každý rozmer nesie svoje
+  číslo, vetu, prečo, a jeden konkrétny ďalší krok.
+
+#### 2.5d.6 Čo pri implementácii spadlo (a prečo je to v dokumente)
+
+Tri veci, ktoré prežili až do behu a zhodili ich testy alebo screenshot. Sú tu, pretože každá
+je poučenie o skóre ako o žánri, nie preklep.
+
+1. **Advice preskočilo na „hromadíš hotovosť" pri 1,2 mesiaca nad hranicou.** Komentár v kóde
+   tvrdil „mesiac nad líniou je štuchnutie, rok je titulok" — a kód to nerobil, penalizácia aj
+   titulok reagovali na tú istú nulu. Domácnosť so siedmimi mesiacmi hotovosti dostala ako
+   hlavný nález cash pile namiesto toho, že neinvestuje nič. Zavedené
+   `MATERIAL_CASH_EXCESS_MONTHS = 3`: **skóre reaguje od prvého mesiaca, titulok až od tretieho.**
+2. **Kompozit spriemeroval fatálnu chybu.** Slovenský landing príklad dostal **58 %** — tri
+   silné rozmery nesúce rezervu na 7. Plán, ktorý sa dostane pod nulu, čítaný ako trojka.
+   Doplnený `DEFICIT_OVERALL_MAX = 45`: deficit nie je jedna zo štyroch úvah, je to nefunkčný
+   plán, a žiadna disciplína v investovaní ho nesmie prekričať.
+3. **Rozmer si protirečil sám so sebou.** „Priestor v rozpočtu **91 %**" a pod tým veta
+   „prebytok je malý", pretože advice žiadal celých 100 a tón sa lámal na 70. Zosúladené na tú
+   istú sedemdesiatku, ktorou UI zafarbuje riadok nazeleno — a uzamknuté testom.
+
+A jedna vec, ktorú zachytil style-guard: pruh skóre bol `<div>` s inline `inlineSize`.
+Ratchet ho odmietol správne — element, ktorý znamená „toľkoto zo sto", už existuje. Je to
+`<progress>`, prináša si rolu aj hodnotu sám a nepotrebuje `aria-label`, ktorý screen readeru
+vysvetľuje farebný obdĺžnik.
+
+#### 2.5d.7 Mená a rok narodenia
+
+Rok narodenia sa zjaví **až po** voľbe „jeden dospelý / dvaja dospelí" — predtým sa pýtal na rok
+narodenia osoby, o ktorej ešte nebolo rozhodnuté, či existuje. Meno je nové, **voliteľné**, so
+štítkom „voliteľné" a s vetou, že zostáva v prehliadači; placeholder aj default zostávajú
+`Osoba 1` / `Osoba 2`, takže prázdne pole nikde nevytvorí prázdne miesto v texte.
+
 ### Fáza 2.6 — Hodnotenia od používateľov (analýza hotová, implementácia pauznutá)
 
 > Analýza je dokončená 25. 8. 2026, implementácia odložená. Toto je jediná funkcia v celom

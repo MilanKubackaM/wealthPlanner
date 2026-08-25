@@ -1,5 +1,103 @@
 # Changelog
 
+## Phase 2.5d — A score for the arrangement, and a person who has a name
+
+**The plan now reports how well the money is arranged, not only what it projects.** One
+percentage over four dimensions — reserve, investing, debt, budget headroom — each with its own
+figure, the measurement behind it, and one concrete next step.
+
+Every input is read from the `ScenarioInput` the user typed or the `ProjectionResult`
+`simulate()` produced. Nothing in `packages/engine/src/score.ts` estimates anything, which is
+the only thing stopping a score from reporting a healthy reserve over a line that goes below
+zero.
+
+**The benchmarks live in `packages/jurisdictions`, not in the scoring code** — dated, sourced,
+`unverified` where they are conventions, and visible on `/parametre` beside every statutory
+constant. A target the user cannot see and cannot argue with is a target that gets to be wrong
+forever. They are also per country, because CZ and SK sit at opposite ends of the EU
+distribution: Czech households save 19.2 % of disposable income and Slovak households 8.1 %
+against an EU average of 14.3 %, and Czechia has no funded second pillar at all while Slovakia
+has a mandatory 4 %.
+
+**What the research actually supported, and what it did not:**
+
+- **50/30/20 is not used.** A 2005 trade book with no peer-reviewed evaluation, a 30 % figure
+  with no derivation anywhere, and a 50 % ceiling that Harvard's JCHS measured half of US
+  renters unable to reach on housing alone. `headroom` measures whether anything is left over,
+  which is the part of that rule that survives.
+- **The 3–6 month reserve is used but not revered.** JPMorganChase Institute says in print that
+  it is "not empirically grounded"; their own transaction-data answer is nearer six weeks.
+- **"Debt at rate r returns a guaranteed r" is used and given teeth** — a cap on the dimension,
+  not a deduction. It is the only rule here that needs no citation because it needs no evidence.
+- **Regulatory DSTI/DTI are not targets.** The score is zero at the regulator's ceiling on
+  purpose: the point at which a bank must refuse you is not a passing grade. (The research also
+  established that ČNB's 45 % DSTI and 8.5× DTI have been *deactivated* since 1 July 2023 and
+  only LTV binds — the `/parametre` notes now say so rather than merely "unverified".)
+
+**It can tell a saver to stop saving.** Cash beyond roughly six months of outgoings loses
+points and, past three months more, becomes the dimension's headline: the money is already
+there, so nothing needs finding, only moving. That advice is **gated on the reserve not dipping
+below its floor**, and the gate is ethical rather than technical — for a fragile household
+liquidity beats optimisation, and "invest it instead" is harmful advice given to exactly the
+people who can least absorb it. A test asserts the gate holds.
+
+Three things shipped wrong and were caught before release: the cash-heavy headline fired at 1.2
+months over a soft line; the composite averaged a deficit away into 58 %; and one row read 91 %
+above the words "the surplus is small". All three are documented in `IMPLEMENTACIA.md` with the
+fix, because each is a lesson about composite scores rather than a typo.
+
+Additive by construction — no projected number depends on the score, so **no `ENGINE_VERSION`
+bump**, confirmed by 10 unchanged goldens.
+
+**Wizard step 2 no longer asks about a person before you say one exists.** The birth-year
+fields appear after the household shape is answered, not before. Each adult also gets an
+optional name, marked "optional" on the label, with the answer's destination stated (nowhere).
+Placeholders and defaults stay `Osoba 1` / `Osoba 2`, and the field is never pre-filled — that
+would only make the user delete a word before typing their own.
+
+## Phase 2.5c — Working sources, and a verdict that turns green
+
+**Every source URL on `/parametre` was fetched and read.** Twenty-one addresses; eleven were
+dead or pointing at the wrong thing. ČNB had moved the credit-limit page to another section,
+NBS had replaced one macroprudential landing page with a page per instrument (better — each
+states its own limit), `mpsv.cz/-/rodicovsky-prispevek` 302'd away and the benefit is paid by
+Úřad práce anyway, `socpoist.sk/materske` had stopped resolving, ÚPSVaR had moved its page
+again (so the statute on Slov-Lex is linked instead — statutes do not move), the OECD's
+equivalence-scale PDF is gone from oecd.org, Deloitte switched to a `cz-sk` structure, and
+`cnb.cz/arad/` answered with an empty SPA shell rather than data. Two zakonyprolidi.cz deep
+links were replaced by the administering authority's own page: a page that states the number
+beats a statute the reader then has to search.
+
+Three things that audit exposed, all now fixed:
+
+- **`allParameters()` was discarding sources.** The `leave.regime` row emitted `sources[0]`
+  and silently dropped the rest, which hid the source for the parental allowance — the
+  constant in the package most likely to be out of date. Rows now carry `sources: string[]`.
+- **`note` was never rendered.** The page asserted "unverified" without saying what was not
+  verified. The note now sits under the parameter name.
+- **CZ DSTI and DTI are now marked `unverified`.** The ČNB page states the LTV thresholds
+  outright and nothing else; 45 / 50 / 8.5 come from the 2023 provision it links. They were
+  previously presented as verified, which was not true. Conversely SK `dtiMaxMultiple` lost
+  its flag: NBS states 8× annual income up to age 40.
+
+`pnpm sources:check` (`scripts/check-sources.mjs`) requests every one of them and reports the
+dead. Not in CI — it needs the network, and a third party's outage must not fail our build.
+
+Only `source`, `note` and comments changed in the guarded jurisdiction files, so the engine
+fingerprint was accepted with **no `ENGINE_VERSION` bump**; 77 engine tests and 10 goldens
+confirm no produced number moved.
+
+**The landing example now reads as bullets and its verdict flips colour.** Five figures in one
+paragraph is a paragraph nobody reads. Above the chart, `.verdict[data-state]` has three
+states: `alarm` (red `!`, and the closing "bude chybět 91 729 Kč" in red), `fixed` (green
+tick, nothing left) and `improved` (green tick on what the applied option actually solved,
+with the milder remaining finding named underneath one size down).
+
+That third state exists because of a measurement: in this example every one of the three
+options clears the deficit and every one leaves `reserve-below-floor` behind. A rule of "green
+only when nothing is left" would therefore never fire — the visitor would press Apply, watch
+the chart lift clear of zero, and still be told off.
+
 ## Phase 2.5 — UI/UX refactor and a household the model can actually describe
 
 **Engine, `ENGINE_VERSION` 3 → 4** (one bump for both arithmetic changes, so a saved plan

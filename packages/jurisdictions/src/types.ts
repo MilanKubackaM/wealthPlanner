@@ -118,4 +118,41 @@ export interface Jurisdiction {
   readonly typicalConsumerLoanRatePct: SourcedValue<number>;
   /** Typical revolving credit-card rate. Same standing as the line above. */
   readonly typicalCreditCardRatePct: SourcedValue<number>;
+
+  /*
+   * Benchmarks for the health score. These live HERE, with a date, a source and an
+   * `unverified` flag, rather than inside the scoring code, for one reason: a target the
+   * user cannot see and cannot argue with is a target that gets to be wrong forever. On
+   * /parametre they sit in the same table as every statutory constant, which is where a
+   * number this consequential belongs.
+   */
+
+  /**
+   * Monthly investment contributions the score treats as "on target", as a share of NET
+   * household income.
+   *
+   * A BENCHMARK, not the output of a retirement projection — this product does not model
+   * decumulation and must never claim a retirement outcome. Deliberately expressed against
+   * net income because that is what the engine and the household both work in.
+   */
+  readonly targetInvestingShareOfNetPct: SourcedValue<number>;
+
+  /**
+   * Months of fixed outgoings above which held CASH starts to look like an allocation
+   * mistake rather than prudence.
+   */
+  readonly cashComfortMonthsMax: SourcedValue<number>;
+
+  /**
+   * The score's own advisory ceiling for total debt service as a share of net income.
+   * NOT a regulatory limit: the regulator's number is where a bank must refuse the loan,
+   * which is a far worse place to be than this one.
+   */
+  readonly advisoryDebtServiceSharePct: SourcedValue<number>;
+
+  /**
+   * Share of households that cannot cover an unexpected expense, so the score can say
+   * "better than most, still not adequate" and mean something by it.
+   */
+  readonly cannotFaceUnexpectedExpensePct: SourcedValue<number>;
 }

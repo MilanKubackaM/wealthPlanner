@@ -42,7 +42,18 @@
     ],
     "exampleBadge": "Príklad — nie vaše čísla",
     "exampleTitle": "Jana a Patrik, obaja 34 rokov",
-    "exampleStory": "Bezdetní, práve si vzali hypotéku {mortgage} a každý berie {income} čistého. Na sporiacom účte majú {reserve} a prebytok posielajú do ETF — {invest} mesačne. Dieťa plánujú v roku {childYear}.",
+    "exampleIntro": "Bezdetní, obaja zamestnaní. Takto vyzerá ich domácnosť dnes:",
+    "factIncome": "Každý z nich berie {income} čistého mesačne",
+    "factMortgage": "Práve si vzali hypotéku {mortgage}",
+    "factReserve": "Na sporiacom účte majú {reserve}",
+    "factInvest": "Prebytok posielajú do ETF — {invest} mesačne",
+    "factChild": "Dieťa plánujú v roku {childYear}",
+    "verdictProblem": "Nález",
+    "verdictSolved": "Vyriešené",
+    "verdictDeficit": "Rezerva sa vyčerpá {when}. Najhlbšie klesne {worstWhen}, kedy <hi>bude chýbať {amount}</hi>.",
+    "verdictFixed": "Rezerva už pod nulu neklesne — najnižšia bude <hi>{amount}</hi>.",
+    "verdictHealthy": "Rezerva v tejto podobe nikdy neklesne pod <hi>{floor}</hi>.",
+    "verdictRest": "Zostáva miernejší nález:",
     "exampleYours": "Model im našiel slabé miesto: investujú všetko, čo zostane, ale rezervu nechávajú takmer na mieste — a rodičovská ju vyčerpá. Prejdite tie isté otázky a tento graf bude o vašej domácnosti, s vaším mesiacom a vašou najnižšou rezervou.",
     "suggestMany": "Model navrhuje jednu z týchto {count} úprav — každá problém dokázateľne odstráni",
     "suggestOne": "Model navrhuje túto úpravu — problém dokázateľne odstráni"
@@ -152,10 +163,7 @@
     "noneSingle": "Žiadna jednotlivá páka problém nevyrieši. Pri domácnosti s jedným príjmom to obvykle znamená kratšiu rodičovskú alebo nižšie fixné výdavky — samotné voľné výdavky na to nestačia.",
     "revert": "Vrátiť späť",
     "appliedBadge": "Použité",
-    "applyHint": "Skúste niektorú použiť — graf aj veta nad ním sa prepočítajú.",
-    "appliedClear": "Po tejto zmene už rezerva pod nulu neklesne. Najnižšia bude {amount}.",
-    "appliedStill": "Rezerva sa aj po tejto zmene dostane pod nulu {when}.",
-    "appliedClearButLow": "Po tejto zmene už rezerva pod nulu neklesne — najnižšia bude {amount}. Pod odporúčané minimum sa však ešte dostane; to rieši až druhá z úprav."
+    "applyHint": "Skúste niektorú použiť — graf aj veta nad ním sa prepočítajú."
   },
   "onboarding": {
     "skip": "Preskočiť zvyšok — chcem vidieť plán",
@@ -237,7 +245,6 @@
     "countryCZ": "Česko",
     "countrySK": "Slovensko",
     "person": "Osoba {n}",
-    "personName": "Meno",
     "netIncome": "Čistý mesačný príjem",
     "incomeGrowth": "Ročný rast príjmu",
     "pocketMoney": "Osobné vreckové",
@@ -298,6 +305,10 @@
     "shapeCouple": "Dvaja dospelí",
     "shapeHint": "Podľa toho sa prispôsobia aj predvyplnené výdavky a rezerva.",
     "personSolo": "Vy",
+    "optional": "voliteľné",
+    "yourName": "Vaše meno",
+    "nameOf": "Meno — osoba {n}",
+    "nameHint": "Len aby plán hovoril vašimi menami namiesto „Osoba 1\". Zostáva vo vašom prehliadači, nikam sa neposiela — a nechať to prázdne je úplne v poriadku.",
     "birthYear": "Rok narodenia",
     "birthYearHint": "Kvôli horizontu plánu a limitom pre mladších ako 36 rokov. Nikam sa neposiela.",
     "ageUnknown": "vek nezadaný",
@@ -578,5 +589,48 @@
     "years": "rokov",
     "percent": "%",
     "percentPerYear": "% ročne"
+  },
+  "score": {
+    "title": "Nastavenie financií",
+    "ringLabel": "Celkové skóre nastavenia financií: {value} zo 100",
+    "barLabel": "{name}: {value} zo 100",
+    "months": "{count} mes.",
+    "show": "Rozpísať po častiach",
+    "hide": "Skryť rozpis",
+    "childWeighted": "Keďže v pláne je dieťa, rezerva váži vo skóre viac než dlhodobé investovanie — v rodičovskej je likvidita to, čo drží plán pohromade.",
+    "caveat": "Nie je to porovnanie s inými používateľmi ani dôchodkový výpočet — dekumuláciu tento model nepočíta. Je to hodnotenie toho, ako sú vaše čísla nastavené voči benchmarkom uvedeným v Parametroch, kde je aj napísané, odkiaľ sú a čo na nich je neisté.",
+    "band": {
+      "critical": "Niečo tu nedrží a stojí to za pozornosť teraz.",
+      "warning": "Základ stojí, ale sú tu miesta, ktoré plán oslabujú.",
+      "good": "Solídne nastavené. Pár vecí sa dá dotiahnuť.",
+      "excellent": "Nastavené veľmi dobre — držte to tak."
+    },
+    "dimension": {
+      "reserve": "Finančná rezerva",
+      "investing": "Investovanie",
+      "debt": "Dlhy",
+      "headroom": "Priestor v rozpočte"
+    },
+    "factReserve": "V najhoršom mesiaci rezerva pokryje {cover} fixných výdavkov. Neočakávaný výdavok nezvládne {peers} slovenských domácností.",
+    "factInvesting": "Mesačne investujete {share} čistého príjmu, benchmark je {target}.",
+    "factInvestingCash": "V hotovosti držíte {cash} fixných výdavkov, pričom stačí {max} — a investujete {share} čistého príjmu.",
+    "factDebt": "Splátky zaberajú {share} čistého príjmu, poradný strop je {advisory}.",
+    "factDebtExpensive": "Najdrahší dlh má {rate}, od investícií čakáte {expected}. Splátky zaberajú {share} čistého príjmu.",
+    "factHeadroom": "Po všetkých výdavkoch zostáva {share} čistého príjmu.",
+    "advice": {
+      "reserve-deficit": "Rezerva sa v pláne dostane pod nulu. Kým to platí, nič iné neriešte — každá ďalšia optimalizácia stojí na peniazoch, ktoré v tom mesiaci nebudú.",
+      "reserve-below-floor": "Nemáte pokryté tri mesiace výdavkov, takže nečakaná udalosť by riešila sama seba na úkor niečoho iného. Ste lepšie než väčšina domácností — a k ideálu to ešte nie je. Dočasne znížte vklady do investícií a po naplnení rezervy ich vráťte späť; je to poradie, nie kompromis.",
+      "reserve-ok": "Rezerva pokrýva odporúčané tri mesiace fixných výdavkov aj v najhoršom mesiaci projekcie. Toto je hotové — pozornosť patrí inde.",
+      "investing-none": "Neinvestujete nič. Rozdiel medzi akciami a hotovosťou bol za 125 rokov a na 35 trhoch približne 4,7 percentného bodu reálne ročne (Dimson–Marsh–Staunton), takže to nie je premárnená príležitosť, ale premárnený čas — ten sa dokúpiť nedá.",
+      "investing-below-target": "Investujete menej, než je benchmark pre túto krajinu. Prvý pilier tu nahradí len časť príjmu a Česko nemá žiadny povinný fondový pilier, takže zvyšok je na vás a začať skôr je jediná páka, ktorá funguje bez rizika.",
+      "investing-ok": "Vklady sedia na benchmarku. Neznamená to zaručený dôchodok — to vám nepovie nikto — ale znamená to, že tu nie je čo naprávať.",
+      "investing-cash-heavy": "Máte podstatne viac hotovosti, než rezerva potrebuje, a tá časť nad ňou dlhodobo stráca proti inflácii. Peniaze už máte — netreba nič nájsť, len presunúť. Nechajte tri mesiace v hotovosti a zvyšok posuňte do investícií.",
+      "debt-costlier-than-returns": "Jeden z dlhov má vyšší úrok, než je očakávaný výnos investícií. Splatiť ho je istý výnos v jeho výške; investícia je len očakávaný. Toto je jediné poradie, ktoré tu má matematickú odpoveď — najprv dlh.",
+      "debt-heavy": "Splátky berú viac, než je zdravé. Regulátor by vás pri týchto číslach ešte nemusel odmietnuť, ale jeho limit je hranica zákonnosti, nie cieľ domácnosti. Refixácia alebo predĺženie splatnosti sú tu skôr ako škrtanie výdavkov.",
+      "debt-ok": "Splátky sú v rozumnom pomere k príjmu a žiadny dlh nie je drahší než očakávaný výnos.",
+      "headroom-none": "Na konci mesiaca nezostáva nič. Nie je to o disciplíne — plán bez prebytku nemá z čoho absorbovať ani malú nepríjemnosť, takže prvý krok je vytvoriť aspoň malý prebytok, nie väčšiu rezervu.",
+      "headroom-thin": "Prebytok je malý. Plán funguje, ale nemá z čoho ustúpiť, keď sa niečo pohne.",
+      "headroom-ok": "Po výdavkoch zostáva dosť na to, aby plán zvládol zmenu bez prepisovania."
+    }
   }
 }

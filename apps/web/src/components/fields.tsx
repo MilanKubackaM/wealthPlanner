@@ -285,6 +285,7 @@ export function TextField({
   onChange,
   hint,
   placeholder,
+  optionalLabel,
   maxLength = 40,
   span = 6,
 }: {
@@ -294,6 +295,12 @@ export function TextField({
   onChange: (value: string) => void;
   hint?: string;
   placeholder?: string;
+  /**
+   * Renders an "optional" pill beside the label. A word, not a styling flag: on a form that
+   * asks about someone's money, a field that does not say it is optional reads as required,
+   * and a name field that reads as required reads as data collection.
+   */
+  optionalLabel?: string;
   maxLength?: number;
   span?: Span;
 }) {
@@ -301,6 +308,7 @@ export function TextField({
     <div className={`f span-${span}`}>
       <label className="f-label" htmlFor={id}>
         <span>{label}</span>
+        {optionalLabel ? <span className="f-badge f-badge-soft">{optionalLabel}</span> : null}
       </label>
       <div className="f-control">
         <input

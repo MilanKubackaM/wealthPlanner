@@ -60,26 +60,30 @@ export default async function ParametersPage({
               <tr key={`${row.jurisdiction}-${row.key}`}>
                 <td style={cell}>
                   <strong>{row.jurisdiction}</strong> · {row.key}
-                  {row.unverified && (
-                    <span
-                      style={{
-                        marginInlineStart: 8,
-                        fontSize: 11,
-                        color: 'var(--status-serious)',
-                        border: '1px solid var(--status-serious)',
-                        borderRadius: 999,
-                        padding: '1px 7px',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {t('parameters.unverified')}
-                    </span>
-                  )}
+                  {/* A class, not inline styles: the pill has to be allowed to wrap on a
+                      narrow screen, where `white-space: nowrap` pushed it off the table. */}
+                  {row.unverified && <span className="param-flag">{t('parameters.unverified')}</span>}
+                  {/* The note is the honest half of the badge: what exactly was not confirmed,
+                      and what the reader should go and read. Hiding it in the source left the
+                      page asserting "unverified" without saying why. */}
+                  {row.note && <span className="param-note">{row.note}</span>}
                 </td>
                 <td style={{ ...cell, fontVariantNumeric: 'tabular-nums' }}>{String(row.value)}</td>
                 <td style={cell}>{row.verifiedAt}</td>
                 <td style={{ ...cell, wordBreak: 'break-all' }}>
-                  {row.source ? <a href={row.source}>{hostOf(row.source)}</a> : '—'}
+                  {row.sources.length === 0 ? (
+                    '—'
+                  ) : (
+                    <span className="param-sources">
+                      {row.sources.map((url) => (
+                        /* The host alone is ambiguous when two rows cite two different
+                           pages on the same site, so the full URL is in the title. */
+                        <a key={url} href={url} title={url} rel="external noreferrer">
+                          {hostOf(url)}
+                        </a>
+                      ))}
+                    </span>
+                  )}
                 </td>
               </tr>
             ))}

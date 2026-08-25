@@ -27,13 +27,15 @@ export interface DefaultsMeta {
 
 export const DEFAULTS_META: Record<JurisdictionCode, DefaultsMeta> = {
   CZ: {
-    incomeSource: 'https://csu.gov.cz/rychle-informace/prumerne-mzdy-1-ctvrtleti-2026',
+    // The stable ČSÚ indicator page, not the quarterly release: a per-quarter URL is dead
+    // the moment the figure it justifies is superseded, which is exactly how this rotted.
+    incomeSource: 'https://csu.gov.cz/zamestnanci-a-mzdy',
     mortgageSource: 'https://www.cbamonitor.cz/',
-    rentSource: 'https://www.deloitte.com/cz/cs/issues/real-estate/property-index.html',
+    rentSource: 'https://www.deloitte.com/cz-sk/en/Industries/real-estate/research/property-index.html',
   },
   SK: {
     incomeSource: 'https://www.finsider.sk/servis/cista-mzda-z-priemernej-mzdy/',
-    mortgageSource: 'https://nbs.sk/statisticke-udaje/',
+    mortgageSource: 'https://nbs.sk/statisticke-udaje/financne-trhy/urokove-sadzby/',
     rentSource: 'https://www.nbs.sk/statisticke-udaje/vybrane-makroekonomicke-ukazovatele/ceny-nehnutelnosti-na-byvanie',
   },
 };
@@ -59,9 +61,12 @@ export function countryFor(locale: string): JurisdictionCode {
  * source (ČSÚ / ŠÚ SR household budget surveys) before launch.
  */
 export const SINGLE_SCALE = {
-  verifiedAt: '2026-08-24',
+  verifiedAt: '2026-08-25',
   unverified: true,
-  source: 'https://www.oecd.org/economy/growth/OECD-Note-EquivalenceScales.pdf',
+  // Eurostat's definition of the modified OECD scale (1.0 / 0.5 / 0.3). The OECD's own PDF
+  // that used to be linked here is gone from oecd.org.
+  source:
+    'https://ec.europa.eu/eurostat/statistics-explained/index.php?title=Glossary:Equivalised_disposable_income',
   factors: {
     groceries: 0.62,
     utilities: 0.75,

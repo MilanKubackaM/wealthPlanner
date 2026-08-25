@@ -1213,6 +1213,17 @@ th {
   white-space: nowrap;
 }
 
+/*
+ * "Optional", not "estimate". The estimate badge is a claim about the VALUE (we guessed this
+ * for you); this one is a claim about the FIELD (you need not answer). Same shape so the form
+ * does not grow a second visual language, no accent tint so it does not compete with the
+ * estimate badges around it.
+ */
+.f-badge-soft {
+  background: transparent;
+  font-weight: 500;
+}
+
 /* The border lives on the wrapper, not on the input, because the unit affix sits inside it. */
 .f-control {
   display: flex;
@@ -2039,6 +2050,121 @@ th {
   color: var(--ink-secondary);
 }
 
+/*
+ * The example household as bullets. Five figures in one paragraph is a paragraph nobody
+ * reads; as a list they are five things the eye can land on separately. Round markers drawn
+ * by hand rather than `list-style`, so the marker takes the muted colour and does not inherit
+ * the text size — a `disc` at this font size is a smudge.
+ */
+.example-facts {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  max-width: 72ch;
+  list-style: none;
+  font-size: var(--text-sm);
+  color: var(--ink-secondary);
+}
+
+.example-facts > li {
+  display: grid;
+  grid-template-columns: 1em minmax(0, 1fr);
+  align-items: baseline;
+}
+
+.example-facts > li::before {
+  content: '';
+  display: block;
+  inline-size: 5px;
+  block-size: 5px;
+  border-radius: 50%;
+  background: currentcolor;
+  opacity: 0.55;
+  transform: translateY(-0.2em);
+}
+
+/*
+ * The verdict over the chart: the one sentence a first-time visitor actually reads.
+ *
+ * Three states, and the state is the whole design. `alarm` is a red exclamation mark and a
+ * red closing amount, because the finding is the reason to keep reading. `fixed` and
+ * `improved` are a green tick and a green amount, because the visitor pressed Apply and the
+ * chart moved — the colour flip is the product's argument that changing the plan changes the
+ * outcome, made in one glance.
+ */
+.verdict {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: start;
+  margin: 0;
+}
+
+.verdict-mark {
+  display: grid;
+  place-items: center;
+  inline-size: 26px;
+  block-size: 26px;
+  border-radius: 50%;
+  border: 1.5px solid currentcolor;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  line-height: 1;
+  /* Optically centred: `!` and `✓` do not sit on the same baseline in the same box. */
+  transform: translateY(2px);
+}
+
+.verdict[data-state='alarm'] .verdict-mark {
+  color: var(--status-serious-text);
+}
+
+.verdict[data-state='fixed'] .verdict-mark,
+.verdict[data-state='improved'] .verdict-mark {
+  color: var(--status-good-text);
+}
+
+.verdict-body {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.verdict-line {
+  margin: 0;
+  max-width: 46ch;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: var(--tracking-tight);
+}
+
+/* The part that has to hit the eye: "bude chýbať 3 068 €". */
+.verdict-amount {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.verdict[data-state='alarm'] .verdict-amount {
+  color: var(--status-serious-text);
+}
+
+.verdict[data-state='fixed'] .verdict-amount,
+.verdict[data-state='improved'] .verdict-amount {
+  color: var(--status-good-text);
+}
+
+/*
+ * What is left after applying an option. Quieter than the headline on purpose: shouting a
+ * milder finding in the same size as the one just solved would make the fix look like it
+ * failed. Quieter, not hidden — it is the honest half of the green tick.
+ */
+.verdict-rest {
+  margin: 0;
+  max-width: 62ch;
+  font-size: var(--text-xs);
+  color: var(--ink-secondary);
+}
+
 .example-foot {
   display: flex;
   flex-wrap: wrap;
@@ -2054,6 +2180,285 @@ th {
   max-width: 72ch;
   font-size: var(--text-sm);
   color: var(--ink-secondary);
+}
+
+
+/* =============================================================== health score ====
+ * The one number a first-time user reads before they read anything else, so the whole
+ * design job here is to stop it looking more certain than it is: a coarse four-band
+ * colour, the measurement printed next to every grade, and a caveat that is not small.
+ */
+.health {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--plane);
+}
+
+.health-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.health-lead {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+  flex: 1 1 26ch;
+}
+
+.health-title {
+  margin: 0;
+  font-size: var(--text-xs);
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+
+.health-verdict {
+  margin: 0;
+  max-width: 44ch;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: var(--tracking-tight);
+}
+
+.health-note,
+.health-caveat {
+  margin: 0;
+  max-width: 76ch;
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--ink-secondary);
+  text-wrap: pretty;
+}
+
+.health-caveat {
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--border);
+}
+
+/* ------------------------------------------------------------------- the ring ---- */
+
+.ring {
+  position: relative;
+  display: grid;
+  place-items: center;
+  inline-size: 104px;
+  block-size: 104px;
+  flex: 0 0 auto;
+}
+
+.ring svg {
+  inline-size: 100%;
+  block-size: 100%;
+  /* Start the arc at twelve o'clock rather than three. */
+  transform: rotate(-90deg);
+}
+
+.ring-track,
+.ring-value {
+  fill: none;
+  stroke-width: 8;
+}
+
+.ring-track {
+  stroke: var(--grid);
+}
+
+.ring-value {
+  stroke: currentcolor;
+  stroke-linecap: round;
+  transition: stroke-dashoffset var(--dur-md, 240ms) var(--ease-out, ease-out);
+}
+
+.ring-figure {
+  position: absolute;
+  display: flex;
+  align-items: baseline;
+  gap: 1px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ring-figure > strong {
+  font-size: 30px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.ring-unit {
+  font-size: var(--text-xs);
+  color: var(--ink-secondary);
+}
+
+/* -------------------------------------------------------------------- the rows ---- */
+
+.health-rows {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.health-row {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  /* The tone lives on the leading edge, so four stacked rows do not become four coloured
+     panels shouting at once. */
+  border-inline-start: 3px solid currentcolor;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.health-row-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.health-row-name {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.health-row-score {
+  margin-inline-start: auto;
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.health-row-fact {
+  margin: 0;
+  max-width: 76ch;
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--ink);
+  text-wrap: pretty;
+}
+
+.health-row-advice {
+  margin: 0;
+  max-width: 76ch;
+  font-size: var(--text-xs);
+  line-height: 1.55;
+  color: var(--ink-secondary);
+  text-wrap: pretty;
+}
+
+/*
+ * A native <progress>. `appearance: none` plus BOTH vendor pseudo-elements, because there is
+ * no standard selector for the filled part and a progress bar styled for only one engine is a
+ * progress bar that is invisible in the other.
+ */
+.health-bar {
+  display: block;
+  appearance: none;
+  inline-size: 100%;
+  margin-block-start: var(--space-2);
+  block-size: 4px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--grid);
+  overflow: hidden;
+  /* Firefox paints the bar through `color`, which the tone has already set. */
+  color: currentcolor;
+}
+
+.health-bar::-webkit-progress-bar {
+  background: var(--grid);
+  border-radius: var(--radius-pill);
+}
+
+.health-bar::-webkit-progress-value {
+  background: currentcolor;
+  border-radius: var(--radius-pill);
+  transition: inline-size var(--dur-md, 240ms) var(--ease-out, ease-out);
+}
+
+.health-bar::-moz-progress-bar {
+  background: currentcolor;
+  border-radius: var(--radius-pill);
+}
+
+/* ------------------------------------------------------------------- the tones ---- */
+/* Set `color` once per tone; the ring stroke, the row edge and the bar all inherit it. */
+
+.ring[data-tone='critical'],
+.health-row[data-tone='critical'],
+.health-verdict[data-tone='critical'] {
+  color: var(--status-serious-text);
+}
+
+.ring[data-tone='warning'],
+.health-row[data-tone='warning'],
+.health-verdict[data-tone='warning'] {
+  color: var(--status-warning-text);
+}
+
+.ring[data-tone='good'],
+.health-row[data-tone='good'],
+.health-verdict[data-tone='good'],
+.ring[data-tone='excellent'],
+.health-row[data-tone='excellent'],
+.health-verdict[data-tone='excellent'] {
+  color: var(--status-good-text);
+}
+
+/* The name and both paragraphs must stay readable text, not tinted text. */
+.health-row-name,
+.health-row-fact {
+  color: var(--ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ring-value,
+  .health-bar::-webkit-progress-value {
+    transition: none;
+  }
+}
+
+/*
+ * /parametre. A row can rest on more than one page — maternity at one authority, the parental
+ * allowance at another — so the source cell is a list, and the `unverified` badge is followed
+ * by the reason it carries that badge.
+ */
+.param-sources {
+  display: grid;
+  gap: 2px;
+}
+
+.param-flag {
+  display: inline-block;
+  margin-inline-start: var(--space-2);
+  border: 1px solid var(--status-serious);
+  border-radius: var(--radius-pill);
+  padding: 1px 7px;
+  font-size: var(--text-2xs);
+  font-weight: 400;
+  color: var(--status-serious);
+}
+
+.param-note {
+  display: block;
+  margin-block-start: var(--space-1);
+  /* Narrow on purpose: the notes live in the first cell of a scrollable table, and a wide
+     column here pushes the value, the date and the source right off a phone screen. */
+  max-width: 34ch;
+  font-size: var(--text-2xs);
+  font-weight: 400;
+  line-height: 1.45;
+  color: var(--ink-secondary);
+  text-wrap: pretty;
 }
 
 /* Small shared page furniture, so a new page does not need its own inline styles. */
@@ -2207,8 +2612,3 @@ th {
   color: var(--ink-secondary);
 }
 
-.suggest-item[data-applied='true'] ~ .suggest-outcome,
-.suggest-list:has(.suggest-item[data-applied='true']) + .suggest-outcome {
-  color: var(--status-good-text);
-  font-weight: 500;
-}

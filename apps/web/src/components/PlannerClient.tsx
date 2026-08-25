@@ -6,6 +6,7 @@ import {
   analyse,
   buildLevers,
   detectProblems,
+  scorePlan,
   simulate,
   type CashAccount,
   type Child,
@@ -38,6 +39,7 @@ import { loadUiState, saveUiState } from '@/lib/uiState';
 import { money, monthPhrase, percent, type UiLocale } from '@/lib/format';
 import { ReserveChart } from './ReserveChart';
 import { ProblemCard } from './ProblemCard';
+import { HealthScore } from './HealthScore';
 import {
   AdvancedDisclosure,
   ChoiceField,
@@ -296,6 +298,21 @@ export function PlannerClient({
   }, []);
 
   const result = useMemo(() => simulate(scenario), [scenario]);
+
+  /*
+   * The score rides along with the simulation, not with the debounced recommendation pass:
+   * it is a read over a result that already exists, measured at well under a millisecond, and
+   * a number over the chart that lagged the chart by a fifth of a second would look broken.
+   */
+  const health = useMemo(() => {
+    const j = jurisdictionFor(scenario.jurisdiction);
+    return scorePlan(scenario, result, {
+      targetInvestingSharePct: j.targetInvestingShareOfNetPct.value,
+      cashComfortMonthsMax: j.cashComfortMonthsMax.value,
+      advisoryDebtServiceSharePct: j.advisoryDebtServiceSharePct.value,
+      cannotFaceUnexpectedExpensePct: j.cannotFaceUnexpectedExpensePct.value,
+    });
+  }, [scenario, result]);
 
   const [analysis, setAnalysis] = useState<ReturnType<typeof analyse>>([]);
   const [isPending, startTransition] = useTransition();
@@ -650,26 +667,70 @@ export function PlannerClient({
           setHouseholdSize(v === 'single' ? 1 : 2);
         }}
       />
-      {scenario.people.map((person, index) => (
-        <NumberField
-          key={`birth-${person.id}`}
-          id={`birth-${person.id}`}
-          kind="year"
-          label={solo ? t('planner.birthYear') : `${t('planner.birthYear')} — ${personName(index)}`}
-          hint={index === 0 ? t('planner.birthYearHint') : undefined}
-          value={person.birthYear ?? startMonth.year - 32}
-          min={startMonth.year - 90}
-          max={startMonth.year}
-          span={3}
-          estimate={!touched.includes(`people[${index}].birthYear`)}
-          onChange={(v) =>
-            edit(`people[${index}].birthYear`, {
-              people: scenario.people.map((p, i) => (i === index ? { ...p, birthYear: v } : p)),
-            })
-          }
-          {...numberProps}
-        />
-      ))}
+      {/*
+        Everything from here down is gated on the shape being ANSWERED, not on how many people
+        the scenario happens to hold. The scenario always carries at least one person, so
+        without the gate this screen asked about an adult the user had not yet said existed —
+        and produced a second one the instant they did.
+
+        A name first, then the birth year: who they are, then a fact about them. That ordering
+        also matters for the group note underneath, which explains that the prefilled values
+        are national averages — it belongs directly under the two `estimate` fields, not
+        stranded below two fields nothing prefilled.
+
+        Three deliberate choices in this one small field:
+
+        It is OPTIONAL and says so on the label, because a name box on a form about someone's
+        money reads as data collection unless it is visibly not required. The hint says where
+        the answer goes — nowhere — for the same reason the birth-year hint does.
+
+        And the placeholder is the fallback the rest of the app already uses (`Osoba 1`), so an
+        empty field is not a blank waiting to be filled but a working default on display. That
+        is why the value stays `person.label` and is never pre-filled: writing "Osoba 1" into
+        the input would make the user delete a word before typing their own.
+      */}
+      {touched.includes('household.shape') &&
+        scenario.people.map((person, index) => (
+          <TextField
+            key={`shape-name-${person.id}`}
+            id={`shape-name-${person.id}`}
+            label={solo ? t('planner.yourName') : t('planner.nameOf', { n: index + 1 })}
+            optionalLabel={t('planner.optional')}
+            placeholder={solo ? t('planner.personSolo') : t('planner.person', { n: index + 1 })}
+            hint={index === 0 ? t('planner.nameHint') : undefined}
+            value={person.label}
+            span={3}
+            onChange={(v) =>
+              patch({
+                people: scenario.people.map((p, i) => (i === index ? { ...p, label: v } : p)),
+              })
+            }
+          />
+        ))}
+      {touched.includes('household.shape') &&
+        scenario.people.map((person, index) => (
+          <NumberField
+            key={`birth-${person.id}`}
+            id={`birth-${person.id}`}
+            kind="year"
+            label={
+              solo ? t('planner.birthYear') : `${t('planner.birthYear')} — ${personName(index)}`
+            }
+            hint={index === 0 ? t('planner.birthYearHint') : undefined}
+            value={person.birthYear ?? startMonth.year - 32}
+            min={startMonth.year - 90}
+            max={startMonth.year}
+            span={3}
+            estimate={!touched.includes(`people[${index}].birthYear`)}
+            onChange={(v) =>
+              edit(`people[${index}].birthYear`, {
+                people: scenario.people.map((p, i) => (i === index ? { ...p, birthYear: v } : p)),
+              })
+            }
+            {...numberProps}
+          />
+        ))}
+
     </>
   );
 
@@ -1663,6 +1724,10 @@ export function PlannerClient({
                 was non-zero, which reflowed the whole row from three columns to four. */}
             <StatTile label={thirdTile.label} value={thirdTile.value} />
           </div>
+          {/* Under the chart and the three tiles, not above them: the score is a reading OF
+              the projection, and putting a grade before the thing it grades invites the user
+              to take the number on trust instead of looking at the line. */}
+          <HealthScore health={health} locale={locale} />
         </div>
       </section>
 
@@ -1825,20 +1890,6 @@ export function PlannerClient({
                     })
                   }
                   {...numberProps}
-                />
-              ))}
-              {scenario.people.map((person, index) => (
-                <TextField
-                  key={`name-${person.id}`}
-                  id={`name-${person.id}`}
-                  label={t('planner.personName')}
-                  value={person.label}
-                  span={6}
-                  onChange={(v) =>
-                    patch({
-                      people: scenario.people.map((p, i) => (i === index ? { ...p, label: v } : p)),
-                    })
-                  }
                 />
               ))}
             </AdvancedDisclosure>

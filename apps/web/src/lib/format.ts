@@ -114,8 +114,22 @@ export function signedMoney(value: number, currency: CurrencyCode, locale: UiLoc
   return value < 0 ? `−${formatted}` : formatted;
 }
 
-export function percent(value: number, locale: UiLocale): string {
-  return canonicalSpaces(nf(locale, { maximumFractionDigits: 2 }).format(value)) + '\u00a0%';
+/**
+ * `digits` defaults to 2 so every existing call site is unchanged. Pass 1 for a ratio the
+ * user is meant to read at a glance: "6,4 %" is the same claim as "6,41 %" and one of them
+ * pretends the model knows the second decimal.
+ */
+export function percent(value: number, locale: UiLocale, digits = 2): string {
+  return canonicalSpaces(nf(locale, { maximumFractionDigits: digits }).format(value)) + '\u00a0%';
+}
+
+/**
+ * A bare localised number. Exists because a count interpolated into a message is NOT
+ * localised by the catalogue — "4.5 měs." shipped with an English decimal point until this
+ * was formatted here instead.
+ */
+export function decimal(value: number, locale: UiLocale, digits = 1): string {
+  return canonicalSpaces(nf(locale, { maximumFractionDigits: digits }).format(value));
 }
 
 export function integer(value: number, locale: UiLocale): string {

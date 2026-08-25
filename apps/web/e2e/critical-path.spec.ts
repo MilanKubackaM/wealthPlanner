@@ -95,8 +95,15 @@ test.describe('landing', () => {
      */
     await expect(page.locator('.example-badge')).toContainText(/Příklad/);
     await expect(page.locator('.example-title')).toContainText('Jana');
-    /* And the story's figures come from the scenario the chart is drawn from. */
-    await expect(page.locator('.example-story')).toContainText(/4\s?510\s?000/);
+    /* And the household's figures come from the scenario the chart is drawn from — as bullets,
+       one figure per line, because five of them in a paragraph is a paragraph nobody reads. */
+    await expect(page.locator('.example-facts > li')).toHaveCount(5);
+    await expect(page.locator('.example-facts')).toContainText(/4\s?510\s?000/);
+
+    /* The verdict opens red, with an exclamation mark and the shortfall picked out. */
+    await expect(page.locator('.verdict')).toHaveAttribute('data-state', 'alarm');
+    await expect(page.locator('.verdict-mark')).toHaveText('!');
+    await expect(page.locator('.verdict-amount')).toBeVisible();
     await expect(page.locator('.example-foot')).toContainText(/vaší domácnosti/);
 
     /* The privacy promise belongs above the fold. */
@@ -162,7 +169,15 @@ test.describe('landing', () => {
 
     /* The consequence is the picture, so the picture has to change. */
     await expect.poll(() => chart.getAttribute('aria-label')).not.toBe(before);
-    await expect(page.locator('.suggest-outcome')).toContainText(/pod nulu (už )?neklesne/);
+    /*
+     * Red to green, which is the point of the button: the exclamation mark becomes a tick and
+     * the sentence reports what was solved rather than the next thing that is wrong.
+     */
+    await expect(page.locator('.verdict')).not.toHaveAttribute('data-state', 'alarm');
+    await expect(page.locator('.verdict-mark')).toHaveText('\u2713');
+    await expect(page.locator('.verdict-line')).toContainText(/pod nulu (už )?neklesne/);
+    /* And the milder finding that remains is still named, one size down. */
+    await expect(page.locator('.verdict-rest')).toBeVisible();
 
     /* Exactly one option is applied, it says so, and the other two still offer themselves. */
     await expect(page.locator('.suggest-item[data-applied="true"]')).toHaveCount(1);
@@ -178,6 +193,7 @@ test.describe('landing', () => {
     await page.getByRole('button', { name: 'Vrátit zpět' }).click();
     await expect.poll(() => chart.getAttribute('aria-label')).toBe(before);
     await expect(page.locator('.suggest-item[data-applied="true"]')).toHaveCount(0);
+    await expect(page.locator('.verdict')).toHaveAttribute('data-state', 'alarm');
 
     expect(errors, errors.join('\n')).toEqual([]);
   });
@@ -259,8 +275,33 @@ test.describe('the wizard', () => {
     /* The shape restructures every screen after it, so unlike the country it gets no default:
        nothing is pre-selected and the wizard will not advance until it is answered. */
     await expect(page.getByRole('button', { name: 'Pokračovat' })).toBeDisabled();
+
+    /*
+     * And nothing about a PERSON is asked before the user has said a person exists. The
+     * scenario always carries at least one, so without the gate this screen asked for the
+     * birth year of an adult nobody had confirmed — and offered a second one the instant the
+     * shape was answered.
+     */
+    await expect(page.getByLabel(/Rok narození/)).toHaveCount(0);
+    await expect(page.getByLabel(/Vaše jméno|Jméno —/)).toHaveCount(0);
+
     await page.getByRole('radio', { name: /Jeden dospělý/ }).click();
     await expect(page.getByRole('radio', { name: /Jeden dospělý/ })).toHaveAttribute('aria-checked', 'true');
+
+    /* Now they appear — one of each, because one adult was chosen. */
+    await expect(page.getByLabel(/Rok narození/)).toHaveCount(1);
+    const nameField = page.getByLabel(/Vaše jméno/);
+    await expect(nameField).toHaveCount(1);
+
+    /*
+     * The name must read as optional and anonymous, or a name box on a money form reads as
+     * data collection. The placeholder is the fallback the rest of the app uses, so an empty
+     * field is a working default on display rather than a blank waiting to be filled.
+     */
+    await expect(nameField).toHaveValue('');
+    await expect(nameField).toHaveAttribute('placeholder', 'Vy');
+    await expect(page.locator('.f-badge-soft').first()).toContainText('volitelné');
+    await expect(page.getByText(/Zůstává ve vašem prohlížeči/)).toBeVisible();
 
     await page.getByRole('button', { name: 'Pokračovat' }).click();
     await expect(page.getByRole('heading', { name: /Kolik čistého/ })).toBeVisible();
@@ -270,6 +311,30 @@ test.describe('the wizard', () => {
     /* One real number, and the band starts answering. */
     await page.getByLabel(/Čistý měsíční příjem/).fill('52000');
     await expect(page.locator('.ribbon')).not.toHaveAttribute('data-verdict', 'pristine');
+
+    expect(errors, errors.join('\n')).toEqual([]);
+  });
+
+  test('names both adults optionally, and falls back to Osoba 1 when left blank', async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+    failOnConsoleErrors(page, errors);
+
+    await page.goto('/cs/plan');
+    await page.getByRole('button', { name: 'Pokračovat' }).click();
+    await page.getByRole('radio', { name: /Dva dospělí/ }).click();
+
+    /* Two adults, two optional name fields, and the placeholders are the defaults. */
+    await expect(page.getByLabel(/Jméno — osoba/)).toHaveCount(2);
+    await expect(page.getByLabel(/Jméno — osoba 1/)).toHaveAttribute('placeholder', 'Osoba 1');
+    await expect(page.getByLabel(/Jméno — osoba 2/)).toHaveAttribute('placeholder', 'Osoba 2');
+
+    /* Naming one and leaving the other blank must not leave a hole anywhere downstream. */
+    await page.getByLabel(/Jméno — osoba 1/).fill('Milan');
+    await page.getByRole('button', { name: 'Pokračovat' }).click();
+    await expect(page.getByLabel(/Čistý měsíční příjem — Milan/)).toBeVisible();
+    await expect(page.getByLabel(/Čistý měsíční příjem — Osoba 2/)).toBeVisible();
 
     expect(errors, errors.join('\n')).toEqual([]);
   });
@@ -429,6 +494,69 @@ test.describe('planner', () => {
         timeout: 15_000,
       })
       .not.toBe(troughBefore);
+  });
+
+  test('scores the arrangement, and shows the reasons rather than just the grade', async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+    failOnConsoleErrors(page, errors);
+
+    await page.goto('/cs/plan');
+    await skipWizard(page);
+
+    /* The ring reports a percentage, and it sits UNDER the chart it is a reading of. */
+    const ring = page.locator('.ring');
+    await expect(ring).toBeVisible();
+    await expect(ring.locator('.ring-figure strong')).toHaveText(/^\d{1,3}$/);
+
+    /* Four dimensions, collapsed but present in the DOM: the reasons behind a score must be
+       findable, not fetched. */
+    const rows = page.locator('.health-row');
+    await expect(rows).toHaveCount(4);
+    await expect(page.locator('#health-rows')).toBeHidden();
+
+    await page.getByRole('button', { name: /Rozepsat po částech/ }).click();
+    await expect(page.locator('#health-rows')).toBeVisible();
+
+    /* Every row states its measurement next to its grade — a grade alone is an opinion. */
+    for (let i = 0; i < 4; i++) {
+      await expect(rows.nth(i).locator('.health-row-score')).toContainText(/\d/);
+      await expect(rows.nth(i).locator('.health-row-fact')).not.toBeEmpty();
+      await expect(rows.nth(i).locator('.health-row-advice')).not.toBeEmpty();
+      await expect(rows.nth(i).locator('progress')).toHaveAttribute('max', '100');
+    }
+
+    /* And the two claims it must never make are denied in writing. */
+    await expect(page.locator('.health-caveat')).toContainText(/Není to srovnání s jinými/);
+    await expect(page.locator('.health-caveat')).toContainText(/ani důchodový výpočet/);
+
+    expect(errors, errors.join('\n')).toEqual([]);
+  });
+
+  test('tells a cash hoarder to invest rather than to save harder', async ({ page }) => {
+    const errors: string[] = [];
+    failOnConsoleErrors(page, errors);
+
+    await page.goto('/cs/plan');
+    await skipWizard(page);
+    await page.getByRole('button', { name: /Rozepsat po částech/ }).click();
+
+    const investing = page.locator('.health-row').nth(1);
+    await expect(investing.locator('.health-row-name')).toContainText('Investování');
+
+    /* Pile up the cash and stop investing: the advice has to change from "invest more of your
+       income" to "move the money you already have", which is the whole point of the rule. */
+    await openSection(page, 'cisla');
+    await page.getByLabel(/Kolik máte teď/).first().fill('4000000');
+    await page.getByLabel(/Měsíční vklad/).first().fill('0');
+
+    await expect(investing.locator('.health-row-advice')).toContainText(
+      /Máte podstatně víc hotovosti/,
+    );
+    await expect(investing.locator('.health-row-fact')).toContainText(/V hotovosti držíte/);
+
+    expect(errors, errors.join('\n')).toEqual([]);
   });
 
   test('a plan survives a reload with no save button in sight', async ({ page }) => {
