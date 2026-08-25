@@ -125,7 +125,8 @@ other than a Czech couple with a mortgage:
 - envelopes and per-person investment sleeves, including the "paid from pocket money" cap the
   prototype claimed but never enforced
 - a share link that carries the whole plan in the URL fragment — never sent to a server
-- `localStorage` persistence, JSON export and import, engine-version awareness
+- `localStorage` persistence with autosave — no Save button, flushed on `pagehide` so the
+  debounce window cannot eat the last edit — plus JSON export/import and engine-version awareness
 - keyboard navigation along the chart with a live region, so the tooltip is not pointer-only
 - installable PWA with an offline shell
 - public `/parametre`, `/metodika` and `/zasady`

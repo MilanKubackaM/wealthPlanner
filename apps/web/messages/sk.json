@@ -265,8 +265,6 @@
     "monthUnit": "mesiacov",
     "computedAt": "Počítané podľa právneho stavu k {date}.",
     "recomputing": "Prepočítavam odporúčania…",
-    "save": "Uložiť do prehliadača",
-    "saved": "Uložené {when}",
     "export": "Exportovať",
     "import": "Importovať",
     "reset": "Začať znova",
@@ -333,7 +331,10 @@
     "linkOtherCountry": "Tento odkaz je plán pre inú krajinu ({country}). Čísla zostávajú jeho, menu ani dávky neprepisujeme.",
     "changeCountry": "Zmeniť krajinu",
     "changeCountryConfirm": "Zmena krajiny začne s novými predvyplnenými číslami pre tú krajinu. Vaše zadané hodnoty sa stratia. Pokračovať?",
-    "personalInvesting": "Osobné investície"
+    "personalInvesting": "Osobné investície",
+    "autosave": "Zmeny sa ukladajú automaticky do tohto prehliadača.",
+    "savedAuto": "Automaticky uložené v {when} — len vo vašom prehliadači.",
+    "saving": "Ukladám…"
   },
   "compare": {
     "heading": "Porovnanie scenárov",

@@ -16,6 +16,22 @@ async function skipWizard(page: Page, locale: 'cs' | 'sk' = 'cs') {
 }
 
 /**
+ * Waits for the autosave to land. There is no Save button: every change is written ~700ms
+ * after the typing stops, and this is the confirmation the user sees.
+ */
+async function waitForAutosave(page: Page, locale: 'cs' | 'sk' = 'cs') {
+  const line = page.locator('.saved-line');
+  /*
+   * Wait for the pending state and then for its absence. Asserting only "saved" is not enough:
+   * the wizard itself saves on hand-over, so that text is already on screen before the edit and
+   * the assertion would pass without the edit ever having been written.
+   */
+  await expect(line).toHaveAttribute('data-saving', 'true', { timeout: 5_000 });
+  await expect(line).not.toHaveAttribute('data-saving', 'true', { timeout: 10_000 });
+  await expect(line).toContainText(locale === 'sk' ? /Automaticky uložené v/ : /Automaticky uloženo v/);
+}
+
+/**
  * Answers the household question, which the wizard now requires before it will advance. That
  * gate is deliberate: it is the one answer that restructures every later screen.
  */
@@ -191,10 +207,6 @@ test.describe('planner', () => {
     await page.goto('/cs/plan');
     await skipWizard(page);
 
-    /* Saved first: without a stored plan a reload correctly lands back in the wizard, and the
-       thing under test here is the reading state, not the plan. */
-    await page.getByRole('button', { name: 'Uložit do prohlížeče' }).click();
-
     await page
       .getByRole('navigation', { name: 'Části plánu' })
       .getByRole('button', { name: 'Srovnání scénářů' })
@@ -205,6 +217,9 @@ test.describe('planner', () => {
     await expect(page).toHaveURL(/\?s=srovnani/);
 
     await page.reload();
+    /* Reading state is kept under its own storage key, so it survives a reload whether or not
+       a plan is stored — which is why the wizard has to be skipped again here. */
+    await skipWizard(page);
     await expect(page.locator('#srovnani-btn')).toHaveAttribute('aria-expanded', 'true');
   });
 
@@ -239,12 +254,13 @@ test.describe('planner', () => {
       .not.toBe(troughBefore);
   });
 
-  test('a plan survives a save and a reload', async ({ page }) => {
+  test('a plan survives a reload with no save button in sight', async ({ page }) => {
     await page.goto('/cs/plan');
     await skipWizard(page);
     await openSection(page, 'cisla');
     await page.getByLabel(/Kolik máte teď/).fill('333000');
-    await page.getByRole('button', { name: 'Uložit do prohlížeče' }).click();
+    /* No Save button: the change persists on its own. */
+    await waitForAutosave(page);
 
     await page.reload();
     /* A stored plan must skip the wizard, not show it again. */
@@ -277,7 +293,9 @@ test.describe('country and locale', () => {
     await skipWizard(page);
     await openSection(page, 'cisla');
     await expect(page.locator('#m-balance')).toHaveValue(/4\s?510\s?000/);
-    await page.getByRole('button', { name: 'Uložit do prohlížeče' }).click();
+    /* Touch one field so there is something to autosave, then let it. */
+    await page.getByLabel(/Kolik máte teď/).fill('222000');
+    await waitForAutosave(page);
 
     /* The header language switch — same profile, same localStorage. */
     await page.getByRole('link', { name: 'SK', exact: true }).click();
@@ -298,13 +316,13 @@ test.describe('country and locale', () => {
     await skipWizard(page);
     await openSection(page, 'cisla');
     await page.getByLabel(/Kolik máte teď/).fill('333000');
-    await page.getByRole('button', { name: 'Uložit do prohlížeče' }).click();
+    await waitForAutosave(page);
 
     await page.goto('/sk/plan');
     await skipWizard(page, 'sk');
     await openSection(page, 'cisla');
     await page.getByLabel(/Koľko máte teraz/).fill('12000');
-    await page.getByRole('button', { name: 'Uložiť do prehliadača' }).click();
+    await waitForAutosave(page, 'sk');
 
     /* The Slovak save must not have eaten the Czech plan. */
     await page.goto('/cs/plan');

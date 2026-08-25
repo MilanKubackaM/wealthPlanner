@@ -789,6 +789,15 @@ v jedinom riadku (`engineVersion` 3 → 4), tri nové goldeny pribudli. Zo 72 po
    `overflow-x: hidden` a každý tap pod zlomom dopadal na iný prvok, než na aký mieril. §6.3 to
    zakazuje výslovne; teraz to hlídá aj e2e na mobilnom projekte.
 
+**Autosave, a tlačidlo „Uložiť" zmizlo.** Plán, ktorý žije iba v prehliadači a treba ho uložiť
+ručne, je plán, ktorý ľudia stratia. Zapisuje sa ~700 ms po tom, čo prestaneš písať, z jedného
+miesta, aby to nemohlo zabudnúť žiadne budúce volanie. Tri podmienky, každá nesie váhu: len keď
+používateľ naozaj niečo zmenil (inak by otvorenie cudzieho zdieľaného odkazu prepísalo jeho
+vlastný uložený plán pre tú krajinu), len po odovzdaní z wizardu (opustený wizard tak nič
+nezanechá a tvrdenie „uložený plán preskočí wizard" zostáva pravdivé) a debounced. Okno debounce
+je okno, v ktorom zmena existuje iba v pamäti — preto je viditeľné („Ukládám…") a flushuje sa na
+`pagehide` aj `visibilitychange`; `beforeunload` sa pri prepnutí aplikácie na telefóne nespustí.
+
 **Čo pribudlo navrch plánu:** `scripts/style-guard.mjs` — dva ratchety (161 inline štýlov, 115
 číselných literálov), ktoré môžu iba klesať, zapojené do CI aj do `ship.sh`; parita kľúčov medzi
 `cs.json` a `sk.json` ako test; a `sk.json` zjednotené na vykanie.

@@ -64,6 +64,7 @@ import { Sensitivity } from './Sensitivity';
  */
 
 const RECOMMEND_DEBOUNCE_MS = 220;
+const AUTOSAVE_DEBOUNCE_MS = 700;
 
 type Stage = 'onboarding' | 'plan';
 
@@ -158,8 +159,24 @@ export function PlannerClient({
 
   const country = countryFor(locale);
 
-  const [scenario, setScenario] = useState<ScenarioInput>(() =>
+  const [scenario, setScenarioRaw] = useState<ScenarioInput>(() =>
     defaultScenario(country, startMonth),
+  );
+  /*
+   * Autosave writes only what the USER changed. Boot uses setScenarioRaw directly, so opening
+   * somebody else's shared link cannot silently overwrite your own stored plan for that
+   * country — the link is only persisted once you actually edit it.
+   */
+  const dirty = useRef(false);
+  /* The debounce window is a window in which work can be lost, so it is visible and it is flushed. */
+  const [saving, setSaving] = useState(false);
+  const pending = useRef<{ scenario: ScenarioInput; touched: string[] } | null>(null);
+  const setScenario = useCallback(
+    (next: ScenarioInput | ((current: ScenarioInput) => ScenarioInput)) => {
+      dirty.current = true;
+      setScenarioRaw(next);
+    },
+    [],
   );
   const [stage, setStage] = useState<Stage>('onboarding');
   const [step, setStep] = useState(0);
@@ -198,7 +215,7 @@ export function PlannerClient({
       if (fragment.startsWith('#p=')) {
         const shared = await decodeScenario(fragment);
         if (shared && !cancelled) {
-          setScenario(shared);
+          setScenarioRaw(shared);
           setFromLink(true);
           setLinkCountry(shared.jurisdiction !== country ? shared.jurisdiction : null);
           setStage('plan');
@@ -207,7 +224,7 @@ export function PlannerClient({
       }
       const stored = loadPlan(country);
       if (stored && !cancelled) {
-        setScenario(stored.scenario);
+        setScenarioRaw(stored.scenario);
         setSavedAt(stored.savedAt);
         setStaleEngine(stored.staleEngine);
         setTouched(stored.touched);
@@ -217,7 +234,7 @@ export function PlannerClient({
       if (!cancelled) {
         const other: JurisdictionCode = country === 'CZ' ? 'SK' : 'CZ';
         if (hasPlanFor(other)) setOtherCountry(other);
-        setScenario(defaultScenario(country, startMonth));
+        setScenarioRaw(defaultScenario(country, startMonth));
       }
     }
     void boot();
@@ -258,6 +275,53 @@ export function PlannerClient({
     return () => clearTimeout(handle);
   }, [scenario, result]);
 
+  /**
+   * Every change is persisted on its own, ~700 ms after the typing stops. There is no Save
+   * button any more: a plan that lives only in this browser and asks to be saved by hand is a
+   * plan people lose, and the one thing this product must never do is lose somebody's numbers.
+   *
+   * Three conditions, each load-bearing:
+   *   - `dirty` — never write a plan the user has not touched, or opening a shared link would
+   *     overwrite their own stored plan for that country.
+   *   - `stage === 'plan'` — an abandoned wizard leaves nothing behind, so the promise that a
+   *     stored plan skips the wizard stays true.
+   *   - debounced — savePlan serialises the whole scenario, and doing that per keystroke is
+   *     work nobody asked for.
+   */
+  useEffect(() => {
+    if (!dirty.current || stage !== 'plan') return;
+    pending.current = { scenario, touched };
+    setSaving(true);
+    const handle = setTimeout(() => {
+      savePlan(scenario, touched);
+      pending.current = null;
+      setSavedAt(new Date().toISOString());
+      setStaleEngine(false);
+      setSaving(false);
+    }, AUTOSAVE_DEBOUNCE_MS);
+    return () => clearTimeout(handle);
+  }, [scenario, touched, stage]);
+
+  /*
+   * A debounce is a window in which a change exists only in memory. Closing the tab inside it
+   * would lose the last edit — which for this product is the one unforgivable bug. `pagehide`
+   * fires where `beforeunload` does not (a phone switching apps, a swipe back), and writing to
+   * localStorage is synchronous, so the flush completes even as the page goes away.
+   */
+  useEffect(() => {
+    const flush = () => {
+      if (pending.current) {
+        savePlan(pending.current.scenario, pending.current.touched);
+        pending.current = null;
+      }
+    };
+    window.addEventListener('pagehide', flush);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') flush();
+    });
+    return () => window.removeEventListener('pagehide', flush);
+  }, []);
+
   const markTouched = useCallback((path: string) => {
     setTouched((current) => (current.includes(path) ? current : [...current, path]));
   }, []);
@@ -294,15 +358,6 @@ export function PlannerClient({
     (solo ? t('planner.personSolo') : t('planner.person', { n: index + 1 }));
 
   /* ------------------------------------------------------------- persistence ---- */
-
-  function handleSave() {
-    setBusy('save');
-    savePlan(scenario, touched);
-    const stored = loadPlan(scenario.jurisdiction);
-    setSavedAt(stored?.savedAt ?? null);
-    setStaleEngine(false);
-    setBusy(null);
-  }
 
   function handleExport() {
     setBusy('export');
@@ -1118,6 +1173,9 @@ export function PlannerClient({
       .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
     setRecap(deltas.slice(0, 3));
     setStage('plan');
+    /* Save the moment the wizard hands over, rather than waiting for the first later edit. */
+    savePlan(scenario, touched);
+    setSavedAt(new Date().toISOString());
   }
 
   if (stage === 'onboarding') {
@@ -1650,15 +1708,6 @@ export function PlannerClient({
             <button
               type="button"
               className="btn btn-primary"
-              data-loading={busy === 'save' ? 'true' : undefined}
-              aria-busy={busy === 'save' || undefined}
-              onClick={handleSave}
-            >
-              {t('planner.save')}
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary"
               data-loading={busy === 'share' ? 'true' : undefined}
               aria-busy={busy === 'share' || undefined}
               onClick={() => void handleShare()}
@@ -1715,13 +1764,25 @@ export function PlannerClient({
             </button>
           </div>
           <div className="row">
-            {savedAt && (
-              <span className="muted" style={{ fontSize: 13 }}>
-                {t('planner.saved', {
-                  when: new Date(savedAt).toLocaleString(locale === 'sk' ? 'sk-SK' : 'cs-CZ'),
-                })}
-              </span>
-            )}
+            <span
+              className="muted saved-line"
+              data-saving={saving ? 'true' : undefined}
+              style={{ fontSize: 13 }}
+            >
+              {/* No tick while the write is still pending — the glyph must not claim more
+                  than the sentence beside it does. */}
+              <span aria-hidden="true">{saving ? '·' : '✓'}</span>
+              {saving
+                ? t('planner.saving')
+                : savedAt
+                ? t('planner.savedAuto', {
+                    when: new Date(savedAt).toLocaleTimeString(locale === 'sk' ? 'sk-SK' : 'cs-CZ', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    }),
+                  })
+                : t('planner.autosave')}
+            </span>
             {importError && (
               <span style={{ fontSize: 13, color: 'var(--status-critical-text)' }}>
                 {t('planner.importFailed')}

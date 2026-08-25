@@ -95,6 +95,17 @@ raises the "computed by another version" banner once rather than twice):
   rail stretched the page to 1450px inside a 412px viewport, `overflow-x: hidden` clipped it,
   and every tap below the fold landed on the wrong element.
 
+**Autosave, and no Save button.** A plan that lives only in this browser and has to be saved
+by hand is a plan people lose, and losing somebody's numbers is the one thing this product must
+never do. Every change is written ~700 ms after the typing stops, from a single choke point, so
+no future call site can forget it. Three conditions, each load-bearing: only when the user has
+actually edited something — otherwise opening a shared link would overwrite their own stored
+plan for that country; only once the wizard has handed over — so an abandoned wizard leaves
+nothing behind and "a stored plan skips the wizard" stays true; and debounced, because
+serialising the whole scenario per keystroke is work nobody asked for. The debounce window is a
+window in which a change exists only in memory, so it is shown ("Ukládám…") and flushed on
+`pagehide` and on `visibilitychange` — `beforeunload` does not fire when a phone switches apps.
+
 **Guards added**, because a design system that is not measured decays back into a refactor:
 `scripts/style-guard.mjs` ratchets inline styles (161) and hardcoded pixel literals (115)
 downwards only, in CI and in `ship.sh`; a test asserts key parity between `cs.json` and
