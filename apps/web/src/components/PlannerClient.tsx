@@ -1390,10 +1390,13 @@ export function PlannerClient({
 
           {cashProblems.length === 0 && (
             <div className="notice" data-tone="good">
-              <h3 style={{ fontSize: 17 }}>{t('problems.noneTitle')}</h3>
-              <p className="muted" style={{ margin: '6px 0 0', fontSize: 14 }}>
-                {t('problems.noneBody')}
+              {/* Not an <h3>: the section's own heading is right above it, and a second
+                  heading saying the same thing is what made this block read as duplicated. */}
+              <p className="notice-title">
+                <span aria-hidden="true">✓</span>
+                {t('problems.noneTitle')}
               </p>
+              <p className="muted notice-body">{t('problems.noneBody')}</p>
             </div>
           )}
 

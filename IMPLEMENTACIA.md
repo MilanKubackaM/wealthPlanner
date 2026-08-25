@@ -789,7 +789,7 @@ v jedinom riadku (`engineVersion` 3 → 4), tri nové goldeny pribudli. Zo 72 po
    `overflow-x: hidden` a každý tap pod zlomom dopadal na iný prvok, než na aký mieril. §6.3 to
    zakazuje výslovne; teraz to hlídá aj e2e na mobilnom projekte.
 
-**Čo pribudlo navrch plánu:** `scripts/style-guard.mjs` — dva ratchety (163 inline štýlov, 117
+**Čo pribudlo navrch plánu:** `scripts/style-guard.mjs` — dva ratchety (161 inline štýlov, 115
 číselných literálov), ktoré môžu iba klesať, zapojené do CI aj do `ship.sh`; parita kľúčov medzi
 `cs.json` a `sk.json` ako test; a `sk.json` zjednotené na vykanie.
 

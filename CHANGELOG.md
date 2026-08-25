@@ -96,7 +96,7 @@ raises the "computed by another version" banner once rather than twice):
   and every tap below the fold landed on the wrong element.
 
 **Guards added**, because a design system that is not measured decays back into a refactor:
-`scripts/style-guard.mjs` ratchets inline styles (163) and hardcoded pixel literals (117)
+`scripts/style-guard.mjs` ratchets inline styles (161) and hardcoded pixel literals (115)
 downwards only, in CI and in `ship.sh`; a test asserts key parity between `cs.json` and
 `sk.json`; and `sk.json` no longer switches between formal and informal address mid-file.
 

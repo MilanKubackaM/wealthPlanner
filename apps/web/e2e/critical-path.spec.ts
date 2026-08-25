@@ -211,14 +211,14 @@ test.describe('planner', () => {
   test('adding a child changes the verdict', async ({ page }) => {
     await page.goto('/cs/plan');
     await skipWizard(page);
-    await expect(page.getByRole('heading', { name: 'Plán drží', exact: true })).toBeVisible();
+    /* The healthy verdict block. Its glyph is aria-hidden and part of the text node, so this
+       addresses the block rather than an exact string. */
+    await expect(page.locator('.notice[data-tone="good"]')).toBeVisible();
 
     await openSection(page, 'cisla');
     await page.getByRole('radio', { name: /Ano — máme nebo plánujeme/ }).click();
     /* One child on an average household is enough to break it — that is the whole product. */
-    await expect(page.getByRole('heading', { name: 'Plán drží', exact: true })).toBeHidden({
-      timeout: 15_000,
-    });
+    await expect(page.locator('.notice[data-tone="good"]')).toBeHidden({ timeout: 15_000 });
   });
 
   test('a proven fix can be applied and it improves the trough', async ({ page }) => {

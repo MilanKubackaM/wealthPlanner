@@ -1826,8 +1826,41 @@ th {
    is carried by the leading border AND by the wording, never by the border alone. */
 .notice {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-2);
   border-inline-start: 3px solid var(--accent-strong);
+}
+
+/*
+ * A notice used on its own — inside an open section rather than as a page-level banner — has
+ * to bring its own box. Without this the 3px tone border sat flush against the text and the
+ * block read as unaligned with the section heading above it. `:not(.card)` so the four
+ * page-level banners, which already have card padding, are untouched.
+ */
+.notice:not(.card) {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-inline-start-width: 3px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+}
+
+/* The verdict inside a notice: glyph AND word AND colour, never colour on its own. */
+.notice-title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 650;
+  letter-spacing: var(--tracking-tight);
+}
+
+.notice[data-tone='good'] .notice-title {
+  color: var(--status-good-text);
+}
+
+.notice[data-tone='warning'] .notice-title {
+  color: var(--status-warning-text);
 }
 
 .notice[data-tone='warning'] {
@@ -1836,6 +1869,12 @@ th {
 
 .notice[data-tone='good'] {
   border-inline-start-color: var(--status-good-text);
+}
+
+.notice-body {
+  margin: 0;
+  font-size: var(--text-sm);
+  max-width: 66ch;
 }
 
 .recap {

@@ -512,7 +512,7 @@
     "predpoklady": "Předpoklady a horizont",
     "export": "Uložit, sdílet, exportovat",
     "summary": {
-      "nalezyNone": "Plán drží",
+      "nalezyNone": "Bez nálezů",
       "nalezy": "{count} nálezů",
       "srovnani": "{count} scénářů na stejné ose",
       "citlivost": "Nejhorší předpoklad: {label} — dno {amount}",

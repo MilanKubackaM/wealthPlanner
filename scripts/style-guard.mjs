@@ -24,8 +24,8 @@ const SRC = join(ROOT, 'apps/web/src');
 
 /* Lower these when a category is retired. Never raise them. */
 const BASELINE = {
-  inlineStyles: 163,
-  numericLiterals: 117,
+  inlineStyles: 161,
+  numericLiterals: 115,
 };
 
 const NUMERIC = /(fontSize: [0-9]|borderRadius: [0-9]|gap: [0-9])/;
