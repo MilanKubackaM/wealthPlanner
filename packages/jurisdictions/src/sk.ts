@@ -24,6 +24,7 @@ const EC_AGEING_SK =
   'https://economy-finance.ec.europa.eu/document/download/9d858e5d-9263-4055-a008-162bf459da4e_en?filename=2024-ageing-report-country-fiche-Slovakia.pdf';
 const VANGUARD_CASH =
   'https://corporate.vanguard.com/content/corporatesite/us/en/corp/articles/beyond-emergency-funds-a-smarter-cash-strategy.html';
+const NBS_FORECAST = 'https://nbs.sk/publikacie/ekonomicky-a-menovy-vyvoj/';
 const EUROSTAT_UNEXPECTED =
   'https://ec.europa.eu/eurostat/databrowser/view/ilc_mdes04/default/table?lang=en';
 
@@ -184,6 +185,13 @@ export const slovakia: Jurisdiction = {
     source: NBS_DSTI,
     unverified: true,
     note: 'OUR OWN advisory figure. NBS\'s 60 % DSTI is binding and stress-tested, but it is the point at which a bank MUST refuse the loan — a legal ceiling, never a household target. The score gives zero at the regulatory ceiling on purpose.',
+  },
+  typicalWageGrowthPct: {
+    value: 4.5,
+    verifiedAt: VERIFIED_AT,
+    source: NBS_FORECAST,
+    unverified: true,
+    note: 'CARRIED OVER from the Czech figure, and flagged because of it: ČNB publishes an explicit long-run equilibrium for nominal wage growth (4.5 %) and no equivalent NBS number was found. Both economies share the ECB-anchored 2 % inflation target and a similar convergence path, so the transfer is defensible — but it is a transfer, not a Slovak measurement.',
   },
   cannotFaceUnexpectedExpensePct: {
     value: 26.0,

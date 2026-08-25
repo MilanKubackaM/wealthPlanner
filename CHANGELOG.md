@@ -1,5 +1,37 @@
 # Changelog
 
+## Phase 2.5h — What the wizard did not ask, and where to find it
+
+**Collapsed panels now say how many of their parameters are still on a default nobody
+confirmed** — "3 na doplnenie" on the assumptions section, "5 na doplnenie" behind the reserve
+cap. The stepper deliberately asks only what the projection cannot work without; everything
+else keeps a sourced default so a plan is eight screens away instead of thirty. That trade is
+only honest if the leftovers are findable, and a collapsed panel is invisible by design — right
+for something already answered, wrong for something never asked.
+
+One map (`defaultGroups`) owns which parameter belongs to which panel, so a count and the panel
+it labels cannot drift apart. Cash and investments are deliberately absent from it: they are
+optional, and "you left the optional thing empty" is not something to nag about. This counts
+defaults that were GUESSED, not questions that were declined.
+
+**Default wage growth is now 4.5 %, from ČNB.** It was a hardcoded 2 %, which against 2.5 %
+expense inflation had every household getting quietly poorer for twenty-five years by default.
+ČNB names 4.5 % as the long-run EQUILIBRIUM rate — the pace consistent with the inflation
+target — which is what a 25-year projection wants; actual growth was 6.6 % across 2024-25 and
+8.1 % in Q1 2026, and extrapolating a catch-up phase to retirement would be optimism dressed as
+data. The Slovak value carries the same number flagged `unverified`, because no NBS equivalent
+was found and a transfer is not a measurement.
+
+**That change broke the landing example, which is the lesson worth recording.** The richer
+household grew out of its own trough, so the page rendered a healthy plan and no red verdict —
+and the existing test still passed, because it asserted the reserve dipped below its *floor*,
+which it still did. The demo now doubles the ETF contribution explicitly, which is the story it
+was always telling (a couple investing every spare koruna while the reserve stays put), and a
+new test asserts the household actually runs out of money rather than merely dipping.
+
+`ENGINE_VERSION` is unchanged: a default only affects NEW scenarios, stored plans carry their
+own figure, and the 10 goldens are byte-identical, which is the proof no formula moved.
+
 ## Phase 2.5g — The wizard asks, and waits for an answer
 
 **Required amounts now start EMPTY and the step will not advance until they are answered.**

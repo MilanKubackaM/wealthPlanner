@@ -25,6 +25,8 @@ export function Disclosure({
   printing,
   onToggle,
   soloTitle,
+  pending,
+  pendingLabel,
   children,
 }: {
   id: string;
@@ -34,6 +36,9 @@ export function Disclosure({
   printing: boolean;
   onToggle: (solo: boolean) => void;
   soloTitle?: string;
+  /** Parameters inside still on an unconfirmed default, counted for the collapsed header. */
+  pending?: number;
+  pendingLabel?: (count: number) => string;
   children: React.ReactNode;
 }) {
   const shown = open || printing;
@@ -52,6 +57,9 @@ export function Disclosure({
             <path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
           <span className="disc-title">{title}</span>
+          {pending && pending > 0 && pendingLabel ? (
+            <span className="pending">{pendingLabel(pending)}</span>
+          ) : null}
           {summary ? <span className="disc-sum">{summary}</span> : null}
         </button>
       </h2>

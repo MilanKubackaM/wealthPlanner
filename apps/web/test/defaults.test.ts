@@ -47,6 +47,17 @@ describe.each(CODES)('the landing demo for %s', (code) => {
     expect(result.worstFloorGap).toBeLessThan(0);
   });
 
+  /*
+   * Stronger than the floor test above, and it exists because the weaker one passed while the
+   * example was quietly broken: raising the default wage growth to the ČNB long-run figure let
+   * the demo household grow out of its trough, so the landing page rendered a healthy plan and
+   * no red verdict at all. The floor gap was still negative; the deficit was gone.
+   */
+  it('actually runs out of money, which is the entire point of the example', () => {
+    expect(result.deficitAt).not.toBeNull();
+    expect(result.minReserve).toBeLessThan(0);
+  });
+
   it('names the month of the trough instead of an em dash', () => {
     /*
      * simulate() seeds minReserve with the opening balance, so a plan whose trough never goes

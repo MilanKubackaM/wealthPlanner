@@ -1245,6 +1245,30 @@ th {
 }
 
 /*
+ * "N na doplnenie" — how many parameters inside a collapsed panel are still on a default
+ * nobody confirmed.
+ *
+ * The wizard cannot ask about everything without becoming a form, so it asks what the
+ * projection cannot work without and leaves the rest on a sourced default. That is a good
+ * trade only if the leftovers are FINDABLE: a collapsed panel is invisible by design, which is
+ * right for something already answered and wrong for something never asked.
+ *
+ * Same tint as "povinné" because it means the same kind of thing — something for the user to
+ * do — and a second colour would only invite ranking two shades of "unfinished".
+ */
+.pending {
+  flex: 0 0 auto;
+  border: 1px solid var(--status-warning-text);
+  border-radius: var(--radius-pill);
+  padding-inline: var(--space-2);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  line-height: 1.7;
+  white-space: nowrap;
+  color: var(--status-warning-text);
+}
+
+/*
  * "Povinné". The one badge on this form allowed to catch the eye, because it is the only one
  * reporting something the user has to DO — the others describe a value that is already there.
  *
@@ -1426,9 +1450,16 @@ th {
   font-size: var(--text-xl);
 }
 
+/*
+ * chevron | title and summary | count.
+ *
+ * A third column rather than letting the badge auto-place: with two columns it landed in
+ * column 1 of the next row, i.e. tucked under the chevron and above the summary, which read
+ * as a stray label rather than a count belonging to the heading.
+ */
 .disc-h > button {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   column-gap: var(--space-3);
   inline-size: 100%;
@@ -1466,6 +1497,12 @@ th {
 }
 
 /* Visible in both states — collapsing a section must cost no information. */
+.disc-h > button > .pending {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+}
+
 .disc-sum {
   grid-column: 2;
   font-size: var(--text-xs);

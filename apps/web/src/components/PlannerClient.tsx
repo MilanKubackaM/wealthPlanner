@@ -178,6 +178,44 @@ function trackedPaths(scenario: ScenarioInput): string[] {
   return paths;
 }
 
+/**
+ * Every parameter that carries a DEFAULT the wizard never asked about, grouped by the panel it
+ * lives in — one map, so a badge count and the panel it labels cannot drift apart.
+ *
+ * This is the other half of the wizard's bargain. The stepper deliberately asks only what the
+ * projection cannot work without; everything else keeps a sourced default so the user reaches a
+ * plan in eight screens instead of thirty. That is only honest if the leftovers are findable,
+ * and a collapsed panel is invisible by design — so each one says how many of its parameters
+ * are still nobody's answer.
+ *
+ * `reserve.balance` and `jointInvesting.monthlyContribution` are deliberately ABSENT: cash and
+ * investments are optional, and "you left the optional thing empty" is not something to nag
+ * about. This counts defaults that were GUESSED, not questions that were declined.
+ */
+function defaultGroups(scenario: ScenarioInput): Record<string, string[]> {
+  const groups: Record<string, string[]> = {
+    /* Sweep cap, pocket money and wage growth all live behind the same disclosure. */
+    sweep: [
+      'reserve.sweepCap',
+      ...scenario.people.flatMap((_, i) => [
+        `people[${i}].pocketMoney`,
+        `people[${i}].incomeGrowthPct`,
+      ]),
+    ],
+    predpoklady: ['assumptions.cpiPct', 'assumptions.horizonYear', 'assumptions.reserveFloorMonths'],
+  };
+  scenario.children.forEach((child, i) => {
+    groups[`child-${child.id}`] = [
+      `children[${i}].parentalMonths`,
+      `children[${i}].returnToWorkPct`,
+    ];
+  });
+  scenario.liabilities.forEach((item, i) => {
+    groups[`debt-${item.id}`] = [`liabilities[${i}].term`];
+  });
+  return groups;
+}
+
 export function PlannerClient({
   locale,
   startMonth,
@@ -410,6 +448,12 @@ export function PlannerClient({
   const solo = size === 1;
   const tracked = trackedPaths(scenario);
   const answered = touched.filter((path) => tracked.includes(path)).length;
+
+  const groups = defaultGroups(scenario);
+  /** How many parameters in one panel are still on a default nobody confirmed. */
+  const pendingIn = (group: string) =>
+    (groups[group] ?? []).filter((path) => !touched.includes(path)).length;
+  const pendingLabel = (count: number) => t('planner.pending', { count });
 
   const personName = (index: number) =>
     scenario.people[index]?.label ||
@@ -1093,7 +1137,12 @@ export function PlannerClient({
                     onChange={(v) => update({ monthlyPayment: v }, `liabilities[${index}].payment`)}
                     {...numberProps}
                   />
-                  <AdvancedDisclosure id={`debt-adv-${item.id}`} label={t('planner.debtTerm')}>
+                  <AdvancedDisclosure
+                    id={`debt-adv-${item.id}`}
+                    label={t('planner.debtTerm')}
+                    pending={pendingIn(`debt-${item.id}`)}
+                    pendingLabel={pendingLabel}
+                  >
                     <NumberField
                       id={`debt-term-${item.id}`}
                       kind="months"
@@ -1435,7 +1484,12 @@ export function PlannerClient({
                       }
                     />
                   )}
-                  <AdvancedDisclosure id={`child-adv-${child.id}`} label={t('planner.childParentalMonths')}>
+                  <AdvancedDisclosure
+                    id={`child-adv-${child.id}`}
+                    label={t('planner.childParentalMonths')}
+                    pending={pendingIn(`child-${child.id}`)}
+                    pendingLabel={pendingLabel}
+                  >
                     <NumberField
                       id={`child-parental-${child.id}`}
                       kind="months"
@@ -1897,7 +1951,12 @@ export function PlannerClient({
           <FieldGroup title={t('planner.expenses')}>{expenseFields}</FieldGroup>
           <div className="grid-12">
             {cashFields}
-            <AdvancedDisclosure id="sweep-adv" label={t('planner.sweepCap')}>
+            <AdvancedDisclosure
+              id="sweep-adv"
+              label={t('planner.sweepCap')}
+              pending={pendingIn('sweep')}
+              pendingLabel={pendingLabel}
+            >
               <NumberField
                 id="r-cap"
                 kind="money.large"
@@ -1987,6 +2046,8 @@ export function PlannerClient({
         open={sections.predpoklady ?? false}
         printing={printing}
         soloTitle={t('planSections.solo')}
+        pending={pendingIn('predpoklady')}
+        pendingLabel={pendingLabel}
         onToggle={(soloClick) => toggleSection('predpoklady', soloClick)}
       >
         <div className="grid-12">

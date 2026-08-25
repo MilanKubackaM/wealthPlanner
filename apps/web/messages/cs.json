@@ -356,7 +356,8 @@
     "potPrimaryHint": "Tenhle vklad model pozastaví, když nezbývá hotovost, a posílá sem přebytek nad stropem rezervy.",
     "potBalance": "Kolik už v ní máte",
     "potAdd": "Přidat investici",
-    "potRemove": "Odebrat"
+    "potRemove": "Odebrat",
+    "pending": "{count} k doplnění"
   },
   "compare": {
     "heading": "Srovnání scénářů",

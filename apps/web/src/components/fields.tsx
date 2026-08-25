@@ -533,6 +533,8 @@ export function FieldGroup({
   title,
   subtitle,
   summary,
+  pending,
+  pendingLabel,
   collapsible = false,
   defaultOpen = true,
   children,
@@ -541,6 +543,9 @@ export function FieldGroup({
   title?: string;
   subtitle?: string;
   summary?: string;
+  /** Parameters inside still on an unconfirmed default. See AdvancedDisclosure. */
+  pending?: number;
+  pendingLabel?: (count: number) => string;
   collapsible?: boolean;
   defaultOpen?: boolean;
   children: React.ReactNode;
@@ -559,6 +564,9 @@ export function FieldGroup({
                 <path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
               </svg>
               <span className="fg-title">{title}</span>
+              {pending && pending > 0 && pendingLabel ? (
+                <span className="pending">{pendingLabel(pending)}</span>
+              ) : null}
               {summary ? <span className="fg-sum">{summary}</span> : null}
             </button>
           </h3>
@@ -636,11 +644,22 @@ export function Repeater<T>({
 export function AdvancedDisclosure({
   id,
   label,
+  pending,
+  pendingLabel,
   defaultOpen = false,
   children,
 }: {
   id: string;
   label: string;
+  /**
+   * How many parameters inside are still carrying a default nobody has confirmed.
+   *
+   * A collapsed panel is invisible by design, which is fine for something already answered and
+   * wrong for something never asked: the wizard cannot ask about everything without becoming a
+   * form, so what it skipped has to announce itself from the outside or it is never found.
+   */
+  pending?: number;
+  pendingLabel?: (count: number) => string;
   defaultOpen?: boolean;
   children: React.ReactNode;
 }) {
@@ -658,6 +677,9 @@ export function AdvancedDisclosure({
           <path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
         {label}
+        {pending && pending > 0 && pendingLabel ? (
+          <span className="pending">{pendingLabel(pending)}</span>
+        ) : null}
       </button>
       <div className="grid-12" id={`${id}-adv`} hidden={!open ? true : undefined}>
         {children}

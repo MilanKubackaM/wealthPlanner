@@ -747,6 +747,38 @@ test.describe('planner', () => {
     expect(errors, errors.join('\n')).toEqual([]);
   });
 
+  test('collapsed panels say how many parameters are still on a default', async ({ page }) => {
+    const errors: string[] = [];
+    failOnConsoleErrors(page, errors);
+
+    await page.goto('/cs/plan');
+    await fillWizard(page);
+    await openSection(page, 'cisla');
+
+    /*
+     * The other half of the wizard's bargain. The stepper only asks what the projection cannot
+     * work without; the rest keeps a sourced default. That is honest only if the leftovers are
+     * findable, and a collapsed panel is invisible by design.
+     */
+    /* Addressed through `aria-controls`, because the id names the PANEL and the badge lives on
+       the button that toggles it. */
+    const sweep = page.locator('button[aria-controls="sweep-adv-adv"]');
+    await expect(sweep.locator('.pending')).toContainText(/\d+ k doplnění/);
+
+    /* Answering one of them decrements the count rather than merely hiding the badge. */
+    const before = Number((await sweep.locator('.pending').textContent())?.match(/\d+/)?.[0]);
+    await sweep.click();
+    await page.getByLabel(/Roční růst příjmu/).first().fill('4');
+    await expect
+      .poll(async () => Number((await sweep.locator('.pending').textContent())?.match(/\d+/)?.[0]))
+      .toBe(before - 1);
+
+    /* And the assumptions section carries its own count, on the section header. */
+    await expect(page.locator('#predpoklady-btn .pending')).toContainText(/\d+ k doplnění/);
+
+    expect(errors, errors.join('\n')).toEqual([]);
+  });
+
   test('a plan survives a reload with no save button in sight', async ({ page }) => {
     await page.goto('/cs/plan');
     await fillWizard(page);

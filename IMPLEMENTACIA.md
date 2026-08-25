@@ -1349,6 +1349,43 @@ Dve chyby cestou, obe zachytené console-error gate a suitou:
 - `.f-label` dostal `margin-block-end`: riadok so štítkom predtým sedel priamo na ovládacom
   prvku, takže akýkoľvek badge v ňom vyzeral prilepený k inputu, nie k štítku.
 
+### Fáza 2.5h — Čo sa wizard nepýtal a kde to nájsť (hotové 25. 8. 2026)
+
+Zbalené panely teraz hlásia, **koľko ich parametrov ešte stojí na defaulte, ktorý nikto
+nepotvrdil** — „3 na doplnenie" na sekcii Predpoklady, „5 na doplnenie" za Stropom rezervy.
+
+Toto je druhá polovica dohody, ktorú wizard uzavrel. Stepper sa zámerne pýta len na to, bez
+čoho projekcia nefunguje; ostatné drží sourced default, takže plán je osem obrazoviek daleko a
+nie tridsať. Tá dohoda je čestná **iba ak sa zvyšok dá nájsť** — a zbalený panel je neviditeľný
+zámerne, čo je správne pre odpovedané a nesprávne pre nikdy nepoložené.
+
+Jedna mapa (`defaultGroups`) vlastní, ktorý parameter patrí do ktorého panela, aby sa počet a
+panel nemohli rozsynchronizovať. Hotovosť a investície v nej **zámerne nie sú**: sú voliteľné a
+„nechal si prázdne to voliteľné" nie je dôvod otravovať. Počítajú sa defaulty, ktoré sme
+**uhádli**, nie otázky, ktoré užívateľ odmietol.
+
+**Rast platu je 4,5 % podľa ČNB.** Bola tam zadrátovaná 2 %, čo proti 2,5 % inflácii výdavkov
+znamenalo, že každá domácnosť dvadsaťpäť rokov potichu chudobnie — a to výhradne kvôli defaultu.
+ČNB uvádza 4,5 % ako **dlhodobo rovnovážnu** hodnotu, teda tempo konzistentné s inflačným
+cieľom, čo je presne to, čo 25-ročná projekcia potrebuje; skutočný rast bol 6,6 % za 2024–25 a
+8,1 % v Q1 2026, a extrapolovať dobiehaciu fázu až do dôchodku by bol optimizmus vydávaný za
+dáta. Slovenská hodnota nesie to isté číslo s `unverified: true`, pretože ekvivalent od NBS sa
+nenašiel a prenos nie je meranie.
+
+#### Čo sa pritom rozbilo — a prečo je to poučné
+
+Bohatšia domácnosť **vyrástla z vlastného prepadu**, takže landing page vykreslila zdravý plán
+a žiadny červený verdikt. A existujúci test **prešiel**, pretože tvrdil, že rezerva klesne pod
+*podlahu* — čo stále robila. Deficit bol pritom preč.
+
+Demo teraz **explicitne zdvojnásobuje vklad do ETF**, čo je presne príbeh, ktorý vždy
+vyprávalo (pár posielajúci každú voľnú korunu do ETF, kým rezerva stojí na mieste), a nový test
+tvrdí, že domácnosti **naozaj vyjdú peniaze**, nie že len klesne. Príklad, ktorý potichu
+prestane byť príkladom, je horší než žiadny príklad.
+
+`ENGINE_VERSION` sa nemení: default ovplyvní iba **nové** scenáre, uložené plány nesú vlastné
+číslo a 10 goldenov je bajt na bajt rovnakých — čo je dôkaz, že sa nepohol žiadny vzorec.
+
 ### Fáza 2.6 — Hodnotenia od používateľov (analýza hotová, implementácia pauznutá)
 
 > Analýza je dokončená 25. 8. 2026, implementácia odložená. Toto je jediná funkcia v celom

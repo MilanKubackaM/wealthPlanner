@@ -122,7 +122,13 @@ function czDefaults(start: YearMonth, size: HouseholdSize): ScenarioInput {
       cpiPct: 2.5,
       reserveFloorMonths: 3,
     },
-    people: people(size, birthYear, 39_000, solo ? tidy(6_000 * f.pocket, 'CZK', 'monthly') : 6_000),
+    people: people(
+      size,
+      birthYear,
+      39_000,
+      solo ? tidy(6_000 * f.pocket, 'CZK', 'monthly') : 6_000,
+      czechia.typicalWageGrowthPct.value,
+    ),
     housing: {
       kind: 'own',
       mortgages: [
@@ -194,7 +200,13 @@ function skDefaults(start: YearMonth, size: HouseholdSize): ScenarioInput {
       cpiPct: 2.5,
       reserveFloorMonths: 3,
     },
-    people: people(size, birthYear, 1_218, solo ? tidy(150 * f.pocket, 'EUR', 'monthly') : 150),
+    people: people(
+      size,
+      birthYear,
+      1_218,
+      solo ? tidy(150 * f.pocket, 'EUR', 'monthly') : 150,
+      slovakia.typicalWageGrowthPct.value,
+    ),
     housing: {
       kind: 'own',
       mortgages: [
@@ -237,12 +249,23 @@ function skDefaults(start: YearMonth, size: HouseholdSize): ScenarioInput {
   };
 }
 
-function people(size: HouseholdSize, birthYear: number, income: number, pocket: number) {
+function people(
+  size: HouseholdSize,
+  birthYear: number,
+  income: number,
+  pocket: number,
+  growthPct: number,
+) {
   const one = {
     id: 'p1',
     label: '',
     netMonthlyIncome: income,
-    incomeGrowthPct: 2,
+    /*
+     * Was a hardcoded 2 %, which was quietly pessimistic: against 2.5 % expense inflation it
+     * had every household getting poorer every year for twenty-five years, purely by default.
+     * Now the country's own long-run equilibrium figure, sourced and shown on /parametre.
+     */
+    incomeGrowthPct: growthPct,
     pocketMoney: pocket,
     birthYear,
     investments: [],
@@ -291,6 +314,23 @@ export function demoScenario(jurisdiction: JurisdictionCode, start: YearMonth): 
   const base = defaultScenario(jurisdiction, start, 2);
   return {
     ...base,
+    /*
+     * Twice the default contribution, and this is the authored flaw rather than a knob turned
+     * until the chart dipped: the example's whole story is a couple who send every spare koruna
+     * into an ETF while leaving the reserve where it is, so the leave eats it. At ~13 % of net
+     * income it is also a plausible, even commendable, rate — which is the point. The household
+     * is doing the responsible-sounding thing and it still breaks.
+     *
+     * It has to be stated here because it stopped being true by accident: when the default wage
+     * growth moved from a hardcoded 2 % to the ČNB long-run figure of 4.5 %, the household grew
+     * out of its own trough and the landing page had nothing left to demonstrate. An example
+     * that silently stops being an example is worse than no example, so this is explicit and
+     * an e2e test asserts the dip.
+     */
+    jointInvesting: {
+      ...base.jointInvesting,
+      monthlyContribution: base.jointInvesting.monthlyContribution * 2,
+    },
     children: [
       {
         id: 'c1',

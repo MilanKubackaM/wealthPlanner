@@ -21,6 +21,8 @@ const EC_AGEING_CZ =
   'https://economy-finance.ec.europa.eu/document/download/ee54a263-d496-44a3-9b3a-b5c48567c6dd_en?filename=2024-ageing-report-country-fiche-Czechia.pdf';
 const VANGUARD_CASH =
   'https://corporate.vanguard.com/content/corporatesite/us/en/corp/articles/beyond-emergency-funds-a-smarter-cash-strategy.html';
+const CNB_WAGE_DYNAMICS =
+  'https://www.cnb.cz/cs/menova-politika/zpravy-o-menove-politice/boxy-a-clanky/Mzdova-dynamika-v-historickem-kontextu-mezi-konvergenci-a-nakladovymi-tlaky/';
 const EUROSTAT_UNEXPECTED =
   'https://ec.europa.eu/eurostat/databrowser/view/ilc_mdes04/default/table?lang=en';
 
@@ -189,6 +191,12 @@ export const czechia: Jurisdiction = {
     source: CNB_LIMITS,
     unverified: true,
     note: 'OUR OWN advisory figure, deliberately far below any regulatory number. ČNB\'s 45 % DSTI is deactivated and was in any case the point at which a bank must refuse the loan — a legal ceiling, never a household target.',
+  },
+  typicalWageGrowthPct: {
+    value: 4.5,
+    verifiedAt: VERIFIED_AT,
+    source: CNB_WAGE_DYNAMICS,
+    note: 'ČNB names 4.5 % as the LONG-RUN EQUILIBRIUM rate of nominal wage growth — the pace consistent with meeting the inflation target — and that is what a 25-year projection wants. Actual growth was far above it recently (6.6 % across 2024-2025, 8.1 % in Q1 2026); using the recent rate would extrapolate a catch-up phase to retirement.',
   },
   cannotFaceUnexpectedExpensePct: {
     value: 18.7,

@@ -155,4 +155,12 @@ export interface Jurisdiction {
    * "better than most, still not adequate" and mean something by it.
    */
   readonly cannotFaceUnexpectedExpensePct: SourcedValue<number>;
+
+  /**
+   * Default annual NOMINAL wage growth for a new plan.
+   *
+   * Nominal on purpose: expenses inflate by their own `cpiPct`, so a real rate here would
+   * double-count inflation and quietly make every household richer every year.
+   */
+  readonly typicalWageGrowthPct: SourcedValue<number>;
 }
