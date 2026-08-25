@@ -95,6 +95,32 @@ raises the "computed by another version" banner once rather than twice):
   rail stretched the page to 1450px inside a 412px viewport, `overflow-x: hidden` clipped it,
   and every tap below the fold landed on the wrong element.
 
+**The refixation was showing a change the projection did not contain.** The step rendered a
+date and a new rate as if they were set, while `rateResets` was empty — so the screen said the
+rate rises in 2029 and the model said it never does. Touching either field silently committed
+the other one's displayed value too. It is now an explicit question, off by default, with the
+reason stated ("refixation is the largest risk in most households' next decade") and nothing
+modelled until it is answered. A prefilled assumption nobody made is worse than no assumption,
+and worst of all on the single biggest risk in the plan.
+
+**Cash and investments are lists now, because that is what a household has.** One balance, one
+savings rate, one contribution and one expected return forced a current account at 0 %, a
+savings account at 4 %, an ETF at 7 % and anything speculative into a single average — and put
+a rate and a return side by side as though they were different kinds of thing. Each row now
+carries exactly one percentage: cash accounts have an amount and a rate, investments have a
+value, a return and a monthly contribution. Both lists may be empty, and an emptied list stays
+empty rather than resurrecting the old total.
+
+Under it, one documented piece of coupling in `apps/web/src/lib/pots.ts` rather than an engine
+rewrite. The engine's two investment concepts are not interchangeable: `jointInvesting` is the
+contribution the model PAUSES when cash runs short and the target the reserve's overflow is
+swept into, so there can only be one — "what gets paused first" is an ordering, not a set —
+while sleeves already carry their own return, balance and contribution. So pot 0 is
+`jointInvesting` (labelled as such in the UI, and it has no remove button because it is a role,
+not an entry) and the rest are sleeves. Cash gets `Reserve.accounts`, descriptive only: the
+projection reads the total and the balance-weighted rate, and a test asserts that splitting the
+same money across accounts differently cannot move a single projected number.
+
 **The country is a question, not an inference from the interface language.** Deriving it from
 the locale was wrong for a case that is neither rare nor exotic: reading Slovak while earning,
 borrowing and raising children in Czechia. For that person locale-inference gets the currency,

@@ -133,14 +133,35 @@ export interface Expense {
   inflates: boolean;
 }
 
+/**
+ * One cash account, as the household actually holds it. DESCRIPTIVE: the projection reads
+ * `Reserve.balance` and `Reserve.annualRatePct`, never this list.
+ *
+ * The reason for the split is that a real household has a current account at 0 %, a savings
+ * account at 4 % and maybe a term deposit — while the model needs one buffer, because "which
+ * month does the reserve hit its floor" is a question about the total. So the UI keeps the
+ * breakdown, derives the total and the balance-weighted rate from it, and the engine consumes
+ * only the aggregate. A test asserts that editing this list alone moves no projected number.
+ */
+export interface CashAccount {
+  id: string;
+  label: string;
+  amount: number;
+  annualRatePct: number;
+}
+
 export interface Reserve {
+  /** The buffer the projection uses. Derived from `accounts` when the UI supplies them. */
   balance: number;
+  /** Balance-weighted average of the accounts' rates. */
   annualRatePct: number;
   /**
    * Anything above this is swept into joint investing each month.
    * null disables the sweep entirely.
    */
   sweepCap: number | null;
+  /** Descriptive breakdown of `balance`. Optional: a plan may just carry a single total. */
+  accounts?: CashAccount[];
 }
 
 export interface JointInvesting {
@@ -148,6 +169,8 @@ export interface JointInvesting {
   monthlyContribution: number;
   annualReturnPct: number;
   startingBalance: number;
+  /** What the household calls it. Descriptive; the projection never reads it. */
+  label?: string;
 }
 
 export interface Child {

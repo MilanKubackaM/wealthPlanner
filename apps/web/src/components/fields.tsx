@@ -500,6 +500,7 @@ export function Repeater<T>({
   removeLabel,
   emptyState,
   max,
+  canRemove,
   onAdd,
   onRemove,
   renderItem,
@@ -510,6 +511,9 @@ export function Repeater<T>({
   removeLabel: string;
   emptyState?: string;
   max?: number;
+  /** Some rows are structural rather than optional. A remove button that does nothing is worse
+   *  than no button, so those simply do not get one. */
+  canRemove?: (item: T, index: number) => boolean;
   onAdd: () => void;
   onRemove: (index: number) => void;
   renderItem: (item: T, index: number) => React.ReactNode;
@@ -521,9 +525,11 @@ export function Repeater<T>({
         <div className="rep-item" key={index}>
           <div className="rep-head">
             <span className="rep-title">{itemTitle(item, index)}</span>
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => onRemove(index)}>
-              {removeLabel}
-            </button>
+            {canRemove === undefined || canRemove(item, index) ? (
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => onRemove(index)}>
+                {removeLabel}
+              </button>
+            ) : null}
           </div>
           <div className="grid-12">{renderItem(item, index)}</div>
         </div>

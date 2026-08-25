@@ -37,10 +37,26 @@ export function upgradePlan(raw: ScenarioInput | LegacyScenario): ScenarioInput 
   const children: Child[] = Array.isArray(legacy.children) ? legacy.children : [];
   const liabilities: Liability[] = Array.isArray(legacy.liabilities) ? legacy.liabilities : [];
 
+  const reserve = legacy.reserve;
   return {
     ...(legacy as ScenarioInput),
     housing,
     liabilities,
+    /* One account standing for the whole total, so the editor always has a row to show. */
+    reserve:
+      reserve && (!reserve.accounts || reserve.accounts.length === 0)
+        ? {
+            ...reserve,
+            accounts: [
+              {
+                id: 'cash1',
+                label: '',
+                amount: reserve.balance,
+                annualRatePct: reserve.annualRatePct,
+              },
+            ],
+          }
+        : reserve,
     /*
      * A plan that already contains a child obviously intends children. A plan without one is
      * 'undecided', never 'no': the user was never asked, and 'no' is an answer.

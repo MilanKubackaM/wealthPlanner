@@ -175,6 +175,65 @@ test.describe('the wizard', () => {
     await expect(page.locator('#m-balance')).toHaveCount(0);
   });
 
+  test('asks about the refixation instead of pretending it is already filled in', async ({ page }) => {
+    await page.goto('/cs/plan');
+    await startWizard(page);
+    await page.getByRole('button', { name: 'Pokračovat' }).click();
+    await expect(page.getByRole('heading', { name: /Jak řešíte bydlení/ })).toBeVisible();
+
+    /*
+     * The regression this exists for: the date and the new rate used to be rendered as if they
+     * were set, while `rateResets` was empty — the screen showed a refixation in 2029 that the
+     * projection did not contain, and touching either field silently committed the other one's
+     * displayed value. It is now a question, off by default, and nothing is modelled until it
+     * is answered.
+     */
+    await expect(page.getByRole('radio', { name: /Nemám \/ neřeším/ })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    await expect(page.locator('#m-refix-rate')).toHaveCount(0);
+    await expect(page.locator('#m-refix-year')).toHaveCount(0);
+
+    await page.getByRole('radio', { name: /Ano, skončí/ }).click();
+    await expect(page.locator('#m-refix-rate')).toBeVisible();
+    await expect(page.locator('#m-refix-year')).toBeVisible();
+
+    /* And it can be turned back off, leaving nothing behind. */
+    await page.getByRole('radio', { name: /Nemám \/ neřeším/ }).click();
+    await expect(page.locator('#m-refix-rate')).toHaveCount(0);
+  });
+
+  test('takes several cash accounts and several investments, each with its own rate', async ({ page }) => {
+    const errors: string[] = [];
+    failOnConsoleErrors(page, errors);
+
+    await page.goto('/cs/plan');
+    await startWizard(page);
+    for (let i = 0; i < 4; i++) await page.getByRole('button', { name: 'Pokračovat' }).click();
+    await expect(page.getByRole('heading', { name: /Rezerva a investování/ })).toBeVisible();
+
+    /* A current account at 0 % beside a savings account is the commonest real arrangement. */
+    await page.getByRole('button', { name: 'Přidat účet' }).click();
+    const amounts = page.getByLabel(/Kolik máte teď/);
+    await expect(amounts).toHaveCount(2);
+    await amounts.nth(1).fill('200000');
+    /* Two accounts, one at 4 % and one at 0 %, blend to 2 % — and the header says so. */
+    await expect(page.getByText(/Celkem/)).toContainText('2');
+
+    /* A second investment, with a different expected return. */
+    await page.getByRole('button', { name: 'Přidat investici' }).click();
+    const returns = page.getByLabel(/Očekávaný roční výnos/);
+    await expect(returns).toHaveCount(2);
+    await returns.nth(1).fill('12');
+    await expect(returns.nth(1)).toHaveValue('12');
+
+    /* The primary pot is a role, not an entry: it has no remove button. */
+    await expect(page.getByRole('button', { name: 'Odebrat' })).toHaveCount(3);
+
+    expect(errors, errors.join('\n')).toEqual([]);
+  });
+
   test('treats children as a question, not as a form to fill in', async ({ page }) => {
     await page.goto('/cs/plan');
     await startWizard(page);

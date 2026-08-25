@@ -431,6 +431,28 @@ describe('simulate — descriptive fields must stay descriptive', () => {
     }
   });
 
+  it('ignores the cash-account breakdown and uses only the aggregate', () => {
+    /*
+     * The UI derives balance and rate from a list of accounts. The engine must read the
+     * aggregate and nothing else, or the same plan would compute differently depending on how
+     * the user happened to split it across accounts.
+     */
+    const base = czCoupleWithMortgage();
+    const withBreakdown = simulate({
+      ...base,
+      reserve: {
+        ...base.reserve,
+        accounts: [
+          { id: 'a', label: 'Current', amount: 999_999, annualRatePct: 0 },
+          { id: 'b', label: 'Savings', amount: 1, annualRatePct: 40 },
+        ],
+      },
+    });
+    const plain = simulate(base);
+    expect(withBreakdown.minReserve).toBe(plain.minReserve);
+    expect(withBreakdown.finalNetWorth).toBe(plain.finalNetWorth);
+  });
+
   it('never invents an age for a person who did not give one', () => {
     const at = { year: 2026, month: 8 };
     expect(ageAt(undefined, at)).toBeNull();

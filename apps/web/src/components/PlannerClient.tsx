@@ -7,6 +7,7 @@ import {
   buildLevers,
   detectProblems,
   simulate,
+  type CashAccount,
   type Child,
   type Liability,
   type ProjectionResult,
@@ -52,6 +53,16 @@ import { Disclosure, SectionRail, usePrinting } from './Disclosure';
 import { Compare } from './Compare';
 import { EnvelopesEditor } from './EnvelopesEditor';
 import { SleevesEditor } from './SleevesEditor';
+import {
+  aggregateAccounts,
+  newAccount,
+  newPot,
+  readAccounts,
+  readPots,
+  writeAccounts,
+  writePots,
+  type Pot,
+} from '@/lib/pots';
 import { decodeScenario, shareUrl } from '@/lib/share';
 import { sensitivityRows } from '@/lib/variants';
 import { Sensitivity } from './Sensitivity';
@@ -159,7 +170,7 @@ function trackedPaths(scenario: ScenarioInput): string[] {
     paths.push('housing.mortgage.balance', 'housing.mortgage.annualRatePct', 'housing.mortgage.monthlyPayment');
   }
   scenario.expenses.forEach((e) => paths.push(`expenses.${e.id}`));
-  paths.push('reserve.balance', 'reserve.annualRatePct', 'jointInvesting.monthlyContribution');
+  paths.push('reserve.balance', 'jointInvesting.monthlyContribution');
   scenario.liabilities.forEach((_, i) => paths.push(`liabilities[${i}].balance`));
   scenario.children.forEach((_, i) => paths.push(`children[${i}].birth`, `children[${i}].monthlyCost`));
   return paths;
@@ -726,64 +737,88 @@ export function PlannerClient({
             onChange={(v) => patchMortgage({ monthlyPayment: v }, 'housing.mortgage.monthlyPayment')}
             {...numberProps}
           />
-          {/* The refixation is two real fields, not a button beside a paragraph. It is the
-              dominant risk in a Czech or Slovak household's next decade. */}
-          <MonthYearField
-            id="m-refix"
-            label={t('planner.refixAt')}
-            value={mortgage.rateResets[0]?.at ?? { year: startMonth.year + 3, month: startMonth.month }}
-            months={months}
-            minYear={startMonth.year}
-            maxYear={scenario.assumptions.horizonYear}
-            span={6}
-            error={
-              mortgage.rateResets[0] &&
-              mortgage.rateResets[0].at.year * 12 + mortgage.rateResets[0].at.month <
-                startMonth.year * 12 + startMonth.month
-                ? t('fieldError.refixBeforeStart')
-                : null
-            }
-            onChange={(at) =>
+          {/*
+            An explicit question, and OFF by default.
+            Before this it was two fields that displayed a date and a rate which were NOT in
+            the model — `rateResets` was empty, so the screen showed a refixation in 2029 that
+            the projection did not contain, and touching either field silently committed the
+            other one's displayed value too. A prefilled assumption the user never made is
+            worse than no assumption, especially for the single largest risk in the plan.
+          */}
+          <ChoiceField<'no' | 'yes'>
+            id="m-has-refix"
+            label={t('planner.refixHas')}
+            variant="segmented"
+            value={mortgage.rateResets.length > 0 ? 'yes' : 'no'}
+            hint={t('planner.refixWhy')}
+            options={[
+              { value: 'no', label: t('planner.refixNo') },
+              { value: 'yes', label: t('planner.refixYes') },
+            ]}
+            onChange={(v) => {
+              markTouched('housing.mortgage.refix');
               patchMortgage(
                 {
-                  rateResets: [
-                    {
-                      at,
-                      newAnnualRatePct:
-                        mortgage.rateResets[0]?.newAnnualRatePct ?? mortgage.annualRatePct + 1,
-                    },
-                  ],
+                  rateResets:
+                    v === 'no'
+                      ? []
+                      : [
+                          {
+                            at: { year: startMonth.year + 3, month: startMonth.month },
+                            newAnnualRatePct:
+                              Math.round((mortgage.annualRatePct + 1) * 10) / 10,
+                          },
+                        ],
                 },
                 'housing.mortgage.refix',
-              )
-            }
+              );
+            }}
           />
-          <NumberField
-            id="m-refix-rate"
-            kind="percent.rate"
-            label={t('planner.refixRate')}
-            hint={t('planner.refixHint', { rate: percent(jurisdiction.typicalMortgageRatePct.value, locale) })}
-            value={mortgage.rateResets[0]?.newAnnualRatePct ?? mortgage.annualRatePct + 1}
-            span={6}
-            onChange={(v) =>
-              patchMortgage(
-                {
-                  rateResets: [
-                    {
-                      at:
-                        mortgage.rateResets[0]?.at ?? {
-                          year: startMonth.year + 3,
-                          month: startMonth.month,
-                        },
-                      newAnnualRatePct: v,
-                    },
-                  ],
-                },
-                'housing.mortgage.refix',
-              )
-            }
-            {...numberProps}
-          />
+
+          {mortgage.rateResets[0] ? (
+            <>
+              <MonthYearField
+                id="m-refix"
+                label={t('planner.refixAt')}
+                value={mortgage.rateResets[0].at}
+                months={months}
+                minYear={startMonth.year}
+                maxYear={scenario.assumptions.horizonYear}
+                span={6}
+                hint={t('planner.refixAtHint')}
+                error={
+                  mortgage.rateResets[0].at.year * 12 + mortgage.rateResets[0].at.month <
+                  startMonth.year * 12 + startMonth.month
+                    ? t('fieldError.refixBeforeStart')
+                    : null
+                }
+                onChange={(at) =>
+                  patchMortgage(
+                    { rateResets: [{ ...mortgage.rateResets[0]!, at }] },
+                    'housing.mortgage.refix',
+                  )
+                }
+              />
+              <NumberField
+                id="m-refix-rate"
+                kind="percent.rate"
+                label={t('planner.refixRate')}
+                hint={t('planner.refixHint', {
+                  rate: percent(jurisdiction.typicalMortgageRatePct.value, locale),
+                })}
+                value={mortgage.rateResets[0].newAnnualRatePct}
+                span={6}
+                estimate={!touched.includes('housing.mortgage.refixRate')}
+                onChange={(v) =>
+                  patchMortgage(
+                    { rateResets: [{ ...mortgage.rateResets[0]!, newAnnualRatePct: v }] },
+                    'housing.mortgage.refixRate',
+                  )
+                }
+                {...numberProps}
+              />
+            </>
+          ) : null}
         </>
       ) : null}
 
@@ -991,55 +1026,191 @@ export function PlannerClient({
     </>
   );
 
+  const accounts = readAccounts(scenario);
+  const pots = readPots(scenario);
+  const cashTotal = aggregateAccounts(accounts);
+
+  function patchAccounts(next: CashAccount[], path: string) {
+    markTouched(path);
+    setScenario((current) => writeAccounts(current, next));
+  }
+
+  function patchPots(next: Pot[], path: string) {
+    markTouched(path);
+    setScenario((current) => writePots(current, next));
+  }
+
+  /*
+   * Two lists, not four fields.
+   *
+   * A household does not have "a reserve" and "an investment" — it has a current account at
+   * 0 %, a savings account at 4 %, an ETF at 7 % and maybe something speculative at 12 %. The
+   * old step asked for one balance, one savings rate, one contribution and one expected return,
+   * which forced all of that into a single average and put a rate and a return side by side as
+   * if they were different kinds of thing. Each row here carries exactly one percentage.
+   *
+   * Both lists may be empty: a household with no cash and no investments is a real starting
+   * point, and the projection tells that story honestly rather than refusing to run.
+   */
   const cashFields = (
     <>
-      <NumberField
-        id="r-balance"
-        kind="money.balance"
-        label={t('planner.reserveBalance')}
-        value={scenario.reserve.balance}
-        span={4}
-        estimate={!touched.includes('reserve.balance')}
-        onChange={(v) => edit('reserve.balance', { reserve: { ...scenario.reserve, balance: v } })}
-        {...numberProps}
-      />
-      <NumberField
-        id="r-rate"
-        kind="percent.rate"
-        label={t('planner.reserveRate')}
-        value={scenario.reserve.annualRatePct}
-        span={4}
-        estimate={!touched.includes('reserve.annualRatePct')}
-        onChange={(v) => edit('reserve.annualRatePct', { reserve: { ...scenario.reserve, annualRatePct: v } })}
-        {...numberProps}
-      />
-      <NumberField
-        id="dca"
-        kind="money.monthly"
-        label={t('planner.dca')}
-        value={scenario.jointInvesting.monthlyContribution}
-        span={4}
-        estimate={!touched.includes('jointInvesting.monthlyContribution')}
-        onChange={(v) =>
-          edit('jointInvesting.monthlyContribution', {
-            jointInvesting: { ...scenario.jointInvesting, monthlyContribution: v },
-          })
-        }
-        {...numberProps}
-      />
-      <NumberField
-        id="dca-return"
-        kind="percent.growth"
-        label={t('planner.expectedReturn')}
-        value={scenario.jointInvesting.annualReturnPct}
-        span={4}
-        onChange={(v) =>
-          edit('jointInvesting.annualReturnPct', {
-            jointInvesting: { ...scenario.jointInvesting, annualReturnPct: v },
-          })
-        }
-        {...numberProps}
-      />
+      <div className="span-12">
+        <FieldGroup
+          title={t('planner.reserve')}
+          subtitle={t('planner.reserveHint')}
+          summary={
+            accounts.length > 1
+              ? t('planner.reserveTotal', {
+                  amount: money(cashTotal.balance, currency, locale),
+                  rate: percent(cashTotal.annualRatePct, locale),
+                })
+              : undefined
+          }
+        >
+          <div className="span-12">
+            <Repeater<CashAccount>
+              items={accounts}
+              max={6}
+              itemTitle={(item, index) => item.label || t('planner.accountN', { n: index + 1 })}
+              addLabel={t('planner.accountAdd')}
+              removeLabel={t('planner.accountRemove')}
+              emptyState={t('planner.reserveEmpty')}
+              onAdd={() => patchAccounts([...accounts, newAccount(accounts)], 'reserve.accounts')}
+              onRemove={(index) =>
+                patchAccounts(
+                  accounts.filter((_, i) => i !== index),
+                  'reserve.accounts',
+                )
+              }
+              renderItem={(account, index) => {
+                const update = (next: Partial<CashAccount>, path: string) =>
+                  patchAccounts(
+                    accounts.map((a, i) => (i === index ? { ...a, ...next } : a)),
+                    path,
+                  );
+                return (
+                  <>
+                    <TextField
+                      id={`r-name-${account.id}`}
+                      label={t('planner.accountName')}
+                      value={account.label}
+                      placeholder={t('planner.accountPlaceholder')}
+                      span={6}
+                      onChange={(label) => update({ label }, `reserve.accounts.${account.id}.label`)}
+                    />
+                    <NumberField
+                      id={index === 0 ? 'r-balance' : `r-amount-${account.id}`}
+                      kind="money.balance"
+                      label={t('planner.reserveBalance')}
+                      value={account.amount}
+                      span={3}
+                      estimate={!touched.includes('reserve.balance')}
+                      onChange={(amount) => update({ amount }, 'reserve.balance')}
+                      {...numberProps}
+                    />
+                    <NumberField
+                      id={index === 0 ? 'r-rate' : `r-rate-${account.id}`}
+                      kind="percent.rate"
+                      label={t('planner.reserveRate')}
+                      hint={index === 0 ? t('planner.reserveRateHint') : undefined}
+                      value={account.annualRatePct}
+                      span={3}
+                      onChange={(annualRatePct) =>
+                        update({ annualRatePct }, `reserve.accounts.${account.id}.rate`)
+                      }
+                      {...numberProps}
+                    />
+                  </>
+                );
+              }}
+            />
+          </div>
+        </FieldGroup>
+      </div>
+
+      <div className="span-12">
+        <FieldGroup title={t('planner.investing')} subtitle={t('planner.investingHint')}>
+          <div className="span-12">
+            <Repeater<Pot>
+              items={pots}
+              max={6}
+              itemTitle={(item, index) =>
+                item.label ||
+                (item.primary ? t('planner.potPrimary') : t('planner.potN', { n: index + 1 }))
+              }
+              addLabel={t('planner.potAdd')}
+              removeLabel={t('planner.potRemove')}
+              /* The primary pot is the throttled one and the sweep target; it is a role, not
+                 an entry. Set its contribution to zero to stop investing. */
+              canRemove={(item) => !item.primary}
+              onAdd={() => patchPots([...pots, newPot(scenario, pots)], 'investments')}
+              onRemove={(index) =>
+                patchPots(
+                  pots.filter((_, i) => i !== index),
+                  'investments',
+                )
+              }
+              renderItem={(pot, index) => {
+                const update = (next: Partial<Pot>, path: string) =>
+                  patchPots(
+                    pots.map((p, i) => (i === index ? { ...p, ...next } : p)),
+                    path,
+                  );
+                return (
+                  <>
+                    <TextField
+                      id={`i-name-${pot.id}`}
+                      label={t('planner.potName')}
+                      value={pot.label}
+                      placeholder={
+                        pot.primary ? t('planner.potPrimary') : t('planner.potPlaceholder')
+                      }
+                      span={6}
+                      onChange={(label) => update({ label }, `investments.${pot.id}.label`)}
+                    />
+                    <NumberField
+                      id={pot.primary ? 'dca' : `i-monthly-${pot.id}`}
+                      kind="money.monthly"
+                      label={t('planner.dca')}
+                      value={pot.monthlyContribution}
+                      span={6}
+                      estimate={pot.primary && !touched.includes('jointInvesting.monthlyContribution')}
+                      onChange={(monthlyContribution) =>
+                        update(
+                          { monthlyContribution },
+                          pot.primary ? 'jointInvesting.monthlyContribution' : `investments.${pot.id}.monthly`,
+                        )
+                      }
+                      {...numberProps}
+                    />
+                    <NumberField
+                      id={pot.primary ? 'i-balance' : `i-balance-${pot.id}`}
+                      kind="money.balance"
+                      label={t('planner.potBalance')}
+                      value={pot.balance}
+                      span={6}
+                      onChange={(balance) => update({ balance }, `investments.${pot.id}.balance`)}
+                      {...numberProps}
+                    />
+                    <NumberField
+                      id={pot.primary ? 'dca-return' : `i-return-${pot.id}`}
+                      kind="percent.growth"
+                      label={t('planner.expectedReturn')}
+                      hint={pot.primary ? t('planner.potPrimaryHint') : undefined}
+                      value={pot.annualReturnPct}
+                      span={6}
+                      onChange={(annualReturnPct) =>
+                        update({ annualReturnPct }, `investments.${pot.id}.return`)
+                      }
+                      {...numberProps}
+                    />
+                  </>
+                );
+              }}
+            />
+          </div>
+        </FieldGroup>
+      </div>
     </>
   );
 
@@ -1603,7 +1774,7 @@ export function PlannerClient({
           <FieldGroup title={t('planner.housing')}>{housingFields}</FieldGroup>
           <FieldGroup title={t('planner.debts')}>{debtFields}</FieldGroup>
           <FieldGroup title={t('planner.expenses')}>{expenseFields}</FieldGroup>
-          <FieldGroup title={t('planner.reserve')}>
+          <div className="grid-12">
             {cashFields}
             <AdvancedDisclosure id="sweep-adv" label={t('planner.sweepCap')}>
               <NumberField
@@ -1663,7 +1834,7 @@ export function PlannerClient({
                 />
               ))}
             </AdvancedDisclosure>
-          </FieldGroup>
+          </div>
           <FieldGroup title={t('planner.children')}>{childFields}</FieldGroup>
 
           <FieldGroup title={t('planner.personalInvesting')} collapsible defaultOpen={false}>

@@ -789,6 +789,29 @@ v jedinom riadku (`engineVersion` 3 → 4), tri nové goldeny pribudli. Zo 72 po
    `overflow-x: hidden` a každý tap pod zlomom dopadal na iný prvok, než na aký mieril. §6.3 to
    zakazuje výslovne; teraz to hlídá aj e2e na mobilnom projekte.
 
+**Refixácia zobrazovala zmenu, ktorú projekcia neobsahovala.** Krok vykresľoval dátum a novú
+sadzbu tak, ako keby boli nastavené, kým `rateResets` bolo prázdne — obrazovka teda tvrdila, že
+sadzba v roku 2029 stúpne, a model tvrdil, že nikdy. A dotknutie sa jedného poľa ticho commitlo
+aj zobrazenú hodnotu druhého. Teraz je to výslovná otázka, **vypnutá defaultne**, s uvedeným
+dôvodom, a kým na ňu neodpovieš, model nič nepredpokladá. Predvyplnený predpoklad, ktorý nikto
+neurobil, je horší než žiadny — a najhorší práve pri najväčšom riziku celého plánu.
+
+**Hotovosť a investície sú zoznamy, pretože presne to domácnosť má.** Jeden zostatok, jeden
+úrok, jeden vklad a jeden očakávaný výnos vtlačili bežný účet na 0 %, sporiaci na 4 %, ETF na
+7 % a čokoľvek špekulatívne do jediného priemeru — a postavili úrok a výnos vedľa seba, akoby to
+boli dva druhy tej istej veci. Každý riadok teraz nesie **presne jedno percento**: účty majú sumu
+a úrok, investície hodnotu, výnos a mesačný vklad. Oba zoznamy môžu byť prázdne, a vyprázdnený
+zoznam prázdny zostane — nevzkriesi starý súčet.
+
+Pod tým je **jedno zdokumentované miesto spojenia** v `apps/web/src/lib/pots.ts`, nie prepis
+enginu. Dva investičné pojmy enginu nie sú zameniteľné: `jointInvesting` je vklad, ktorý model
+**pozastaví**, keď nezostáva hotovosť, a cieľ, kam sa zmieta prebytok nad stropom rezervy —
+takže môže byť len jeden, lebo „čo sa pozastaví prvé" je poradie, nie množina. Sleeves už svoj
+vlastný výnos, zostatok a vklad majú. Preto pot 0 je `jointInvesting` (v UI tak aj pomenovaný a
+bez tlačidla „odobrať", pretože je to rola, nie položka) a ostatné sú sleeves. Hotovosť dostala
+`Reserve.accounts` ako **čisto deskriptívne** pole: projekcia číta súčet a váhovaný úrok, a test
+tvrdí, že iné rozdelenie tých istých peňazí medzi účty nesmie pohnúť ani jedným číslom.
+
 **Krajina je otázka, nie odvodenie z jazyka rozhrania — rozhodnutie 4 sa týmto opravuje.** Plán
 hovoril „krajina prestáva byť prvá otázka wizardu, odvodí sa z locale". To je nesprávne pre
 prípad, ktorý nie je ani vzácny, ani exotický: čítať po slovensky a pritom pracovať, mať

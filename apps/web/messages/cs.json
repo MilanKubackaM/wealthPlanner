@@ -194,7 +194,7 @@
     },
     "cash": {
       "title": "Rezerva a investování",
-      "body": "Kolik máte v hotovosti a kolik měsíčně posíláte do investic."
+      "body": "Hotovost po účtech a investice po položkách — každá se svým vlastním výnosem. Obojí můžete nechat prázdné."
     },
     "children": {
       "title": "Děti",
@@ -233,8 +233,8 @@
     "mortgageRate": "Úroková sazba",
     "mortgagePayment": "Měsíční splátka",
     "refixAdd": "Přidat refixaci",
-    "refixAt": "Kdy",
-    "refixRate": "Nová sazba",
+    "refixAt": "Kdy fixace skončí",
+    "refixRate": "Sazba po refixaci",
     "refixHint": "Při průměrné sazbě okolo {rate} je refixace pro většinu domácností největší riziko příští dekády.",
     "expenses": "Pravidelné výdaje",
     "expenseUtilities": "Energie a služby",
@@ -341,7 +341,30 @@
     "saving": "Ukládám…",
     "countryHint": "Podle země se do modelu dostanou správné dávky, limity a měna. Nemusí to být země, ve které čtete tuhle stránku.",
     "countryHintCZ": "Koruny, české dávky, limity ČNB",
-    "countryHintSK": "Eura, slovenské dávky, limity NBS"
+    "countryHintSK": "Eura, slovenské dávky, limity NBS",
+    "refixHas": "Máte fixaci, která skončí?",
+    "refixWhy": "Refixace je pro většinu domácností největší riziko příští dekády. Když ji nevyplníte, model počítá se stejnou sazbou po celou dobu.",
+    "refixNo": "Nemám / neřeším",
+    "refixYes": "Ano, skončí",
+    "refixAtHint": "Měsíc, od kterého platí nová sazba.",
+    "reserveHint": "Účty, na kterých držíte hotovost. Přebytek sem model posílá sám, takže se tu nezadává měsíční vklad — jen kolik na nich je dnes a co nesou.",
+    "reserveEmpty": "Žádná hotovost. Model to unese, ale rezerva pak startuje na nule.",
+    "reserveTotal": "Celkem {amount} · průměrně {rate}",
+    "reserveRateHint": "Běžný účet nenese nic — dejte mu 0 % a přidejte spořicí zvlášť.",
+    "accountName": "Název účtu",
+    "accountPlaceholder": "Spořicí účet",
+    "accountN": "Účet {n}",
+    "accountAdd": "Přidat účet",
+    "accountRemove": "Odebrat",
+    "investingHint": "Každá investice má svůj vlastní očekávaný výnos. Nechte prázdné, pokud zatím neinvestujete.",
+    "potName": "Název investice",
+    "potPlaceholder": "Akciové ETF",
+    "potN": "Investice {n}",
+    "potPrimary": "Hlavní investice",
+    "potPrimaryHint": "Tenhle vklad model pozastaví, když nezbývá hotovost, a posílá sem přebytek nad stropem rezervy.",
+    "potBalance": "Kolik už v ní máte",
+    "potAdd": "Přidat investici",
+    "potRemove": "Odebrat"
   },
   "compare": {
     "heading": "Srovnání scénářů",

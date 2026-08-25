@@ -142,6 +142,9 @@ function czDefaults(start: YearMonth, size: HouseholdSize): ScenarioInput {
       balance: s(200_000, f.reserve, 'balance'),
       annualRatePct: 4,
       sweepCap: s(600_000, f.reserve, 'balance'),
+      accounts: [
+        { id: 'cash1', label: '', amount: s(200_000, f.reserve, 'balance'), annualRatePct: 4 },
+      ],
     },
     jointInvesting: {
       monthlyContribution: s(5_000, f.investing),
@@ -213,6 +216,9 @@ function skDefaults(start: YearMonth, size: HouseholdSize): ScenarioInput {
       balance: s(6_500, f.reserve, 'balance'),
       annualRatePct: 2,
       sweepCap: s(19_500, f.reserve, 'balance'),
+      accounts: [
+        { id: 'cash1', label: '', amount: s(6_500, f.reserve, 'balance'), annualRatePct: 2 },
+      ],
     },
     jointInvesting: {
       monthlyContribution: s(200, f.investing),
