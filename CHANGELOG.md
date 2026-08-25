@@ -95,6 +95,23 @@ raises the "computed by another version" banner once rather than twice):
   rail stretched the page to 1450px inside a 412px viewport, `overflow-x: hidden` clipped it,
   and every tap below the fold landed on the wrong element.
 
+**The landing example can be repaired in place.** Each suggestion has an Apply button; applying
+one re-runs the simulation, redraws the chart, and rewrites the sentence above it — so the visitor
+watches the deficit disappear instead of reading a claim that it would. The accepted option stays
+marked (green leading edge, a "Použito" chip, and a Revert) so it is always clear which change the
+picture is showing.
+
+Exactly one at a time, and that is correctness rather than simplification: each option's
+before/after was computed against the untouched household, so two of them stacked would be two
+proofs about a situation that no longer exists. Applying a second replaces the first, which is
+also what "one of these" promises. The list of options stays derived from the untouched household,
+so using one does not make the options vanish underneath the person who just used it.
+
+The outcome line has three states, not two, and the third is why: clearing the deficit can still
+leave the milder "below the recommended minimum" finding, because each proof was about the deficit
+alone. Saying "the reserve no longer goes below zero" while the sentence above the chart reports a
+remaining finding would read as the model contradicting itself.
+
 **The landing page was throwing away two thirds of what the engine found.** It rendered
 `fixes[0]` and dropped the rest: for both demos the recommender proves THREE separate ways out
 of the deficit — a shorter parental leave, lower free spending, or a smaller monthly

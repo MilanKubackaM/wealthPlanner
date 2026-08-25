@@ -149,7 +149,13 @@
       "children_parentalMonths": "Skrátiť čerpanie rodičovskej",
       "liabilities_monthlyPayment": "Rozložiť splátku dlhu na dlhší čas"
     },
-    "noneSingle": "Žiadna jednotlivá páka problém nevyrieši. Pri domácnosti s jedným príjmom to obvykle znamená kratšiu rodičovskú alebo nižšie fixné výdavky — samotné voľné výdavky na to nestačia."
+    "noneSingle": "Žiadna jednotlivá páka problém nevyrieši. Pri domácnosti s jedným príjmom to obvykle znamená kratšiu rodičovskú alebo nižšie fixné výdavky — samotné voľné výdavky na to nestačia.",
+    "revert": "Vrátiť späť",
+    "appliedBadge": "Použité",
+    "applyHint": "Skúste niektorú použiť — graf aj veta nad ním sa prepočítajú.",
+    "appliedClear": "Po tejto zmene už rezerva pod nulu neklesne. Najnižšia bude {amount}.",
+    "appliedStill": "Rezerva sa aj po tejto zmene dostane pod nulu {when}.",
+    "appliedClearButLow": "Po tejto zmene už rezerva pod nulu neklesne — najnižšia bude {amount}. Pod odporúčané minimum sa však ešte dostane; to rieši až druhá z úprav."
   },
   "onboarding": {
     "skip": "Preskočiť zvyšok — chcem vidieť plán",

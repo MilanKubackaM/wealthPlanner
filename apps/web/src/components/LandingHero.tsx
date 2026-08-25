@@ -2,7 +2,16 @@
 
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { analyse, criterionFor, detectProblems, simulate, type YearMonth } from '@wealthplanner/engine';
+import {
+  analyse,
+  buildLevers,
+  criterionFor,
+  detectProblems,
+  simulate,
+  type Recommendation,
+  type ScenarioInput,
+  type YearMonth,
+} from '@wealthplanner/engine';
 import { jurisdictionFor } from '@wealthplanner/jurisdictions';
 import { countryFor, demoScenario } from '@/lib/defaults';
 import { money, monthPhrase, type UiLocale } from '@/lib/format';
@@ -40,21 +49,28 @@ export function LandingHero({ locale, startMonth }: { locale: UiLocale; startMon
   const monthsIn = t.raw('monthsIn') as string[];
   /* Which option's proof is open, by lever id. One at a time, and none by default. */
   const [openProof, setOpenProof] = useState<string | null>(null);
+  /*
+   * The applied option, by lever id.
+   *
+   * Exactly ONE at a time, and that is a correctness constraint rather than a simplification:
+   * each option's before/after was computed against the untouched household, so two of them
+   * stacked would be two proofs about a situation that no longer exists. Applying a second one
+   * therefore replaces the first, which is also what "one of these" promises.
+   */
+  const [applied, setApplied] = useState<string | null>(null);
 
-  const { scenario, result, headline, fixes } = useMemo(() => {
+  /* The example as authored, and the findings, which stay computed from THIS one. */
+  const { base, fixes } = useMemo(() => {
     const code = countryFor(locale);
     const s = demoScenario(code, startMonth);
-    const r = simulate(s);
-    const problems = detectProblems(s, r, {
+    const problems = detectProblems(s, simulate(s), {
       typicalSavingsRatePct: jurisdictionFor(code).typicalTopSavingsRatePct.value,
       retirementAgeYears: jurisdictionFor(code).statutoryRetirementAgeYears.value,
     });
     const fixable = problems.filter((p) => criterionFor(p) !== null);
     const analysed = fixable.length > 0 ? analyse(s, [fixable[0]!]) : [];
     return {
-      scenario: s,
-      result: r,
-      headline: fixable[0] ?? null,
+      base: s,
       /*
        * All of them, least drastic first — up to three.
        *
@@ -62,21 +78,45 @@ export function LandingHero({ locale, startMonth }: { locale: UiLocale; startMon
        * verified ways out of the demo's deficit, and showing one made the product look like it
        * has a single opinion. The whole claim is that it searches the input space and proves
        * what it finds; a list of alternatives IS the claim, and one line is the claim hidden.
+       *
+       * Deliberately derived from the UNTOUCHED household, so applying an option does not make
+       * the list of options vanish underneath the person who just used it.
        */
       fixes: (analysed[0]?.fixes ?? []).slice(0, 3),
     };
   }, [locale, startMonth]);
 
-  const currency = scenario.currency;
+  const appliedFix: Recommendation | null = fixes.find((f) => f.leverId === applied) ?? null;
+
+  /* What the chart and the headline are actually about: the household as it now stands. */
+  const scenario: ScenarioInput = useMemo(() => {
+    if (!appliedFix) return base;
+    const lever = buildLevers(base).find((l) => l.id === appliedFix.leverId);
+    return lever ? lever.set(base, appliedFix.to) : base;
+  }, [base, appliedFix]);
+
+  const result = useMemo(() => simulate(scenario), [scenario]);
+
+  /* Re-detected, so the sentence over the chart reports the household on screen, not the old one. */
+  const headline = useMemo(() => {
+    const code = countryFor(locale);
+    const problems = detectProblems(scenario, result, {
+      typicalSavingsRatePct: jurisdictionFor(code).typicalTopSavingsRatePct.value,
+      retirementAgeYears: jurisdictionFor(code).statutoryRetirementAgeYears.value,
+    });
+    return problems.filter((p) => criterionFor(p) !== null)[0] ?? null;
+  }, [locale, scenario, result]);
+
+  const currency = base.currency;
 
   /* Read off the scenario, never typed into the copy: the story cannot contradict the chart. */
-  const mortgage = scenario.housing.kind === 'own' ? scenario.housing.mortgages[0] : undefined;
+  const mortgage = base.housing.kind === 'own' ? base.housing.mortgages[0] : undefined;
   const story = {
-    income: money(scenario.people[0]?.netMonthlyIncome ?? 0, currency, locale),
+    income: money(base.people[0]?.netMonthlyIncome ?? 0, currency, locale),
     mortgage: money(mortgage?.balance ?? 0, currency, locale),
-    reserve: money(scenario.reserve.balance, currency, locale),
-    invest: money(scenario.jointInvesting.monthlyContribution, currency, locale),
-    childYear: scenario.children[0]?.birth.year ?? scenario.assumptions.start.year + 3,
+    reserve: money(base.reserve.balance, currency, locale),
+    invest: money(base.jointInvesting.monthlyContribution, currency, locale),
+    childYear: base.children[0]?.birth.year ?? base.assumptions.start.year + 3,
   };
 
   const headlineSentence = headline
@@ -141,25 +181,49 @@ export function LandingHero({ locale, startMonth }: { locale: UiLocale; startMon
               const show = (v: number) =>
                 months ? t('planner.months', { count: Math.round(v) }) : money(v, currency, locale);
               const open = openProof === option.leverId;
+              const isApplied = applied === option.leverId;
               return (
-                <li key={option.leverId} className="suggest-item">
+                <li
+                  key={option.leverId}
+                  className="suggest-item"
+                  data-applied={isApplied ? 'true' : undefined}
+                >
                   <div className="suggest-row">
                     <p className="suggest-what">
-                      <span className="suggest-lever">{tx(`fixes.levers.${key}`)}</span>
+                      <span className="suggest-lever">
+                        {tx(`fixes.levers.${key}`)}
+                        {/* The accepted change stays named and marked, so it is always clear
+                            which one the picture below is showing. */}
+                        {isApplied ? (
+                          <span className="suggest-badge">
+                            <span aria-hidden="true">✓</span>
+                            {t('fixes.appliedBadge')}
+                          </span>
+                        ) : null}
+                      </span>
                       <span className="suggest-change">
                         <span className="muted tabular">{show(option.from)}</span>
                         <span aria-hidden="true"> → </span>
                         <strong className="tabular">{show(option.to)}</strong>
                       </span>
                     </p>
-                    <button
-                      type="button"
-                      className="btn btn-secondary btn-sm"
-                      aria-expanded={open}
-                      onClick={() => setOpenProof(open ? null : option.leverId)}
-                    >
-                      {open ? t('fixes.hideProof') : t('fixes.showProof')}
-                    </button>
+                    <span className="suggest-actions">
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        aria-expanded={open}
+                        onClick={() => setOpenProof(open ? null : option.leverId)}
+                      >
+                        {open ? t('fixes.hideProof') : t('fixes.showProof')}
+                      </button>
+                      <button
+                        type="button"
+                        className={isApplied ? 'btn btn-ghost btn-sm' : 'btn btn-primary btn-sm'}
+                        onClick={() => setApplied(isApplied ? null : option.leverId)}
+                      >
+                        {isApplied ? t('fixes.revert') : t('fixes.apply')}
+                      </button>
+                    </span>
                   </div>
 
                   {open && (
@@ -191,6 +255,28 @@ export function LandingHero({ locale, startMonth }: { locale: UiLocale; startMon
               );
             })}
           </ul>
+
+          {/* Announced, because the visible consequence of pressing Apply is a redrawn chart
+              two hundred pixels away. */}
+          <p className="suggest-outcome" role="status" aria-live="polite">
+            {/*
+              Three outcomes, not two. Each option was proven against ONE finding — the deficit —
+              so clearing it can still leave the milder "below the recommended minimum". Saying
+              only "the reserve no longer goes below zero" while the sentence above the chart
+              reports a remaining finding would read as the model contradicting itself.
+            */}
+            {appliedFix
+              ? result.deficitAt !== null
+                ? t('fixes.appliedStill', { when: monthPhrase(result.deficitAt, monthsIn) })
+                : result.worstFloorGap < 0
+                  ? t('fixes.appliedClearButLow', {
+                      amount: money(result.minReserve, currency, locale),
+                    })
+                  : t('fixes.appliedClear', {
+                      amount: money(result.minReserve, currency, locale),
+                    })
+              : t('fixes.applyHint')}
+          </p>
         </section>
       )}
 

@@ -138,12 +138,46 @@ test.describe('landing', () => {
     await expect(page.locator('.suggest-title')).toContainText(/jednu z těchto 3 úprav/);
 
     /* Each option proves itself separately, and only one proof is open at a time. */
-    await page.locator('.suggest-item').nth(1).getByRole('button').click();
+    await page.locator('.suggest-item').nth(1).getByRole('button', { name: /přepočet/ }).click();
     await expect(page.locator('.suggest-proof')).toHaveCount(1);
     await expect(page.getByText('Po změně')).toBeVisible();
 
-    await page.locator('.suggest-item').nth(2).getByRole('button').click();
+    await page.locator('.suggest-item').nth(2).getByRole('button', { name: /přepočet/ }).click();
     await expect(page.locator('.suggest-proof')).toHaveCount(1);
+
+    expect(errors, errors.join('\n')).toEqual([]);
+  });
+
+  test('an applied suggestion redraws the chart and stays marked as applied', async ({ page }) => {
+    const errors: string[] = [];
+    failOnConsoleErrors(page, errors);
+
+    await page.goto('/cs');
+    const chart = page.locator('svg[role="img"]').first();
+    const before = await chart.getAttribute('aria-label');
+    /* The example opens in trouble — that is the whole point of it. */
+    expect(before).toMatch(/-|−/);
+
+    await page.locator('.suggest-item').nth(1).getByRole('button', { name: 'Použít' }).click();
+
+    /* The consequence is the picture, so the picture has to change. */
+    await expect.poll(() => chart.getAttribute('aria-label')).not.toBe(before);
+    await expect(page.locator('.suggest-outcome')).toContainText(/pod nulu (už )?neklesne/);
+
+    /* Exactly one option is applied, it says so, and the other two still offer themselves. */
+    await expect(page.locator('.suggest-item[data-applied="true"]')).toHaveCount(1);
+    await expect(page.locator('.suggest-badge')).toContainText('Použito');
+    await expect(page.getByRole('button', { name: 'Použít' })).toHaveCount(2);
+
+    /* Applying another replaces it: each proof was computed against the untouched household, so
+       two stacked would be two proofs about a situation that no longer exists. */
+    await page.locator('.suggest-item').nth(2).getByRole('button', { name: 'Použít' }).click();
+    await expect(page.locator('.suggest-item[data-applied="true"]')).toHaveCount(1);
+
+    /* And it can be undone, back to the example as authored. */
+    await page.getByRole('button', { name: 'Vrátit zpět' }).click();
+    await expect.poll(() => chart.getAttribute('aria-label')).toBe(before);
+    await expect(page.locator('.suggest-item[data-applied="true"]')).toHaveCount(0);
 
     expect(errors, errors.join('\n')).toEqual([]);
   });

@@ -789,6 +789,23 @@ v jedinom riadku (`engineVersion` 3 → 4), tri nové goldeny pribudli. Zo 72 po
    `overflow-x: hidden` a každý tap pod zlomom dopadal na iný prvok, než na aký mieril. §6.3 to
    zakazuje výslovne; teraz to hlídá aj e2e na mobilnom projekte.
 
+**Ukážku na landingu sa dá opraviť priamo na mieste.** Každý návrh má tlačidlo „Použiť";
+použitie prepočíta simuláciu, prekreslí graf a prepíše vetu nad ním — návštevník teda **vidí**, ako
+deficit zmizol, namiesto toho, aby čítal tvrdenie, že by zmizol. Prijatá možnosť zostáva
+označená (zelená hrana, čip „Použité", tlačidlo „Vrátiť späť"), takže je stále jasné, ktorú zmenu
+obrázok zobrazuje.
+
+**Práve jedna naraz**, a to je správnosť, nie zjednodušenie: dôkaz pred/po každej možnosti bol
+spočítaný proti nedotknutej domácnosti, takže dve naskladané na sebe by boli dva dôkazy o situácii,
+ktorá už neexistuje. Použitie druhej preto prvú vystrieda — čo je aj to, čo „jednu z týchto"
+sľubuje. Zoznam možností zostáva odvodený z nedotknutej domácnosti, aby sa nestratil pod rukami
+tomu, kto ho práve použil.
+
+Veta o výsledku má **tri** stavy, nie dva, a tretí je dôvod prečo: odstránenie deficitu môže
+nechať miernejší nález „pod odporúčaným minimom", pretože každý dôkaz bol len o deficite. Tvrdiť
+„rezerva už pod nulu neklesne", kým veta nad grafom hlási zostávajúci nález, by sa čítalo ako že
+si model protirečí.
+
 **Landing page zahadzovala dve tretiny toho, čo engine našiel.** Vykresľovala `fixes[0]` a
 ostatné nechala ležať: pri oboch demách recommender dokáže **tri** samostatné cesty z deficitu —
 kratšia rodičovská, nižšie voľné výdavky, alebo menší mesačný vklad. Zobrazenie jednej robilo
