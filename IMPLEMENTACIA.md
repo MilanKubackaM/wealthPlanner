@@ -789,6 +789,22 @@ v jedinom riadku (`engineVersion` 3 → 4), tri nové goldeny pribudli. Zo 72 po
    `overflow-x: hidden` a každý tap pod zlomom dopadal na iný prvok, než na aký mieril. §6.3 to
    zakazuje výslovne; teraz to hlídá aj e2e na mobilnom projekte.
 
+**Zvolená téma prežije prepnutie jazyka.** Zmena locale mení segment `[locale]`, takže sa root
+layout vykreslí znovu a React zladí `<html>` späť na server-renderované atribúty — `data-theme`
+zmizol a stránka padla na `prefers-color-scheme`. Kto má tmavý systém a vybral si svetlý režim,
+skončil kliknutím na „SK" v tmavom. Inline boot skript to zachytiť nemôže, ten beží len pri
+plnom načítaní dokumentu. `<ThemeSync/>` s layout efektom nad pathname teraz obnoví voľbu
+**pred** vykreslením, takže tam nie je ani jeden frame nesprávnej témy.
+
+Dve veci, ktoré si tá oprava vyžiadala. Používa `usePathname` z `next/navigation`, nie z
+next-intl — ten locale odstraňuje, takže by sa nezmenil práve pri tej jedinej navigácii, pre
+ktorú to celé existuje. A zdieľaný kľúč musel **von z klientského komponentu**: konštanta
+exportovaná z `'use client'` modulu nie je na serveri hodnota, ale klientská referencia, a jej
+interpolácia do inline skriptu vygenerovala
+`localStorage.getItem('function(){throw Error("Attempted to call THEME_KEY() from the server…")}')`
+— apostrof v tej správe ukončil string a rozbil skript na každej stránke. Pravidlo e2e „nič
+nesmie prísť do konzoly" to našlo na prvý beh.
+
 **Refixácia zobrazovala zmenu, ktorú projekcia neobsahovala.** Krok vykresľoval dátum a novú
 sadzbu tak, ako keby boli nastavené, kým `rateResets` bolo prázdne — obrazovka teda tvrdila, že
 sadzba v roku 2029 stúpne, a model tvrdil, že nikdy. A dotknutie sa jedného poľa ticho commitlo

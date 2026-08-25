@@ -6,13 +6,17 @@ import { routing, type AppLocale } from '@/i18n/routing';
 import { Link } from '@/i18n/navigation';
 import { SiteNav } from '@/components/SiteNav';
 import { RegisterServiceWorker } from '@/components/RegisterServiceWorker';
+import { ThemeSync } from '@/components/ThemeSync';
+import { THEME_KEY } from '@/lib/theme';
 import '../globals.css';
 
 /* Stamped before first paint, so a stored theme that disagrees with the OS never flashes.
    Legal under the CSP in next.config.ts: script-src includes 'unsafe-inline'. It only writes an
    attribute on <html>, which React does not hydrate, so it cannot cause a mismatch. */
+/* First paint only. Every later navigation is handled by <ThemeSync/>, because a locale change
+   re-renders this layout and React reconciles the attribute away. */
 const THEME_BOOT =
-  "try{var t=localStorage.getItem('wealthplanner.theme');" +
+  `try{var t=localStorage.getItem('${THEME_KEY}');` +
   "if(t==='dark'||t==='light')document.documentElement.dataset.theme=t}catch(e){}";
 
 export function generateStaticParams() {
@@ -52,6 +56,7 @@ export default async function LocaleLayout({
       </head>
       <body>
         <NextIntlClientProvider>
+          <ThemeSync />
           <RegisterServiceWorker />
 
           <SiteNav

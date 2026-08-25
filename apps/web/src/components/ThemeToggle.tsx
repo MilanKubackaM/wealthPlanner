@@ -1,9 +1,11 @@
 'use client';
 
+import { THEME_KEY } from '@/lib/theme';
+
 /**
  * Stateless on purpose. The current theme is stamped on <html> before first paint by
- * THEME_BOOT in the layout, and which icon shows is decided by CSS (.i-sun / .i-moon) from the
- * same selectors the tokens use — so there is no React state to disagree with the server, no
+ * THEME_BOOT in the layout and re-applied after every navigation by <ThemeSync/>. Which icon
+ * shows is decided by CSS (.i-sun / .i-moon) from the same selectors the tokens use — so there is no React state to disagree with the server, no
  * post-hydration label flip, and no aria-pressed that can lie. The accessible name is the
  * action ("switch light/dark mode"), which is constant; the current theme is conveyed by the
  * whole page.
@@ -17,7 +19,7 @@ export function ThemeToggle({ label }: { label: string }) {
     const next = isDark ? 'light' : 'dark';
     root.dataset.theme = next;
     try {
-      localStorage.setItem('wealthplanner.theme', next);
+      localStorage.setItem(THEME_KEY, next);
     } catch {
       /* private windows throw */
     }

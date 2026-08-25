@@ -118,6 +118,34 @@ test.describe('landing', () => {
     await expect(page.getByRole('columnheader', { name: 'Rezerva' })).toBeVisible();
   });
 
+  test('a chosen theme survives switching language', async ({ page }) => {
+    /*
+     * Switching locale re-renders the root layout, and React reconciles <html> back to its
+     * server-rendered attributes — which wiped `data-theme` and dropped anyone on a dark OS who
+     * had chosen light straight back into dark. The inline boot script cannot catch it: it only
+     * runs on a full document load.
+     */
+    const errors: string[] = [];
+    failOnConsoleErrors(page, errors);
+
+    await page.goto('/cs/metodika');
+    await page.getByRole('button', { name: /Přepnout/ }).click();
+    const chosen = await page.evaluate(() => document.documentElement.dataset.theme);
+    expect(chosen === 'light' || chosen === 'dark').toBe(true);
+
+    await page.getByRole('link', { name: 'SK', exact: true }).click();
+    await expect(page).toHaveURL(/\/sk\/metodika/);
+    await expect
+      .poll(async () => page.evaluate(() => document.documentElement.dataset.theme))
+      .toBe(chosen);
+
+    /* And a hard reload keeps it too — that is the boot script's job. */
+    await page.reload();
+    expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe(chosen);
+
+    expect(errors, errors.join('\n')).toEqual([]);
+  });
+
   test('the navigation says where you are without relying on colour', async ({ page }) => {
     await page.goto('/cs/metodika');
     await expect(page.getByRole('link', { name: 'Metodika' })).toHaveAttribute('aria-current', 'page');

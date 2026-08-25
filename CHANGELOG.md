@@ -95,6 +95,23 @@ raises the "computed by another version" banner once rather than twice):
   rail stretched the page to 1450px inside a 412px viewport, `overflow-x: hidden` clipped it,
   and every tap below the fold landed on the wrong element.
 
+**A chosen theme no longer survives only until you switch language.** Switching locale changes
+the `[locale]` segment, so the root layout re-renders and React reconciles `<html>` back to its
+server-rendered attributes — `data-theme` vanished and the page fell back to
+`prefers-color-scheme`. Anyone on a dark OS who had chosen light was thrown into dark by
+clicking "SK". The inline boot script cannot catch it; it only runs on a full document load. A
+`<ThemeSync/>` layout effect keyed on the pathname now re-applies the stored choice before the
+browser paints, so there is not even a frame of the wrong theme.
+
+Two things that fix took, both worth recording. It uses `next/navigation`'s `usePathname`, not
+next-intl's, because next-intl's strips the locale and so would not change on the one navigation
+this exists for. And the shared storage key had to move OUT of the client component: a constant
+exported from a `'use client'` module is not a value on the server, it is a client reference
+proxy, and interpolating it into the inline script emitted
+`localStorage.getItem('function(){throw Error("Attempted to call THEME_KEY() from the server…")}')`
+— whose own apostrophe closed the string and broke the script on every page. The end-to-end
+suite's "no console output" rule caught that within one run.
+
 **The refixation was showing a change the projection did not contain.** The step rendered a
 date and a new rate as if they were set, while `rateResets` was empty — so the screen said the
 rate rises in 2029 and the model said it never does. Touching either field silently committed
