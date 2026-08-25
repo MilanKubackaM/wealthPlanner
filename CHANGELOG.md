@@ -2,6 +2,11 @@
 
 ## Phase 2.5f — One thing that says "start here"
 
+- **The hero's "how it counts" button is gone too.** It sat beside the primary action competing
+  for the same click, while `/metodika` is already a destination in the nav bar a few
+  centimetres above — so it cost attention and reached nothing that was unreachable. The hero
+  is one headline and one button.
+
 - **The header's primary button is gone.** It pointed at `/plan`, which is also the first
   destination in the same bar, so the bar carried two controls for one route.
 - **`/plan` now carries the accent instead.** The accent moved onto the destination the button

@@ -1290,6 +1290,10 @@ rozlíšiteľné aj vedľa seba.
 CTA sa prestalo menovať „Vyskúšať — bez registrácie" a menuje sa **„Vytvoriť prehľad"** —
 pomenúva, čo vznikne, nie čo to nestojí.
 
+Zmizlo aj tlačidlo „Ako to počíta" z hero sekcie: stálo vedľa primárnej akcie a súperilo o ten
+istý klik, pričom `/metodika` je destinácia v lište pár centimetrov nad ním. Stálo teda pozornosť
+a neotváralo nič, čo by inak bolo nedostupné. Hero je jeden nadpis a jedno tlačidlo.
+
 ### Fáza 2.6 — Hodnotenia od používateľov (analýza hotová, implementácia pauznutá)
 
 > Analýza je dokončená 25. 8. 2026, implementácia odložená. Toto je jediná funkcia v celom

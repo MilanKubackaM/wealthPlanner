@@ -65,12 +65,13 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
         {/* The strings are resolved here, on the server, so the client component carries no
             message dependency. t.raw is the house idiom for an array. */}
         <RotatingHeadline slogans={t.raw('landing.slogans') as string[]} />
+        {/* One action. The methodology button sat beside it competing for the same click while
+            /metodika is already a destination in the nav bar three centimetres above — so it
+            cost attention here and reached nothing that was unreachable. The wrapper stays:
+            without it a grid child stretches to the full column width. */}
         <div className="hero-actions">
           <Link href="/plan" className="btn btn-primary btn-lg">
             {t('landing.cta')}
-          </Link>
-          <Link href="/metodika" className="btn btn-secondary btn-lg">
-            {t('landing.ctaMethodology')}
           </Link>
         </div>
       </section>

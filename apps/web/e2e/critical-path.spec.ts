@@ -114,6 +114,10 @@ test.describe('landing', () => {
      * the page has exactly one thing saying "start here" instead of two.
      */
     await expect(page.locator('.nav-cta')).toHaveCount(0);
+    /* And the hero offers exactly one action — /metodika is a nav destination, not a rival
+       button competing for the same click. */
+    await expect(page.locator('.hero-actions').getByRole('link')).toHaveCount(1);
+    await expect(page.locator('.hero-actions').getByRole('link')).toHaveText('Vytvořit přehled');
     const planLink = page.locator('.nav-link[data-primary]');
     await expect(planLink).toHaveCount(1);
     await expect(planLink).toHaveText('Můj plán');
