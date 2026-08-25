@@ -1381,7 +1381,12 @@ export function PlannerClient({
    * "change one thing, run it again" the sensitivity panel uses, so the figures mean the same
    * thing in both places.
    */
-  function finishWizard() {
+  /**
+   * `completed` distinguishes walking the questions to the end from pressing skip. Nothing reads
+   * it yet — the review prompt that will is parked in the plan — but the distinction is real and
+   * cheap to keep, and reconstructing it later means touching all three call sites again.
+   */
+  function finishWizard(completed: boolean) {
     const pristine = defaultScenario(scenario.jurisdiction, startMonth, size);
     const mine = simulate(scenario).minReserve;
     const groups: Array<[string, ScenarioInput]> = [
@@ -1482,14 +1487,15 @@ export function PlannerClient({
               type="button"
               className="btn btn-primary"
               disabled={stepId === 'shape' && !touched.includes('household.shape')}
-              onClick={() => (step === total - 1 ? finishWizard() : setStep((s) => s + 1))}
+              onClick={() => (step === total - 1 ? finishWizard(true) : setStep((s) => s + 1))}
             >
               {step === total - 1 ? t('onboarding.finish') : t('onboarding.next')}
             </button>
             <button
               type="button"
               className="btn btn-ghost"
-              onClick={() => (step === total - 1 ? finishWizard() : setStep((s) => s + 1))}
+              /* Accepting the prefilled estimates step by step still means walking the flow. */
+              onClick={() => (step === total - 1 ? finishWizard(true) : setStep((s) => s + 1))}
             >
               {t('onboarding.estimate')}
             </button>
@@ -1497,7 +1503,7 @@ export function PlannerClient({
               type="button"
               className="btn btn-ghost"
               style={{ marginInlineStart: 'auto' }}
-              onClick={finishWizard}
+              onClick={() => finishWizard(false)}
             >
               {t('onboarding.skip')}
             </button>

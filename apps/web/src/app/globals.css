@@ -2055,3 +2055,119 @@ th {
   font-size: var(--text-sm);
   color: var(--ink-secondary);
 }
+
+/* Small shared page furniture, so a new page does not need its own inline styles. */
+.page-prose {
+  display: grid;
+  gap: var(--space-6);
+  max-width: 74ch;
+}
+
+.page-title {
+  font-size: var(--text-2xl);
+}
+
+.page-lead {
+  margin-block-start: var(--space-2);
+  font-size: var(--text-base);
+}
+
+.wall-meta,
+.review-privacy {
+  margin: 0;
+  font-size: var(--text-xs);
+}
+
+/* A textarea in the shared field frame. Used by any multi-line field, present or future. */
+.f-control textarea {
+  resize: vertical;
+  min-block-size: 4.5em;
+  padding-block: var(--space-2);
+  line-height: var(--lh-body);
+}
+
+/* ------------------------------------------------------ the suggested optimisations ----
+ * The one block on the landing page the visitor is meant to look at, so it is the one block
+ * that gets an accent. Highlighted as a UNIT — tinted plane, accent leading edge, accent
+ * heading — rather than by shouting inside each row, which would just make three loud rows.
+ */
+
+.suggest {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--accent-strong);
+  border-inline-start-width: 3px;
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+}
+
+.suggest-title {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  color: var(--accent-strong);
+}
+
+.suggest-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.suggest-item {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+}
+
+.suggest-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.suggest-what {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  flex: 1 1 20ch;
+  min-inline-size: 0;
+}
+
+.suggest-lever {
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.suggest-change {
+  font-size: var(--text-sm);
+  font-variant-numeric: var(--font-num);
+}
+
+.suggest-row .btn {
+  flex: 0 0 auto;
+}
+
+.suggest-proof {
+  display: grid;
+  grid-template-columns: auto auto auto;
+  gap: var(--space-1) var(--space-5);
+  margin: var(--space-3) 0 0;
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--border);
+  font-size: var(--text-xs);
+}
+
+.suggest-proof dd {
+  margin: 0;
+}
+
+.suggest-after {
+  font-weight: 650;
+}

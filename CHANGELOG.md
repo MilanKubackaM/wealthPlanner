@@ -95,6 +95,19 @@ raises the "computed by another version" banner once rather than twice):
   rail stretched the page to 1450px inside a 412px viewport, `overflow-x: hidden` clipped it,
   and every tap below the fold landed on the wrong element.
 
+**The landing page was throwing away two thirds of what the engine found.** It rendered
+`fixes[0]` and dropped the rest: for both demos the recommender proves THREE separate ways out
+of the deficit — a shorter parental leave, lower free spending, or a smaller monthly
+contribution. Showing one made the product look like it has a single opinion, when a list of
+verified alternatives is the entire claim it makes. All three now appear, least drastic first,
+each with its own before/after proof, and only one proof open at a time.
+
+They are highlighted as a unit — tinted plane, accent leading edge, accent heading ("Model
+navrhuje jednu z těchto 3 úprav — každá problém prokazatelně odstraní") — rather than by
+shouting inside each row, which would only have produced three loud rows. The heading switches
+to the singular when the engine finds one, because promising a choice and offering one reads as
+a bug.
+
 **Nothing claims a verdict about a household nobody has described.** Two places did. The
 wizard's band printed "the reserve holds — lowest 200 000 Kč in August 2026" on the very first
 screen of a brand-new session, which is a judgement about the national average wearing the
@@ -194,7 +207,7 @@ window in which a change exists only in memory, so it is shown ("Ukládám…") 
 `pagehide` and on `visibilitychange` — `beforeunload` does not fire when a phone switches apps.
 
 **Guards added**, because a design system that is not measured decays back into a refactor:
-`scripts/style-guard.mjs` ratchets inline styles (160) and hardcoded pixel literals (114)
+`scripts/style-guard.mjs` ratchets inline styles (152) and hardcoded pixel literals (110)
 downwards only, in CI and in `ship.sh`; a test asserts key parity between `cs.json` and
 `sk.json`; and `sk.json` no longer switches between formal and informal address mid-file.
 

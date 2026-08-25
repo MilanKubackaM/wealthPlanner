@@ -25,13 +25,23 @@ import { chartLabels } from './PlannerClient';
  * The scenario is the national-average household plus a child in three years. That one
  * addition is what turns a comfortable plan into a cash trough.
  */
+/** `children[0].leavePlan.parentalMonths` -> `children_parentalMonths` (next-intl reads a dot as a path). */
+function leverKey(leverId: string): string {
+  return leverId.replace(/\[\d+\]/g, '').replace('.leavePlan.', '.').replace(/\./g, '_');
+}
+
+function isMonthLever(leverId: string): boolean {
+  return leverId.endsWith('parentalMonths');
+}
+
 export function LandingHero({ locale, startMonth }: { locale: UiLocale; startMonth: YearMonth }) {
   const t = useTranslations();
   const months = t.raw('months') as string[];
   const monthsIn = t.raw('monthsIn') as string[];
-  const [showProof, setShowProof] = useState(false);
+  /* Which option's proof is open, by lever id. One at a time, and none by default. */
+  const [openProof, setOpenProof] = useState<string | null>(null);
 
-  const { scenario, result, headline, fix, fixAfter } = useMemo(() => {
+  const { scenario, result, headline, fixes } = useMemo(() => {
     const code = countryFor(locale);
     const s = demoScenario(code, startMonth);
     const r = simulate(s);
@@ -41,13 +51,19 @@ export function LandingHero({ locale, startMonth }: { locale: UiLocale; startMon
     });
     const fixable = problems.filter((p) => criterionFor(p) !== null);
     const analysed = fixable.length > 0 ? analyse(s, [fixable[0]!]) : [];
-    const first = analysed[0];
     return {
       scenario: s,
       result: r,
       headline: fixable[0] ?? null,
-      fix: first?.fixes[0] ?? null,
-      fixAfter: first?.fixes[0]?.after ?? null,
+      /*
+       * All of them, least drastic first — up to three.
+       *
+       * This used to take `fixes[0]` and drop the rest on the floor. The engine finds three
+       * verified ways out of the demo's deficit, and showing one made the product look like it
+       * has a single opinion. The whole claim is that it searches the input space and proves
+       * what it finds; a list of alternatives IS the claim, and one line is the claim hidden.
+       */
+      fixes: (analysed[0]?.fixes ?? []).slice(0, 3),
     };
   }, [locale, startMonth]);
 
@@ -78,10 +94,8 @@ export function LandingHero({ locale, startMonth }: { locale: UiLocale; startMon
       })
     : t('landing.healthy', { floor: money(result.reserveFloor, currency, locale) });
 
-  const leverKey = fix ? fix.leverId.replace(/\[\d+\]/g, '').replace('.leavePlan.', '.').replace(/\./g, '_') : null;
-  const isMonths = fix?.leverId.endsWith('parentalMonths') ?? false;
-  const fmt = (v: number) =>
-    isMonths ? t('planner.months', { count: Math.round(v) }) : money(v, currency, locale);
+  /* next-intl types keys literally; the lever labels are assembled. */
+  const tx = (key: string) => t(key as never);
 
   return (
     <div className="card example" style={{ display: 'grid', gap: 16 }}>
@@ -111,76 +125,73 @@ export function LandingHero({ locale, startMonth }: { locale: UiLocale; startMon
         {headlineSentence}
       </p>
 
-      {fix && leverKey && (
-        <div
-          style={{
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-sm)',
-            padding: '12px 14px',
-            background: 'var(--surface-raised)',
-            display: 'grid',
-            gap: 10,
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              gap: 12,
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-            }}
-          >
-            <span style={{ fontSize: 15 }}>
-              {t(`fixes.levers.${leverKey}`)}: <span className="tabular muted">{fmt(fix.from)}</span>
-              {' → '}
-              <strong className="tabular">{fmt(fix.to)}</strong>
-            </span>
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={() => setShowProof((v) => !v)}
-              aria-expanded={showProof}
-            >
-              {showProof ? t('fixes.hideProof') : t('fixes.showProof')}
-            </button>
-          </div>
+      {fixes.length > 0 && (
+        /* Highlighted as a unit: this is the thing the page most wants the visitor to look at. */
+        <section className="suggest" aria-labelledby="suggest-title">
+          <h3 id="suggest-title" className="suggest-title">
+            {t(fixes.length > 1 ? 'landing.suggestMany' : 'landing.suggestOne', {
+              count: fixes.length,
+            })}
+          </h3>
 
-          {showProof && fixAfter && (
-            <dl
-              className="tabular"
-              style={{
-                margin: 0,
-                display: 'grid',
-                gridTemplateColumns: 'auto auto auto',
-                gap: '4px 16px',
-                fontSize: 13,
-              }}
-            >
-              <dt className="muted" />
-              <dt className="muted">{t('fixes.proofBefore')}</dt>
-              <dt className="muted">{t('fixes.proofAfter')}</dt>
+          <ul className="suggest-list">
+            {fixes.map((option) => {
+              const key = leverKey(option.leverId);
+              const months = isMonthLever(option.leverId);
+              const show = (v: number) =>
+                months ? t('planner.months', { count: Math.round(v) }) : money(v, currency, locale);
+              const open = openProof === option.leverId;
+              return (
+                <li key={option.leverId} className="suggest-item">
+                  <div className="suggest-row">
+                    <p className="suggest-what">
+                      <span className="suggest-lever">{tx(`fixes.levers.${key}`)}</span>
+                      <span className="suggest-change">
+                        <span className="muted tabular">{show(option.from)}</span>
+                        <span aria-hidden="true"> → </span>
+                        <strong className="tabular">{show(option.to)}</strong>
+                      </span>
+                    </p>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      aria-expanded={open}
+                      onClick={() => setOpenProof(open ? null : option.leverId)}
+                    >
+                      {open ? t('fixes.hideProof') : t('fixes.showProof')}
+                    </button>
+                  </div>
 
-              <dt className="muted">{t('fixes.proofMinReserve')}</dt>
-              <dd style={{ margin: 0 }}>{money(fix.before.minReserve, currency, locale)}</dd>
-              <dd style={{ margin: 0, fontWeight: 600 }}>
-                {money(fixAfter.minReserve, currency, locale)}
-              </dd>
+                  {open && (
+                    <dl className="tabular suggest-proof">
+                      <dt className="muted" />
+                      <dt className="muted">{t('fixes.proofBefore')}</dt>
+                      <dt className="muted">{t('fixes.proofAfter')}</dt>
 
-              <dt className="muted">{t('fixes.proofDeficit')}</dt>
-              <dd style={{ margin: 0 }}>
-                {fix.before.deficitAt
-                  ? monthPhrase(fix.before.deficitAt, monthsIn)
-                  : t('fixes.proofNever')}
-              </dd>
-              <dd style={{ margin: 0, fontWeight: 600 }}>
-                {fixAfter.deficitAt
-                  ? monthPhrase(fixAfter.deficitAt, monthsIn)
-                  : t('fixes.proofNever')}
-              </dd>
-            </dl>
-          )}
-        </div>
+                      <dt className="muted">{t('fixes.proofMinReserve')}</dt>
+                      <dd>{money(option.before.minReserve, currency, locale)}</dd>
+                      <dd className="suggest-after">
+                        {money(option.after.minReserve, currency, locale)}
+                      </dd>
+
+                      <dt className="muted">{t('fixes.proofDeficit')}</dt>
+                      <dd>
+                        {option.before.deficitAt
+                          ? monthPhrase(option.before.deficitAt, monthsIn)
+                          : t('fixes.proofNever')}
+                      </dd>
+                      <dd className="suggest-after">
+                        {option.after.deficitAt
+                          ? monthPhrase(option.after.deficitAt, monthsIn)
+                          : t('fixes.proofNever')}
+                      </dd>
+                    </dl>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
       )}
 
       <footer className="example-foot">

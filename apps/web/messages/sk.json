@@ -43,7 +43,9 @@
     "exampleBadge": "Príklad — nie vaše čísla",
     "exampleTitle": "Jana a Patrik, obaja 34 rokov",
     "exampleStory": "Bezdetní, práve si vzali hypotéku {mortgage} a každý berie {income} čistého. Na sporiacom účte majú {reserve} a prebytok posielajú do ETF — {invest} mesačne. Dieťa plánujú v roku {childYear}.",
-    "exampleYours": "Model im našiel slabé miesto: investujú všetko, čo zostane, ale rezervu nechávajú takmer na mieste — a rodičovská ju vyčerpá. Prejdite tie isté otázky a tento graf bude o vašej domácnosti, s vaším mesiacom a vašou najnižšou rezervou."
+    "exampleYours": "Model im našiel slabé miesto: investujú všetko, čo zostane, ale rezervu nechávajú takmer na mieste — a rodičovská ju vyčerpá. Prejdite tie isté otázky a tento graf bude o vašej domácnosti, s vaším mesiacom a vašou najnižšou rezervou.",
+    "suggestMany": "Model navrhuje jednu z týchto {count} úprav — každá problém dokázateľne odstráni",
+    "suggestOne": "Model navrhuje túto úpravu — problém dokázateľne odstráni"
   },
   "chart": {
     "title": "Hotovostná rezerva",

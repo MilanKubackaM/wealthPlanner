@@ -8,7 +8,7 @@ function failOnConsoleErrors(page: Page, sink: string[]) {
   });
 }
 
-/** The wizard is seven steps now; every one of them offers a way straight to the plan. */
+/** Eight steps now, and every one of them offers a way straight to the plan. */
 async function skipWizard(page: Page, locale: 'cs' | 'sk' = 'cs') {
   const label = locale === 'sk' ? /Preskočiť/ : /Přeskočit/;
   const skip = page.getByRole('button', { name: label });
@@ -52,6 +52,13 @@ async function openSection(page: Page, id: string) {
   await header.waitFor();
   if ((await header.getAttribute('aria-expanded')) === 'false') await header.click();
   await expect(header).toHaveAttribute('aria-expanded', 'true');
+}
+
+/** Walks the whole eight-step wizard to the plan, which is what unlocks the review prompt. */
+async function completeWizard(page: Page) {
+  await startWizard(page);
+  for (let i = 0; i < 5; i++) await page.getByRole('button', { name: 'Pokračovat' }).click();
+  await page.getByRole('button', { name: 'Zobrazit plán' }).click();
 }
 
 /** Opens a group inside the "Čísla plánu" section (envelopes, personal investing). */
@@ -117,10 +124,28 @@ test.describe('landing', () => {
     expect(errors, errors.join('\n')).toEqual([]);
   });
 
-  test('the proof of a fix can be opened', async ({ page }) => {
+  test('offers every verified way out, not just the first one', async ({ page }) => {
+    const errors: string[] = [];
+    failOnConsoleErrors(page, errors);
+
     await page.goto('/cs');
-    await page.getByRole('button', { name: 'Ukázat přepočet' }).click();
+
+    /*
+     * The engine finds three proven ways out of the demo's deficit. Showing one made the product
+     * look like it has a single opinion, when a list of alternatives IS the claim it makes.
+     */
+    await expect(page.locator('.suggest-item')).toHaveCount(3);
+    await expect(page.locator('.suggest-title')).toContainText(/jednu z těchto 3 úprav/);
+
+    /* Each option proves itself separately, and only one proof is open at a time. */
+    await page.locator('.suggest-item').nth(1).getByRole('button').click();
+    await expect(page.locator('.suggest-proof')).toHaveCount(1);
     await expect(page.getByText('Po změně')).toBeVisible();
+
+    await page.locator('.suggest-item').nth(2).getByRole('button').click();
+    await expect(page.locator('.suggest-proof')).toHaveCount(1);
+
+    expect(errors, errors.join('\n')).toEqual([]);
   });
 
   test('offers the chart as a table for screen readers and sceptics', async ({ page }) => {
@@ -550,3 +575,4 @@ test.describe('accessibility and sharing', () => {
     expect(after).toBe(before);
   });
 });
+

@@ -789,6 +789,18 @@ v jedinom riadku (`engineVersion` 3 → 4), tri nové goldeny pribudli. Zo 72 po
    `overflow-x: hidden` a každý tap pod zlomom dopadal na iný prvok, než na aký mieril. §6.3 to
    zakazuje výslovne; teraz to hlídá aj e2e na mobilnom projekte.
 
+**Landing page zahadzovala dve tretiny toho, čo engine našiel.** Vykresľovala `fixes[0]` a
+ostatné nechala ležať: pri oboch demách recommender dokáže **tri** samostatné cesty z deficitu —
+kratšia rodičovská, nižšie voľné výdavky, alebo menší mesačný vklad. Zobrazenie jednej robilo
+z produktu nástroj s jedným názorom, pričom zoznam overených alternatív **je** to, čo tvrdí.
+Teraz sú tam všetky tri, od najmenej drastickej, každá s vlastným dôkazom pred/po, a otvorený je
+vždy len jeden dôkaz.
+
+Zvýraznené sú **ako blok** — tónovaná plocha, accent hrana, accent nadpis („Model navrhuje jednu
+z týchto 3 úprav — každá problém dokázateľne odstráni") — nie krikom vnútri každého riadku, čo by
+vyrobilo len tri hlasné riadky. Nadpis sa prepne do jednotného čísla, keď engine nájde jednu
+možnosť, pretože sľúbiť voľbu a nabídnuť jednu sa číta ako chyba.
+
 **Nič už nevynáša verdikt o domácnosti, ktorú nikto nezadal.** Robili to dve miesta. Pás vo
 wizarde vypisoval „Plán drží — najnižšia rezerva 200 000 Kč v auguste 2026" na prvej obrazovke
 úplne novej session, čo je súd o národnom priemere prezlečenom za plán používateľa; kým nie je
@@ -879,7 +891,7 @@ nezanechá a tvrdenie „uložený plán preskočí wizard" zostáva pravdivé) 
 je okno, v ktorom zmena existuje iba v pamäti — preto je viditeľné („Ukládám…") a flushuje sa na
 `pagehide` aj `visibilitychange`; `beforeunload` sa pri prepnutí aplikácie na telefóne nespustí.
 
-**Čo pribudlo navrch plánu:** `scripts/style-guard.mjs` — dva ratchety (160 inline štýlov, 114
+**Čo pribudlo navrch plánu:** `scripts/style-guard.mjs` — dva ratchety (152 inline štýlov, 110
 číselných literálov), ktoré môžu iba klesať, zapojené do CI aj do `ship.sh`; parita kľúčov medzi
 `cs.json` a `sk.json` ako test; a `sk.json` zjednotené na vykanie.
 
@@ -1016,6 +1028,92 @@ prehliadnuteľný a samostatne revertovateľný. `ReserveChart.tsx` sa nedotýka
 | Zbalená stránka sa vytlačí zbalená | CSS-only riešenie nedokáže vrátiť nevykreslený obsah | Stav v Reacte + `beforeprint`; CSS pravidlo iba ako druhá poistka |
 | Rotujúci h1 rozbije e2e alebo hydratáciu | `textContent` obsahuje šesť reťazcov; interval a listenery v efektoch | `toContainText`, slogan 1 na indexe 0, prvý slogan literál na oboch stranách |
 | Refaktor sa rozšíri na prepisovanie celej appky | 220 inline štýlov je pozvánka | Kategórie, nie súbory; grep guardy s klesajúcim baseline v CI |
+
+### Fáza 2.6 — Hodnotenia od používateľov (analýza hotová, implementácia pauznutá)
+
+> Analýza je dokončená 25. 8. 2026, implementácia odložená. Toto je jediná funkcia v celom
+> produkte, ktorá **potrebuje server** — a tým sa dotýka tvrdenia, na ktorom stojí celá landing
+> page. Preto je tu rozpísaná do rozhodnutí, nie do úloh: úlohy sú triviálne, rozhodnutia nie.
+
+#### 2.6.1 Prečo je to iná trieda funkcie než všetko doteraz
+
+Doteraz appka nekomunikuje s ničím. `connect-src 'self'` v CSP nie je náhoda ani lenivosť — je
+to vynútenie tvrdenia „vaše čísla neopustia prehliadač". Hodnotenie musí odísť a musí ho vidieť
+každý. To je prvá trhlina v tom tvrdení, a preto ju treba spraviť tak, aby tvrdenie zostalo
+pravdivé, nie tak, aby sa dalo obhájiť.
+
+**Kľúčové rozhodnutie: prehliadač nehovorí so Supabase, hovorí s vlastným API routom.**
+Volanie Supabase priamo z klienta by znamenalo (a) rozšíriť CSP o cudziu domacinu a (b) poslať
+anon kľúč v bundle. Route handler na rovnakom origine znamená, že **CSP sa nemení ani o znak**,
+kľúč zostáva na serveri a stránka naďalej nekontaktuje nikoho. Server áno — v jej mene, kľúčom,
+ktorý stránka nikdy nevidí. Overené: pri tomto rozdelení zostali všetky stránky statické (`●`)
+a dynamický je jediný `/api/reviews` (`ƒ`).
+
+#### 2.6.2 Sedem rozhodnutí
+
+1. **Typ hodnotenia nemá pole pre nič z plánu.** Nie zostatok, nie dno, nie odvodené číslo.
+   Hodnotenie nesie počet hviezdičiek, nepovinnú vetu a nepovinné meno. Nemožnosť je
+   **štrukturálna**, nie sľub v komentári — a e2e test tvrdí, že POST obsahuje presne štyri
+   kľúče (`rating`, `text`, `name`, `locale`).
+2. **Nič sa nezverejní bez schválenia.** `status` má default `'pending'`. Verejný zapisovací
+   endpoint na bezplatnom produkte raz dostane spam a raz aj nadávku — a toto je tvoja
+   portfóliová stránka. Ručné schvaľovanie je jediný zodpovedný default.
+3. **Nikdy vymyslené hodnotenie.** Keď nie je nič schválené, stena sa nevykreslí vôbec — žiadne
+   placeholdery, žiadne „ukázkové" recenzie. Vymyslený posudok je lož v cudzom hlase.
+4. **Priemer sa neukazuje pod 5 hodnotení.** „5,0 z 2 hodnotení" je číslo bez informácie.
+   Do piatich sa zobrazí len počet.
+5. **Meno áno, ale nepovinné a bez e-mailu.** Stena samých „Anonymne" nemá ako sociálny dôkaz
+   cenu; placeholder navádza na „Jana z Brna" (krstné meno + mesto), čo je menej osobných údajov
+   pri rovnakej dôveryhodnosti. **E-mail sa odmieta**, nie potichu odstraňuje — ľudia ho lepia do
+   všetkého, čo sa menuje „meno", a stena je verejná. Kontrola e-mailu ide **pred** kontrolou
+   odkazu, lebo `jana@example.com` matchuje oboje a užitočná správa je tá o e-maili.
+6. **Nie modál.** Zadanie hovorí „vyskočí", ale dialóg prehodený cez cudzie rodinné financie
+   v momente, keď na ne prvýkrát pozerá, prerušuje presne to, po čo prišla. Karta na konci
+   verdiktu, s ~4 s odkladom: dosť dlho na prečítanie odpovede, dosť krátko, aby sa na ňu ešte
+   pozeral. Pýtať sa **raz za život** — odoslanie aj odmietnutie sa pamätá.
+7. **Pýtať sa len toho, kto naozaj prešiel otázkami.** Kto dal „preskočiť", videl národný priemer,
+   nie svoju domácnosť, a nemá čo hodnotiť. (Pri analýze sa ukázalo, že „preskočiť" a „zobraziť
+   plán" viedli na tú istú funkciu — `finishWizard` teraz rozlišuje `completed`, a to rozlíšenie
+   je v kóde už teraz, aby sa ho nemuselo rekonštruovať.)
+
+#### 2.6.3 Ochrana proti zneužitiu
+
+Verejný neautentizovaný zápis potrebuje strop. **Neukladá sa IP adresa** — ukladá sa
+`sha256(tajná soľ + adresa)` vo **vlastnej tabuľke**, ktorá je počítadlo, nie log, a maže sa po
+siedmich dňoch. Bez nastavenej soli sa throttle **preskočí**, namiesto toho, aby ukladal niečo
+slabšie, než tvrdia zásady. Strop 3 za deň na haš: pre človeka štedrý, pre skript nepoužiteľný.
+Záznam sa píše **až po úspešnom vložení**, takže odmietnuté odoslanie nespáli návštevníkovi limit.
+
+RLS je zapnuté na oboch tabuľkách a **žiadna politika nepúšťa anonymný prístup** — všetko ide cez
+route handler so service kľúčom, ktorý RLS obchádza. Tabuľky sú tak z internetu nedosiahnuteľné
+a anon kľúč nie je v prehliadači vôbec potrebný.
+
+#### 2.6.4 Čo treba k spusteniu (a čo je už napísané)
+
+SQL je hotové a v repozitári: **`supabase/reviews.sql`** — dve tabuľky, obmedzenia, indexy, RLS,
+poznámky k moderovaniu a k retencii. Zvyšok je na tebe, lebo to sú účty:
+
+- [ ] Spustiť `supabase/reviews.sql` v SQL editore Supabase
+- [ ] Nastaviť na Verceli `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `REVIEW_IP_SALT`
+- [ ] Naplánovať dennú purge `review_throttle` (Supabase → Integrations → Cron)
+- [ ] `apps/web/src/lib/reviews.ts` — čistý modul: typy, validácia, sanitácia, `summarise`, `forReader`
+- [ ] `apps/web/src/lib/supabase.ts` — REST cez `fetch`, **žiadna závislosť**, len na serveri
+- [ ] `apps/web/src/app/api/reviews/route.ts` — GET schválené (cache 5 min), POST ako `pending`
+- [ ] `StarRating` ako **skutočná radio group** (šípky, tab, popis „4 z 5" textom vedľa hviezd);
+      `.star` musí mať `position: relative` a `svg` `pointer-events: none` — inak sa všetkých päť
+      skrytých inputov zloží na jedno miesto a klik na štvrtú hviezdu dopadne na cudzie SVG
+- [ ] `ReviewPrompt` — karta na konci verdiktu, odklad, pamätá si odmietnutie, veta o tom, že sa
+      neposiela nič z plánu, **priamo pri tlačidle** a nie v poznámke na inej stránke
+- [ ] `ReviewWall` — fetch z `/api/reviews` v prehliadači, aby stránky zostali statické
+- [ ] `/hodnoceni` ako plná stránka + tri najnovšie na landingu + odkaz vo footeri
+- [ ] `zasady` — nová sekcia o tom, že hodnotenie je jediná vec, ktorá odchádza, a o hašovaní IP
+- [ ] Testy: validácia (odkazy, e-maily, control znaky, dĺžky, „nemá kam dať číslo z plánu“),
+      `summarise` pod aj nad hranicou priemeru, e2e na odklad, na „pýta sa raz“ a na obsah POSTu
+
+**Jedna vec, ktorú si treba uvedomiť pri predvolených 5 hviezdičkách:** predvybrané maximum
+posúva výsledok nahor. Chcel si to tak a je to legitímne (menšie trenie), ale na portfóliovej
+stránke je stena samých päťok menej dôveryhodná než rozptyl. Ak by ťa to niekedy trápilo, stačí
+zmeniť jedno počiatočné číslo.
 
 ### Fáza 3 — Launch #1 a rast (priebežne od konca fázy 2.5)
 
