@@ -31,16 +31,23 @@ function toneOf(score: number): 'critical' | 'warning' | 'good' | 'excellent' {
   return 'excellent';
 }
 
-/** The ring, drawn as one SVG circle whose dash offset is the score. */
-function Ring({ value, label }: { value: number; label: string }) {
+/**
+ * The dial, drawn as one SVG circle whose dash offset is the score.
+ *
+ * Called `gauge` and not `ring` because Tailwind's `ring` utility is
+ * `box-shadow: 0 0 0 1px currentColor`, and a class of that name inherited it — a 1px green
+ * square around the circle that read as intentional. Names that collide with utilities are
+ * bugs waiting to happen.
+ */
+function Gauge({ value, label }: { value: number; label: string }) {
   const radius = 42;
   const circumference = 2 * Math.PI * radius;
   return (
-    <div className="ring" data-tone={toneOf(value)}>
+    <div className="gauge" data-tone={toneOf(value)}>
       <svg viewBox="0 0 100 100" aria-hidden="true">
-        <circle className="ring-track" cx="50" cy="50" r={radius} />
+        <circle className="gauge-track" cx="50" cy="50" r={radius} />
         <circle
-          className="ring-value"
+          className="gauge-value"
           cx="50"
           cy="50"
           r={radius}
@@ -49,9 +56,9 @@ function Ring({ value, label }: { value: number; label: string }) {
           strokeDashoffset={circumference * (1 - Math.max(0, Math.min(100, value)) / 100)}
         />
       </svg>
-      <span className="ring-figure">
+      <span className="gauge-figure">
         <strong>{value}</strong>
-        <span className="ring-unit" aria-hidden="true">
+        <span className="gauge-unit" aria-hidden="true">
           %
         </span>
       </span>
@@ -115,7 +122,7 @@ export function HealthScore({ health, locale }: { health: Score; locale: UiLocal
   return (
     <section className="health" aria-labelledby="health-title">
       <div className="health-head">
-        <Ring value={health.overall} label={t('score.ringLabel', { value: health.overall })} />
+        <Gauge value={health.overall} label={t('score.gaugeLabel', { value: health.overall })} />
         <div className="health-lead">
           <h3 id="health-title" className="health-title">
             {t('score.title')}
@@ -178,12 +185,6 @@ export function HealthScore({ health, locale }: { health: Score; locale: UiLocal
         ))}
       </ul>
 
-      {/*
-        The disclaimer is not boilerplate and does not get to be small. The score is the most
-        authoritative-looking thing on the page and the two claims it must never make are that
-        it is a comparison with other people and that it is a retirement calculation.
-      */}
-      <p className="health-caveat">{t('score.caveat')}</p>
     </section>
   );
 }

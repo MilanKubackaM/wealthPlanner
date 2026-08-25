@@ -1248,6 +1248,34 @@ narodenia osoby, o ktorej ešte nebolo rozhodnuté, či existuje. Meno je nové,
 štítkom „voliteľné" a s vetou, že zostáva v prehliadači; placeholder aj default zostávajú
 `Osoba 1` / `Osoba 2`, takže prázdne pole nikde nevytvorí prázdne miesto v texte.
 
+### Fáza 2.5e — Menej textu (hotové 25. 8. 2026)
+
+Landing page stratila štyri bloky prózy a panel skóre svoj disclaimer. Všetko odstránené bolo
+pravdivé a nič z toho nikto nečítal — a každý blok tlačil graf, teda jedinú vec na stránke, ktorá
+naozaj argumentuje, nižšie.
+
+Tri kartičky sú teraz **tri slová a ikona**. Ikony sú inline SVG: CSP zakazuje tretiu domenu a
+ikonový font pre tri glyfy by bol absurdný. E2e test kontroluje, že každý štítok má **najviac
+štyri slová** a že sa tam nevrátil žiadny odstavec.
+
+Caveat skóre sa presunul do `methodology.limits` na `/metodike` — do zoznamu, ktorý už vypisuje,
+čo model nerobí. Tie dve tvrdenia, ktoré skóre nesmie robiť (porovnanie s inými, dôchodkový
+výpočet), musia existovať niekde, a zoznam obmedzení je lepší domov než odstavec pod číselníkom,
+ktorého sa nikto na nič nepýtal. Test kontroluje, že tam obe sú.
+
+**Zelený štvorec okolo číselníka bola kolízia názvov tried.** `.ring` je Tailwindová utilita —
+`box-shadow: 0 0 0 1px currentColor` — takže vlastná trieda toho istého mena zdedila 1px obrys
+v tónovej farbe, ktorý vyzeral ako zámer. Premenované na `.gauge`; opravou je **názov, nie
+override**, pretože trieda kolidujúca s utilitou je chyba čakajúca na ďalšiu utilitu.
+
+Ratchety klesli: inline štýly 150 → 141, magické čísla 107 → 99.
+
+#### Pozor pri doručovaní na macOS mount
+
+Bridge do používateľovho stroja **nedovolí unlink**, takže obyčajný `tar -xzf` vytvorí len nové
+súbory a všetky zmenené **ticho preskočí** — repozitár skončí v stave, ktorý sa ani nepreloží.
+Vždy `tar -xzf ... --overwrite` (truncate namiesto unlink).
+
 ### Fáza 2.6 — Hodnotenia od používateľov (analýza hotová, implementácia pauznutá)
 
 > Analýza je dokončená 25. 8. 2026, implementácia odložená. Toto je jediná funkcia v celom

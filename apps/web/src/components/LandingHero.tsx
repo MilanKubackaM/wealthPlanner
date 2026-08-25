@@ -343,8 +343,10 @@ export function LandingHero({ locale, startMonth }: { locale: UiLocale; startMon
 
       )}
 
+      {/* The button, and nothing beside it. The paragraph that used to sit here explained the
+          example the bullets and the verdict have already made — a reader who got this far has
+          seen the argument, and a fourth restatement of it only delays the click. */}
       <footer className="example-foot">
-        <p>{t('landing.exampleYours')}</p>
         <Link href="/plan" className="btn btn-primary">
           {t('landing.cta')}
         </Link>

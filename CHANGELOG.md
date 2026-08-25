@@ -1,5 +1,34 @@
 # Changelog
 
+## Phase 2.5e — Less to read
+
+The landing page lost four blocks of prose and the score panel lost its disclaimer. Everything
+removed was true; none of it was read, and each piece pushed the chart — the only thing on the
+page that actually argues for the product — further down.
+
+- **Gone from the landing page:** the paragraph explaining what a monthly simulator is, the
+  privacy-and-pricing line, and the paragraph interpreting the worked example. The example's
+  bullets and its red-to-green verdict already make that argument; a fourth restatement only
+  delayed the click.
+- **The three cards are now three words and an icon each** — "Mesiac po mesiaci", "Každé
+  odporúčanie dokázané", "Celý model verejný" — with inline SVG marks (a month grid, a shield
+  with a tick, code brackets). Inline because the CSP forbids a third-party origin and an icon
+  font for three glyphs would be absurd. An e2e test asserts each label is at most four words
+  and that no paragraph has crept back in.
+- **The score's caveat moved to `/metodika`,** into the `methodology.limits` list that already
+  enumerates what this model does not do. The two claims the score must never make — that it
+  compares you with other users, and that it calculates a pension — still have to exist
+  somewhere, and the limitations list is a better home than a paragraph under a dial nobody
+  asked a question of. A test asserts both lines are there.
+
+**The green square around the dial was a class-name collision.** `.ring` is a Tailwind
+utility — `box-shadow: 0 0 0 1px currentColor` — so naming our own class `ring` inherited a 1px
+outline in the tone colour that read as a deliberate green box. Renamed to `.gauge` throughout;
+the fix is the name rather than an override, because a class that collides with a utility is a
+bug waiting for the next utility. A test now asserts the gauge has no box-shadow at all.
+
+Style ratchets fell with the rewrite: inline styles 150 → 141, numeric literals 107 → 99.
+
 ## Phase 2.5d — A score for the arrangement, and a person who has a name
 
 **The plan now reports how well the money is arranged, not only what it projects.** One

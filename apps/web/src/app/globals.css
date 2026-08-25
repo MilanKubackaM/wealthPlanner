@@ -2183,6 +2183,58 @@ th {
 }
 
 
+/* =================================================================== landing ====
+ * A headline, two buttons, a worked example, three marks. The page carried four more
+ * paragraphs than that and none of them were read: a stranger deciding whether to spend a
+ * minute here does not read six paragraphs first, and each one pushed the chart — the only
+ * thing that actually argues for the product — further down. The detail lives on /metodika.
+ */
+.hero {
+  display: grid;
+  gap: var(--space-5);
+  max-width: 58ch;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.marks {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+/* Three words and a mark. Centred, because at this length a left rag looks like a mistake. */
+.mark {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--plane);
+  text-align: center;
+}
+
+.mark-icon {
+  inline-size: 26px;
+  block-size: 26px;
+  color: var(--accent);
+}
+
+.mark-label {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  text-wrap: balance;
+}
+
+
 /* =============================================================== health score ====
  * The one number a first-time user reads before they read anything else, so the whole
  * design job here is to stop it looking more certain than it is: a coarse four-band
@@ -2246,7 +2298,13 @@ th {
 
 /* ------------------------------------------------------------------- the ring ---- */
 
-.ring {
+/*
+ * `.gauge`, NOT `.ring` — Tailwind owns that name. Its `ring` utility is
+ * `box-shadow: 0 0 0 1px currentColor`, so the class painted a 1px square outline in the tone
+ * colour around the circle, which looked like a deliberate green box and was not. Any class
+ * name that collides with a utility is a latent bug, so the fix is the name, not an override.
+ */
+.gauge {
   position: relative;
   display: grid;
   place-items: center;
@@ -2255,30 +2313,30 @@ th {
   flex: 0 0 auto;
 }
 
-.ring svg {
+.gauge svg {
   inline-size: 100%;
   block-size: 100%;
   /* Start the arc at twelve o'clock rather than three. */
   transform: rotate(-90deg);
 }
 
-.ring-track,
-.ring-value {
+.gauge-track,
+.gauge-value {
   fill: none;
   stroke-width: 8;
 }
 
-.ring-track {
+.gauge-track {
   stroke: var(--grid);
 }
 
-.ring-value {
+.gauge-value {
   stroke: currentcolor;
   stroke-linecap: round;
   transition: stroke-dashoffset var(--dur-md, 240ms) var(--ease-out, ease-out);
 }
 
-.ring-figure {
+.gauge-figure {
   position: absolute;
   display: flex;
   align-items: baseline;
@@ -2286,13 +2344,13 @@ th {
   font-variant-numeric: tabular-nums;
 }
 
-.ring-figure > strong {
+.gauge-figure > strong {
   font-size: 30px;
   font-weight: 650;
   letter-spacing: -0.02em;
 }
 
-.ring-unit {
+.gauge-unit {
   font-size: var(--text-xs);
   color: var(--ink-secondary);
 }
@@ -2393,22 +2451,22 @@ th {
 /* ------------------------------------------------------------------- the tones ---- */
 /* Set `color` once per tone; the ring stroke, the row edge and the bar all inherit it. */
 
-.ring[data-tone='critical'],
+.gauge[data-tone='critical'],
 .health-row[data-tone='critical'],
 .health-verdict[data-tone='critical'] {
   color: var(--status-serious-text);
 }
 
-.ring[data-tone='warning'],
+.gauge[data-tone='warning'],
 .health-row[data-tone='warning'],
 .health-verdict[data-tone='warning'] {
   color: var(--status-warning-text);
 }
 
-.ring[data-tone='good'],
+.gauge[data-tone='good'],
 .health-row[data-tone='good'],
 .health-verdict[data-tone='good'],
-.ring[data-tone='excellent'],
+.gauge[data-tone='excellent'],
 .health-row[data-tone='excellent'],
 .health-verdict[data-tone='excellent'] {
   color: var(--status-good-text);
@@ -2421,7 +2479,7 @@ th {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ring-value,
+  .gauge-value,
   .health-bar::-webkit-progress-value {
     transition: none;
   }

@@ -20,18 +20,12 @@
   },
   "landing": {
     "h1": "Kdy si můžeme dovolit dítě?",
-    "lead": "Simulátor, který nepočítá po letech, ale po měsících — takže vám řekne konkrétní měsíc, ve kterém vaše rezerva narazí na dno, a kolik korun v ten moment bude chybět.",
     "cta": "Vyzkoušet — bez registrace",
     "ctaMethodology": "Jak to počítá",
-    "privacy": "Vaše data zůstávají ve vašem prohlížeči.",
-    "free": "Zdarma navždy. Žádné reklamy. Žádné affiliate odkazy.",
     "healthy": "Rezerva v téhle podobě nikdy neklesne pod {floor}.",
-    "whyMonthlyTitle": "Proč měsíčně",
-    "whyMonthly": "Roční model neumí říct „v lednu 2032“. Osmadvacetitýdenní mateřská, splátkový kalendář hypotéky i propad rezervy jsou podměsíční jevy — a právě v nich se plán láme.",
-    "verifiedTitle": "Každé doporučení je dokázané",
-    "verified": "Návrh se nevymýšlí. Model hledá binárním půlením nejmenší změnu, která problém odstraní, pak spustí celou simulaci znovu a ukáže vám oba průběhy. Když se změna neprokáže, nezobrazí se.",
-    "openSourceTitle": "Celý model je veřejný",
-    "openSource": "Kód, testy i zdroje zákonných parametrů. Můžete si zkontrolovat, jak se dopočítalo každé číslo.",
+    "whyMonthlyTitle": "Měsíc po měsíci",
+    "verifiedTitle": "Každé doporučení dokázané",
+    "openSourceTitle": "Celý model veřejný",
     "slogans": [
       "Kdy si můžeme dovolit dítě?",
       "Utáhneme hypotéku po refixaci?",
@@ -54,7 +48,6 @@
     "verdictFixed": "Rezerva už pod nulu neklesne — nejnižší bude <hi>{amount}</hi>.",
     "verdictHealthy": "Rezerva v téhle podobě nikdy neklesne pod <hi>{floor}</hi>.",
     "verdictRest": "Zůstává mírnější nález:",
-    "exampleYours": "Model jim našel slabé místo: investují všechno, co zbyde, ale rezervu nechávají téměř na místě — a rodičovská ji vyčerpá. Projděte stejné otázky a tenhle graf bude o vaší domácnosti, s vaším měsícem a vaší nejnižší rezervou.",
     "suggestMany": "Model navrhuje jednu z těchto {count} úprav — každá problém prokazatelně odstraní",
     "suggestOne": "Model navrhuje tuhle úpravu — problém prokazatelně odstraní"
   },
@@ -445,7 +438,9 @@
       "Výnosy jsou nominální a konstantní. Skutečné trhy takhle nevypadají.",
       "Nemodeluje ztrátu práce, nemoc, rozvod ani druhou nemovitost.",
       "Nezná vaše skutečné bankovní účty a nikdy se na ně nepřipojí.",
-      "Nedoporučuje žádný fond, banku ani produkt a nikdy nebude."
+      "Nedoporučuje žádný fond, banku ani produkt a nikdy nebude.",
+      "Skóre nastavení financí není srovnání s jinými uživateli a nikdy nebude — porovnává vaše čísla s benchmarky uvedenými v Parametrech, kde je i napsáno, odkud jsou a co je na nich nejisté.",
+      "Skóre není důchodový výpočet. Dekumulaci — tedy čerpání majetku v důchodu — tenhle model nepočítá vůbec, takže žádná jeho část netvrdí, jaký důchod dostanete."
     ],
     "engineVersion": "Verze modelu: {version}",
     "engineVersionNote": "Uložený plán si pamatuje, kterou verzí byl spočítán. Když se model zpřesní, starý plán se nikdy nepřepočítá bez vašeho vědomí.",
@@ -592,13 +587,11 @@
   },
   "score": {
     "title": "Nastavení financí",
-    "ringLabel": "Celkové skóre nastavení financí: {value} ze 100",
     "barLabel": "{name}: {value} ze 100",
     "months": "{count} měs.",
     "show": "Rozepsat po částech",
     "hide": "Skrýt rozpis",
     "childWeighted": "Protože je v plánu dítě, váží rezerva ve skóre víc než dlouhodobé investování — na rodičovské je likvidita to, co drží plán pohromadě.",
-    "caveat": "Není to srovnání s jinými uživateli ani důchodový výpočet — dekumulaci tenhle model nepočítá. Je to hodnocení toho, jak jsou vaše čísla nastavená proti benchmarkům uvedeným v Parametrech, kde je i napsáno, odkud jsou a co je na nich nejisté.",
     "band": {
       "critical": "Něco tu nedrží a stojí to za pozornost teď.",
       "warning": "Základ stojí, ale jsou tu místa, která plán oslabují.",
@@ -631,6 +624,7 @@
       "headroom-none": "Na konci měsíce nezůstává nic. Není to o disciplíně — plán bez přebytku nemá z čeho absorbovat ani malou nepříjemnost, takže první krok je vytvořit aspoň malý přebytek, ne větší rezervu.",
       "headroom-thin": "Přebytek je malý. Plán funguje, ale nemá z čeho ustoupit, když se něco pohne.",
       "headroom-ok": "Po výdajích zůstává dost na to, aby plán zvládl změnu bez přepisování."
-    }
+    },
+    "gaugeLabel": "Celkové skóre nastavení financí: {value} ze 100"
   }
 }

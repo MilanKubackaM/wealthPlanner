@@ -104,10 +104,22 @@ test.describe('landing', () => {
     await expect(page.locator('.verdict')).toHaveAttribute('data-state', 'alarm');
     await expect(page.locator('.verdict-mark')).toHaveText('!');
     await expect(page.locator('.verdict-amount')).toBeVisible();
-    await expect(page.locator('.example-foot')).toContainText(/vaší domácnosti/);
+    /* The footer is the button and nothing else — the paragraph that used to interpret the
+       example restated what the bullets and the verdict had already said. */
+    await expect(page.locator('.example-foot > p')).toHaveCount(0);
+    await expect(page.locator('.example-foot').getByRole('link')).toBeVisible();
 
-    /* The privacy promise belongs above the fold. */
-    await expect(page.getByText('Vaše data zůstávají ve vašem prohlížeči.')).toBeVisible();
+    /*
+     * Three marks, three words each, and NO explanatory paragraphs. The page is deliberately
+     * this bare: everything cut from it is still on /metodika, and a stranger deciding whether
+     * to spend a minute here reads a headline and looks at a chart, not six paragraphs.
+     */
+    await expect(page.locator('.mark')).toHaveCount(3);
+    await expect(page.locator('.mark p')).toHaveCount(0);
+    for (const label of await page.locator('.mark-label').allTextContents()) {
+      expect(label.trim().split(/\s+/).length, label).toBeLessThanOrEqual(4);
+    }
+    await expect(page.locator('.mark-icon').first()).toBeVisible();
 
     expect(errors, errors.join('\n')).toEqual([]);
   });
@@ -505,10 +517,14 @@ test.describe('planner', () => {
     await page.goto('/cs/plan');
     await skipWizard(page);
 
-    /* The ring reports a percentage, and it sits UNDER the chart it is a reading of. */
-    const ring = page.locator('.ring');
-    await expect(ring).toBeVisible();
-    await expect(ring.locator('.ring-figure strong')).toHaveText(/^\d{1,3}$/);
+    /* The gauge reports a percentage, and it sits UNDER the chart it is a reading of.
+       `.gauge`, not `.ring`: that name belongs to a Tailwind utility, which painted a 1px
+       square outline around the circle for as long as the class was called that. */
+    const gauge = page.locator('.gauge');
+    await expect(gauge).toBeVisible();
+    await expect(gauge.locator('.gauge-figure strong')).toHaveText(/^\d{1,3}$/);
+    /* And no utility is drawing a box around it any more. */
+    await expect(gauge).toHaveCSS('box-shadow', 'none');
 
     /* Four dimensions, collapsed but present in the DOM: the reasons behind a score must be
        findable, not fetched. */
@@ -527,9 +543,15 @@ test.describe('planner', () => {
       await expect(rows.nth(i).locator('progress')).toHaveAttribute('max', '100');
     }
 
-    /* And the two claims it must never make are denied in writing. */
-    await expect(page.locator('.health-caveat')).toContainText(/Není to srovnání s jinými/);
-    await expect(page.locator('.health-caveat')).toContainText(/ani důchodový výpočet/);
+    /*
+     * The two claims the score must never make are denied on /metodika rather than under the
+     * gauge — the panel is for the reading, the limitations list is for the limitations. They
+     * have to be somewhere, so this asserts they are.
+     */
+    await page.goto('/cs/metodika');
+    const limits = page.getByRole('listitem');
+    await expect(limits.filter({ hasText: /není srovnání s jinými uživateli/ })).toHaveCount(1);
+    await expect(limits.filter({ hasText: /není důchodový výpočet/ })).toHaveCount(1);
 
     expect(errors, errors.join('\n')).toEqual([]);
   });
