@@ -1,5 +1,39 @@
 # Changelog
 
+## Phase 2.5i — "Čísla plánu" becomes "Nastavenie plánu"
+
+**One column of thirty inputs is now six collapsed panels** — Domácnosť a príjmy, Bývanie,
+Ostatné dlhy, Pravidelné výdavky, Rezervy a investície, Deti — each carrying a count of the
+parameters inside that are still on a default nobody confirmed, and **the section header
+carrying the total before anything is expanded**.
+
+The grouping is by what a person goes looking for, not by the shape of `ScenarioInput`. Two
+things moved because of that:
+
+- **Pocket money and wage growth** are facts about PEOPLE, so they sit under the household. They
+  used to hide behind a disclosure labelled "reserve cap", which grouped them by how advanced
+  they looked rather than by what they are about.
+- **The parental-leave length is inline inside each child**, not behind a disclosure two levels
+  down. It is one of the two or three numbers that decide whether a plan survives a child at
+  all; the old placement ranked it by how technical it seemed.
+
+**A system-supplied number now looks like one.** The "odhad" badge was a neutral grey pill,
+which made a national average look exactly as settled as a figure the user had typed — so a plan
+built almost entirely on defaults looked finished. It is now tinted, the same tint as "povinné"
+and "N na doplnenie", because all three mean one thing to the reader: not yours yet. The
+distinction worth drawing is shape, not hue — an outlined pill is a claim about a value that is
+there, plain colour is something for the user to do. "Voliteľné" stays neutral: an optional field
+left empty is not an unfinished one.
+
+The section's summary now counts the same universe as its badge. "8 na doplnenie" beside "13
+parametrov" invited the reading "8 of 13" while the two counted different sets.
+
+One mistake worth recording: the first attempt at this refactor spliced the new body in using a
+`.index()` for the closing boundary searched from position zero, so the end landed BEFORE the
+start and the slice duplicated three whole sections instead of replacing one. Caught by a
+strict-mode violation on a duplicated element id, not by the typechecker — which happily
+compiles two of everything.
+
 ## Phase 2.5h — What the wizard did not ask, and where to find it
 
 **Collapsed panels now say how many of their parameters are still on a default nobody

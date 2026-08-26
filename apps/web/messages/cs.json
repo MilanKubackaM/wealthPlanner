@@ -357,7 +357,9 @@
     "potBalance": "Kolik už v ní máte",
     "potAdd": "Přidat investici",
     "potRemove": "Odebrat",
-    "pending": "{count} k doplnění"
+    "pending": "{count} k doplnění",
+    "groupHousehold": "Domácnost a příjmy",
+    "groupSavings": "Rezervy a investice"
   },
   "compare": {
     "heading": "Srovnání scénářů",
@@ -534,7 +536,7 @@
     "nalezy": "Co model našel",
     "srovnani": "Srovnání scénářů",
     "citlivost": "Co když se předpoklady nevyplní",
-    "cisla": "Čísla plánu",
+    "cisla": "Nastavení plánu",
     "predpoklady": "Předpoklady a horizont",
     "export": "Uložit, sdílet, exportovat",
     "summary": {
@@ -542,7 +544,7 @@
       "nalezy": "{count} nálezů",
       "srovnani": "{count} scénářů na stejné ose",
       "citlivost": "Nejhorší předpoklad: {label} — dno {amount}",
-      "cisla": "{total} čísel · {user} vašich, zbytek národní průměr",
+      "cisla": "{total} parametrů modelu",
       "predpoklady": "Výnos {ret} · inflace {cpi} · horizont {year}"
     },
     "solo": "Shift+klik otevře jen tuhle část"

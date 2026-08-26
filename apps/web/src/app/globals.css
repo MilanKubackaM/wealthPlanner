@@ -1221,11 +1221,22 @@ th {
   color: var(--ink-secondary);
 }
 
+/*
+ * "Odhad" — this number came from us, not from you.
+ *
+ * Tinted, and the same tint as "povinné" and "N na doplnenie" on purpose: all three mean one
+ * thing to the reader, "not yours yet". It used to be a neutral grey pill, which made a
+ * system-supplied figure look exactly as settled as a figure the user had typed — so a plan
+ * built almost entirely on national averages looked finished.
+ *
+ * The distinction that IS worth drawing is shape, not hue: an outlined pill is a claim about a
+ * value that is there ("odhad", "voliteľné"), plain colour is something for the user to do.
+ */
 .f-badge {
-  border: 1px solid var(--border);
+  border: 1px solid var(--status-warning-text);
   border-radius: var(--radius-pill);
-  background: var(--accent-soft);
-  color: var(--ink-secondary);
+  background: transparent;
+  color: var(--status-warning-text);
   padding-inline: var(--space-2);
   font-size: var(--text-2xs);
   font-weight: 600;
@@ -1233,15 +1244,10 @@ th {
   white-space: nowrap;
 }
 
-/*
- * "Optional", not "estimate". The estimate badge is a claim about the VALUE (we guessed this
- * for you); this one is a claim about the FIELD (you need not answer). Same shape so the form
- * does not grow a second visual language, no accent tint so it does not compete with the
- * estimate badges around it.
- */
+/* "Voliteľné" stays neutral: an optional field left empty is not an unfinished one. */
 .f-badge-soft {
-  background: transparent;
-  font-weight: 500;
+  border-color: var(--border);
+  color: var(--ink-secondary);
 }
 
 /*

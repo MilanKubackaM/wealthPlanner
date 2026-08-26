@@ -179,41 +179,70 @@ function trackedPaths(scenario: ScenarioInput): string[] {
 }
 
 /**
- * Every parameter that carries a DEFAULT the wizard never asked about, grouped by the panel it
- * lives in — one map, so a badge count and the panel it labels cannot drift apart.
+ * Every parameter of the plan, grouped by the panel it lives in — one map, so a badge count and
+ * the panel it labels cannot drift apart.
  *
- * This is the other half of the wizard's bargain. The stepper deliberately asks only what the
- * projection cannot work without; everything else keeps a sourced default so the user reaches a
- * plan in eight screens instead of thirty. That is only honest if the leftovers are findable,
- * and a collapsed panel is invisible by design — so each one says how many of its parameters
- * are still nobody's answer.
+ * This is the other half of the wizard's bargain. The stepper asks only what the projection
+ * cannot work without; everything else keeps a sourced default so a plan is eight screens away
+ * instead of thirty. That is only honest if the leftovers are FINDABLE, and a collapsed panel is
+ * invisible by design — right for something already answered, wrong for something never asked.
+ * So every panel says how many of its parameters are still nobody's answer, and the section
+ * above them all says the total, before anything is expanded.
  *
- * `reserve.balance` and `jointInvesting.monthlyContribution` are deliberately ABSENT: cash and
- * investments are optional, and "you left the optional thing empty" is not something to nag
- * about. This counts defaults that were GUESSED, not questions that were declined.
+ * The grouping is by what a person would go looking for, which is not the same as what the
+ * engine calls things: pocket money and wage growth are facts about PEOPLE, so they sit under
+ * the household rather than behind "reserve cap", which is where they used to hide for no
+ * better reason than that both were advanced.
  */
-function defaultGroups(scenario: ScenarioInput): Record<string, string[]> {
-  const groups: Record<string, string[]> = {
-    /* Sweep cap, pocket money and wage growth all live behind the same disclosure. */
-    sweep: [
-      'reserve.sweepCap',
-      ...scenario.people.flatMap((_, i) => [
-        `people[${i}].pocketMoney`,
-        `people[${i}].incomeGrowthPct`,
+function planGroups(scenario: ScenarioInput): Record<string, string[]> {
+  const perPerson = (suffix: string) => scenario.people.map((_, i) => `people[${i}].${suffix}`);
+
+  const housing: string[] = ['housing.kind'];
+  if (scenario.housing.kind === 'rent') {
+    housing.push('housing.rent.monthlyAmount', 'housing.rent.annualIndexationPct');
+  } else if (scenario.housing.mortgages.length > 0) {
+    housing.push(
+      'housing.mortgage.balance',
+      'housing.mortgage.annualRatePct',
+      'housing.mortgage.monthlyPayment',
+    );
+  }
+
+  return {
+    household: [
+      'household.shape',
+      ...perPerson('netMonthlyIncome'),
+      ...perPerson('birthYear'),
+      ...perPerson('pocketMoney'),
+      ...perPerson('incomeGrowthPct'),
+    ],
+    housing,
+    debts: scenario.liabilities.flatMap((_, i) => [
+      `liabilities[${i}].balance`,
+      `liabilities[${i}].rate`,
+      `liabilities[${i}].payment`,
+      `liabilities[${i}].term`,
+    ]),
+    expenses: scenario.expenses.map((e) => `expenses.${e.id}`),
+    /* `reserve.balance` and the joint contribution ARE counted here, unlike in the wizard where
+       they are optional: on this screen the question is "is this number yours or ours", and the
+       answer for an untouched default is ours whether or not answering was compulsory. */
+    savings: ['reserve.balance', 'jointInvesting.monthlyContribution', 'reserve.sweepCap'],
+    children: [
+      'childrenIntent',
+      ...scenario.children.flatMap((_, i) => [
+        `children[${i}].birth`,
+        `children[${i}].monthlyCost`,
+        `children[${i}].parentalMonths`,
+        `children[${i}].returnToWorkPct`,
       ]),
     ],
-    predpoklady: ['assumptions.cpiPct', 'assumptions.horizonYear', 'assumptions.reserveFloorMonths'],
+    predpoklady: [
+      'assumptions.cpiPct',
+      'assumptions.horizonYear',
+      'assumptions.reserveFloorMonths',
+    ],
   };
-  scenario.children.forEach((child, i) => {
-    groups[`child-${child.id}`] = [
-      `children[${i}].parentalMonths`,
-      `children[${i}].returnToWorkPct`,
-    ];
-  });
-  scenario.liabilities.forEach((item, i) => {
-    groups[`debt-${item.id}`] = [`liabilities[${i}].term`];
-  });
-  return groups;
 }
 
 export function PlannerClient({
@@ -449,10 +478,19 @@ export function PlannerClient({
   const tracked = trackedPaths(scenario);
   const answered = touched.filter((path) => tracked.includes(path)).length;
 
-  const groups = defaultGroups(scenario);
+  const groups = planGroups(scenario);
   /** How many parameters in one panel are still on a default nobody confirmed. */
   const pendingIn = (group: string) =>
     (groups[group] ?? []).filter((path) => !touched.includes(path)).length;
+  /*
+   * The section header's two numbers have to count the SAME universe, or "8 na doplnenie" next
+   * to "13 parametrov" reads as "8 of 13" and is simply a third number nobody asked for. Both
+   * are now over the panels this section actually contains — `predpoklady` has its own section
+   * and its own badge.
+   */
+  const planKeys = Object.keys(groups).filter((key) => key !== 'predpoklady');
+  const planParamCount = planKeys.reduce((sum, key) => sum + (groups[key] ?? []).length, 0);
+  const pendingTotal = planKeys.reduce((sum, key) => sum + pendingIn(key), 0);
   const pendingLabel = (count: number) => t('planner.pending', { count });
 
   const personName = (index: number) =>
@@ -734,6 +772,50 @@ export function PlannerClient({
           onChange={(v) =>
             edit(`people[${index}].netMonthlyIncome`, {
               people: scenario.people.map((p, i) => (i === index ? { ...p, netMonthlyIncome: v } : p)),
+            })
+          }
+          {...numberProps}
+        />
+      ))}
+    </>
+  );
+
+  /*
+   * Pocket money and wage growth. Facts about PEOPLE, so they belong with the household — they
+   * used to live behind a disclosure labelled "reserve cap", which grouped them by how advanced
+   * they were rather than by what they are about.
+   */
+  const peopleDetailFields = (
+    <>
+      {scenario.people.map((person, index) => (
+        <NumberField
+          key={`pocket-${person.id}`}
+          id={`pocket-${person.id}`}
+          kind="money.monthly"
+          label={solo ? t('planner.pocketMoney') : `${t('planner.pocketMoney')} — ${personName(index)}`}
+          value={person.pocketMoney}
+          span={3}
+          estimate={!touched.includes(`people[${index}].pocketMoney`)}
+          onChange={(v) =>
+            edit(`people[${index}].pocketMoney`, {
+              people: scenario.people.map((p, i) => (i === index ? { ...p, pocketMoney: v } : p)),
+            })
+          }
+          {...numberProps}
+        />
+      ))}
+      {scenario.people.map((person, index) => (
+        <NumberField
+          key={`growth-${person.id}`}
+          id={`growth-${person.id}`}
+          kind="percent.growth"
+          label={solo ? t('planner.incomeGrowth') : `${t('planner.incomeGrowth')} — ${personName(index)}`}
+          value={person.incomeGrowthPct}
+          span={3}
+          estimate={!touched.includes(`people[${index}].incomeGrowthPct`)}
+          onChange={(v) =>
+            edit(`people[${index}].incomeGrowthPct`, {
+              people: scenario.people.map((p, i) => (i === index ? { ...p, incomeGrowthPct: v } : p)),
             })
           }
           {...numberProps}
@@ -1484,18 +1566,17 @@ export function PlannerClient({
                       }
                     />
                   )}
-                  <AdvancedDisclosure
-                    id={`child-adv-${child.id}`}
-                    label={t('planner.childParentalMonths')}
-                    pending={pendingIn(`child-${child.id}`)}
-                    pendingLabel={pendingLabel}
-                  >
+                  {/* Inline, not behind a disclosure. The leave length is one of the two or
+                      three numbers that decide whether the plan survives a child at all; hiding
+                      it two levels down was ranking it by how advanced it looks. */}
+                  <>
                     <NumberField
                       id={`child-parental-${child.id}`}
                       kind="months"
                       label={t('planner.childParentalMonths')}
                       unit={t('units.months')}
                       value={child.leavePlan.parentalMonths}
+                      estimate={!touched.includes(`children[${index}].parentalMonths`)}
                       min={0}
                       /* Derived from the regime, not hardcoded: SK stops paying at age three. */
                       max={maxParental}
@@ -1514,6 +1595,7 @@ export function PlannerClient({
                       label={t('planner.childReturnPct')}
                       hint={t('planner.childReturnHint')}
                       value={child.leavePlan.returnToWorkPct}
+                      estimate={!touched.includes(`children[${index}].returnToWorkPct`)}
                       span={6}
                       onChange={(v) =>
                         update(
@@ -1523,7 +1605,7 @@ export function PlannerClient({
                       }
                       {...numberProps}
                     />
-                  </AdvancedDisclosure>
+                  </>
                 </>
               );
             }}
@@ -1743,7 +1825,9 @@ export function PlannerClient({
           amount: money(worstRow.result.minReserve, currency, locale),
         })
       : undefined,
-    cisla: t('planSections.summary.cisla', { total: tracked.length, user: answered }),
+    /* Just the size of the thing. The "N of N are yours" version contradicted the pending
+       badge beside it, because the two counted different sets. */
+    cisla: t('planSections.summary.cisla', { total: planParamCount }),
     predpoklady: t('planSections.summary.predpoklady', {
       ret: percent(scenario.jointInvesting.annualReturnPct, locale),
       cpi: percent(scenario.assumptions.cpiPct, locale),
@@ -1922,89 +2006,109 @@ export function PlannerClient({
         open={sections.cisla ?? false}
         printing={printing}
         soloTitle={t('planSections.solo')}
+        pending={pendingTotal}
+        pendingLabel={pendingLabel}
         onToggle={(soloClick) => toggleSection('cisla', soloClick)}
       >
-        <div className="stack-lg">
-          <FieldGroup title={t('planner.country')} subtitle={t('planner.countryHint')}>
-            <ChoiceField<JurisdictionCode>
-              id="country-plan"
-              label={t('planner.country')}
-              variant="cards"
-              value={scenario.jurisdiction}
-              options={[
-                { value: 'CZ', label: t('planner.countryCZ'), hint: t('planner.countryHintCZ') },
-                { value: 'SK', label: t('planner.countrySK'), hint: t('planner.countryHintSK') },
-              ]}
-              /* Here it discards work, so it asks. In the wizard nothing has been typed yet. */
-              onChange={(code) => {
-                if (code === scenario.jurisdiction) return;
-                if (touched.length > 0 && !confirm(t('planner.changeCountryConfirm'))) return;
-                setCountry(code);
-              }}
-            />
+        {/*
+          Six panels, all collapsed, each with its own count — not thirty inputs in a column.
+          Grouped by what a person goes looking for ("where do I change the mortgage") rather
+          than by the shape of `ScenarioInput`, which is why pocket money and wage growth are
+          here under the household instead of behind "reserve cap", and why the parental-leave
+          length is inside Children instead of behind a disclosure of its own two levels deep.
+        */}
+        <div className="stack">
+          <FieldGroup
+            id="nast-household"
+            title={t('planner.groupHousehold')}
+            collapsible
+            defaultOpen={false}
+            pending={pendingIn('household')}
+            pendingLabel={pendingLabel}
+          >
+            <div className="span-12 stack">
+              <div className="grid-12">
+                <ChoiceField<JurisdictionCode>
+                  id="country-plan"
+                  label={t('planner.country')}
+                  variant="cards"
+                  value={scenario.jurisdiction}
+                  options={[
+                    { value: 'CZ', label: t('planner.countryCZ'), hint: t('planner.countryHintCZ') },
+                    { value: 'SK', label: t('planner.countrySK'), hint: t('planner.countryHintSK') },
+                  ]}
+                  /* Here it discards work, so it asks. In the wizard nothing has been typed yet. */
+                  onChange={(code) => {
+                    if (code === scenario.jurisdiction) return;
+                    if (touched.length > 0 && !confirm(t('planner.changeCountryConfirm'))) return;
+                    setCountry(code);
+                  }}
+                />
+              </div>
+              <div className="grid-12">{shapeFields}</div>
+              <div className="grid-12">{incomeFields}</div>
+              <div className="grid-12">{peopleDetailFields}</div>
+            </div>
           </FieldGroup>
 
-          <FieldGroup title={t('planner.householdShape')}>{shapeFields}</FieldGroup>
-          <FieldGroup title={t('planner.netIncome')}>{incomeFields}</FieldGroup>
-          <FieldGroup title={t('planner.housing')}>{housingFields}</FieldGroup>
-          <FieldGroup title={t('planner.debts')}>{debtFields}</FieldGroup>
-          <FieldGroup title={t('planner.expenses')}>{expenseFields}</FieldGroup>
-          <div className="grid-12">
-            {cashFields}
-            <AdvancedDisclosure
-              id="sweep-adv"
-              label={t('planner.sweepCap')}
-              pending={pendingIn('sweep')}
-              pendingLabel={pendingLabel}
-            >
-              <NumberField
-                id="r-cap"
-                kind="money.large"
-                label={t('planner.sweepCap')}
-                hint={t('planner.sweepHint')}
-                value={scenario.reserve.sweepCap ?? 0}
-                span={6}
-                onChange={(v) => edit('reserve.sweepCap', { reserve: { ...scenario.reserve, sweepCap: v } })}
-                {...numberProps}
-              />
-              {scenario.people.map((person, index) => (
-                <NumberField
-                  key={`pocket-${person.id}`}
-                  id={`pocket-${person.id}`}
-                  kind="money.monthly"
-                  label={solo ? t('planner.pocketMoney') : `${t('planner.pocketMoney')} — ${personName(index)}`}
-                  value={person.pocketMoney}
-                  span={6}
-                  onChange={(v) =>
-                    edit(`people[${index}].pocketMoney`, {
-                      people: scenario.people.map((p, i) => (i === index ? { ...p, pocketMoney: v } : p)),
-                    })
-                  }
-                  {...numberProps}
-                />
-              ))}
-              {scenario.people.map((person, index) => (
-                <NumberField
-                  key={`growth-${person.id}`}
-                  id={`growth-${person.id}`}
-                  kind="percent.growth"
-                  label={solo ? t('planner.incomeGrowth') : `${t('planner.incomeGrowth')} — ${personName(index)}`}
-                  value={person.incomeGrowthPct}
-                  span={6}
-                  onChange={(v) =>
-                    edit(`people[${index}].incomeGrowthPct`, {
-                      people: scenario.people.map((p, i) => (i === index ? { ...p, incomeGrowthPct: v } : p)),
-                    })
-                  }
-                  {...numberProps}
-                />
-              ))}
-            </AdvancedDisclosure>
-          </div>
-          <FieldGroup title={t('planner.children')}>{childFields}</FieldGroup>
+          <FieldGroup
+            id="nast-housing"
+            title={t('planner.housing')}
+            collapsible
+            defaultOpen={false}
+            pending={pendingIn('housing')}
+            pendingLabel={pendingLabel}
+          >
+            {housingFields}
+          </FieldGroup>
 
-          <FieldGroup title={t('planner.personalInvesting')} collapsible defaultOpen={false}>
+          <FieldGroup
+            id="nast-debts"
+            title={t('planner.debts')}
+            collapsible
+            defaultOpen={false}
+            pending={pendingIn('debts')}
+            pendingLabel={pendingLabel}
+          >
+            {debtFields}
+          </FieldGroup>
+
+          <FieldGroup
+            id="nast-expenses"
+            title={t('planner.expenses')}
+            collapsible
+            defaultOpen={false}
+            pending={pendingIn('expenses')}
+            pendingLabel={pendingLabel}
+          >
+            {expenseFields}
+          </FieldGroup>
+
+          <FieldGroup
+            id="nast-savings"
+            title={t('planner.groupSavings')}
+            collapsible
+            defaultOpen={false}
+            pending={pendingIn('savings')}
+            pendingLabel={pendingLabel}
+          >
             <div className="span-12 stack">
+              <div className="grid-12">{cashFields}</div>
+              <div className="grid-12">
+                <NumberField
+                  id="r-cap"
+                  kind="money.large"
+                  label={t('planner.sweepCap')}
+                  hint={t('planner.sweepHint')}
+                  value={scenario.reserve.sweepCap ?? 0}
+                  span={6}
+                  estimate={!touched.includes('reserve.sweepCap')}
+                  onChange={(v) =>
+                    edit('reserve.sweepCap', { reserve: { ...scenario.reserve, sweepCap: v } })
+                  }
+                  {...numberProps}
+                />
+              </div>
               {scenario.people.map((person, index) => (
                 <SleevesEditor
                   key={`sleeves-${person.id}`}
@@ -2020,11 +2124,6 @@ export function PlannerClient({
                   }
                 />
               ))}
-            </div>
-          </FieldGroup>
-
-          <FieldGroup title={t('envelopes.title')} collapsible defaultOpen={false}>
-            <div className="span-12">
               <EnvelopesEditor
                 envelopes={scenario.envelopes}
                 people={scenario.people}
@@ -2035,6 +2134,17 @@ export function PlannerClient({
                 onChange={(envelopes) => patch({ envelopes })}
               />
             </div>
+          </FieldGroup>
+
+          <FieldGroup
+            id="nast-children"
+            title={t('planner.children')}
+            collapsible
+            defaultOpen={false}
+            pending={pendingIn('children')}
+            pendingLabel={pendingLabel}
+          >
+            {childFields}
           </FieldGroup>
         </div>
       </Disclosure>

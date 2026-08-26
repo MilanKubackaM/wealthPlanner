@@ -1386,6 +1386,41 @@ prestane byť príkladom, je horší než žiadny príklad.
 `ENGINE_VERSION` sa nemení: default ovplyvní iba **nové** scenáre, uložené plány nesú vlastné
 číslo a 10 goldenov je bajt na bajt rovnakých — čo je dôkaz, že sa nepohol žiadny vzorec.
 
+### Fáza 2.5i — „Čísla plánu" sa stali „Nastavením plánu" (hotové 25. 8. 2026)
+
+Jeden stĺpec tridsiatich inputov je teraz **šesť zbalených panelov** — Domácnosť a príjmy,
+Bývanie, Ostatné dlhy, Pravidelné výdavky, Rezervy a investície, Deti — každý s počtom
+parametrov, ktoré v ňom stoja na nepotvrdenom defaulte, a **hlavička sekcie nesie súčet ešte
+pred rozbalením**.
+
+Zoskupenie je podľa toho, **čo človek hľadá**, nie podľa tvaru `ScenarioInput`. Kvôli tomu sa
+dve veci presunuli:
+
+- **Vreckové a rast platu** sú fakty o *ľuďoch*, takže patria k domácnosti. Predtým sa skrývali
+  za disclosure s názvom „Strop rezervy", čo ich zoskupovalo podľa toho, ako pokročilo
+  vyzerajú, nie podľa toho, o čom sú.
+- **Dĺžka rodičovskej je inline pri dieťati**, nie za disclosure o dve úrovne nižšie. Je to
+  jedno z dvoch-troch čísel, ktoré rozhodujú, či plán dieťa vôbec prežije; staré umiestnenie
+  ju radilo podľa toho, ako technicky vyzerá.
+
+**Systémom dodané číslo teraz aj vyzerá ako systémom dodané.** Štítok „odhad" bola neutrálna
+šedá pilulka, čo robilo národný priemer rovnako usadeným ako číslo, ktoré užívateľ napísal —
+takže plán postavený takmer výhradne na defaultoch vyzeral hotovo. Teraz je tónovaný, tým istým
+odtieňom ako „povinné" a „N na doplnenie", pretože všetky tri hovoria čitateľovi jedno: *ešte
+nie tvoje*. Rozdiel, ktorý sa vyplatí kresliť, je **tvar, nie odtieň** — orámovaná pilulka je
+tvrdenie o hodnote, ktorá tam je; plná farba je niečo, čo má užívateľ urobiť. „Voliteľné"
+zostalo neutrálne: prázdne voliteľné pole nie je nedokončené.
+
+Súhrn sekcie teraz počíta ten istý súbor ako jej odznak. „8 na doplnenie" vedľa „13 parametrov"
+zvádzalo k čítaniu „8 z 13", pričom to boli dve rôzne množiny.
+
+#### Chyba, ktorú si zapíšem
+
+Prvý pokus o tento refaktor vkladal nové telo sekcie pomocou `.index()` pre koncovú hranicu
+hľadanú **od začiatku súboru** — takže koniec skončil *pred* začiatkom a rez namiesto nahradenia
+jednej sekcie **zduplikoval tri**. Zachytilo to až strict-mode porušenie na duplicitnom `id`
+v prehliadači, nie typechecker: ten dve kópie všetkého skompiluje bez slova.
+
 ### Fáza 2.6 — Hodnotenia od používateľov (analýza hotová, implementácia pauznutá)
 
 > Analýza je dokončená 25. 8. 2026, implementácia odložená. Toto je jediná funkcia v celom

@@ -180,7 +180,22 @@ async function advance(page: Page, locale: 'cs' | 'sk' = 'cs') {
   await next.click();
 }
 
-/** Opens a group inside the "Čísla plánu" section (envelopes, personal investing). */
+/**
+ * Opens one panel inside "Nastavenie plánu".
+ *
+ * That section used to be a single column of every input in the plan. It is now six collapsed
+ * panels, each carrying a count of the parameters still on a default — so a test that wants a
+ * field has to say which panel it lives in, exactly as a user does.
+ */
+async function openPlanGroup(page: Page, group: string) {
+  await openSection(page, 'cisla');
+  const button = page.locator(`button[aria-controls="nast-${group}-body"]`);
+  await button.waitFor();
+  if ((await button.getAttribute('aria-expanded')) === 'false') await button.click();
+  await expect(button).toHaveAttribute('aria-expanded', 'true');
+}
+
+/** Opens a group inside the plan settings (envelopes, personal investing). */
 async function openGroup(page: Page, name: RegExp) {
   const header = page.getByRole('button', { name, expanded: false });
   if (await header.isVisible().catch(() => false)) await header.click();
@@ -650,7 +665,7 @@ test.describe('planner', () => {
        addresses the block rather than an exact string. */
     await expect(page.locator('.notice[data-tone="good"]')).toBeVisible();
 
-    await openSection(page, 'cisla');
+    await openPlanGroup(page, 'children');
     await page.getByRole('radio', { name: /Ano — máme nebo plánujeme/ }).click();
     /* One child on an average household is enough to break it — that is the whole product. */
     await expect(page.locator('.notice[data-tone="good"]')).toBeHidden({ timeout: 15_000 });
@@ -659,7 +674,7 @@ test.describe('planner', () => {
   test('a proven fix can be applied and it improves the trough', async ({ page }) => {
     await page.goto('/cs/plan');
     await fillWizard(page);
-    await openSection(page, 'cisla');
+    await openPlanGroup(page, 'children');
     await page.getByRole('radio', { name: /Ano — máme nebo plánujeme/ }).click();
 
     const apply = page.getByRole('button', { name: 'Použít' }).first();
@@ -735,7 +750,7 @@ test.describe('planner', () => {
 
     /* Pile up the cash and stop investing: the advice has to change from "invest more of your
        income" to "move the money you already have", which is the whole point of the rule. */
-    await openSection(page, 'cisla');
+    await openPlanGroup(page, 'savings');
     await page.getByLabel(/Kolik máte teď/).first().fill('4000000');
     await page.getByLabel(/Měsíční vklad/).first().fill('0');
 
@@ -753,27 +768,29 @@ test.describe('planner', () => {
 
     await page.goto('/cs/plan');
     await fillWizard(page);
-    await openSection(page, 'cisla');
-
     /*
      * The other half of the wizard's bargain. The stepper only asks what the projection cannot
      * work without; the rest keeps a sourced default. That is honest only if the leftovers are
-     * findable, and a collapsed panel is invisible by design.
+     * findable, and a collapsed panel is invisible by design — so the count is on the SECTION
+     * header, before anything is expanded, and again on each panel inside it.
      */
-    /* Addressed through `aria-controls`, because the id names the PANEL and the badge lives on
-       the button that toggles it. */
-    const sweep = page.locator('button[aria-controls="sweep-adv-adv"]');
-    await expect(sweep.locator('.pending')).toContainText(/\d+ k doplnění/);
+    const section = page.locator('#cisla-btn .pending');
+    await expect(section).toContainText(/\d+ k doplnění/);
+    const before = Number((await section.textContent())?.match(/\d+/)?.[0]);
+    expect(before).toBeGreaterThan(0);
 
-    /* Answering one of them decrements the count rather than merely hiding the badge. */
-    const before = Number((await sweep.locator('.pending').textContent())?.match(/\d+/)?.[0]);
-    await sweep.click();
+    await openSection(page, 'cisla');
+    /* Six panels, and the ones with unanswered defaults say so. */
+    await expect(page.locator('#cisla .fg-h .pending').first()).toContainText(/\d+ k doplnění/);
+
+    /* Answering one decrements both counts rather than merely hiding a badge. */
+    await openPlanGroup(page, 'household');
     await page.getByLabel(/Roční růst příjmu/).first().fill('4');
     await expect
-      .poll(async () => Number((await sweep.locator('.pending').textContent())?.match(/\d+/)?.[0]))
+      .poll(async () => Number((await section.textContent())?.match(/\d+/)?.[0]))
       .toBe(before - 1);
 
-    /* And the assumptions section carries its own count, on the section header. */
+    /* And the assumptions section carries its own count, on its own header. */
     await expect(page.locator('#predpoklady-btn .pending')).toContainText(/\d+ k doplnění/);
 
     expect(errors, errors.join('\n')).toEqual([]);
@@ -782,21 +799,21 @@ test.describe('planner', () => {
   test('a plan survives a reload with no save button in sight', async ({ page }) => {
     await page.goto('/cs/plan');
     await fillWizard(page);
-    await openSection(page, 'cisla');
+    await openPlanGroup(page, 'savings');
     await page.getByLabel(/Kolik máte teď/).fill('333000');
     /* No Save button: the change persists on its own. */
     await waitForAutosave(page);
 
     await page.reload();
     /* A stored plan must skip the wizard, not show it again. */
-    await openSection(page, 'cisla');
+    await openPlanGroup(page, 'savings');
     await expect(page.getByLabel(/Kolik máte teď/)).toHaveValue(/333\s?000/);
   });
 
   test('the editor accepts the numbers this product itself prints', async ({ page }) => {
     await page.goto('/cs/plan');
     await fillWizard(page);
-    await openSection(page, 'cisla');
+    await openPlanGroup(page, 'household');
 
     /*
      * A user copies "39 000 Kč" out of the app and pastes it back in. With the old field this
@@ -827,9 +844,10 @@ test.describe('country and locale', () => {
 
     await page.goto('/cs/plan');
     await fillWizard(page);
-    await openSection(page, 'cisla');
+    await openPlanGroup(page, 'housing');
     await expect(page.locator('#m-balance')).toHaveValue(/4\s?510\s?000/);
     /* A figure nothing else in the suite uses, so finding it later can only mean a leak. */
+    await openPlanGroup(page, 'savings');
     await page.getByLabel(/Kolik máte teď/).fill('222000');
     await waitForAutosave(page);
 
@@ -847,7 +865,7 @@ test.describe('country and locale', () => {
     await expect(page.locator('.wizard')).toBeVisible();
     await expect(page.getByRole('heading', { name: /V ktorej krajine/ })).toBeVisible();
     await fillWizard(page, 'sk');
-    await openSection(page, 'cisla');
+    await openPlanGroup(page, 'savings');
 
     /* Slovak page, euro, and not a trace of the Czech reserve. */
     await expect(page.locator('.f-unit').first()).toHaveText('€');
@@ -890,14 +908,15 @@ test.describe('country and locale', () => {
 
     /* The rest of the wizard, answered — there is no way past it any more. */
     await runRemainingSteps(page, 'sk');
-    await openSection(page, 'cisla');
+    await openPlanGroup(page, 'housing');
     await expect(page.locator('#m-balance')).toHaveValue(/4\s?510\s?000/);
+    await openPlanGroup(page, 'savings');
     await page.getByLabel(/Koľko máte teraz/).fill('250000');
     await waitForAutosave(page, 'sk');
 
     /* The choice is remembered, so a reload does not put them back on euro. */
     await page.reload();
-    await openSection(page, 'cisla');
+    await openPlanGroup(page, 'housing');
     await expect(page.locator('#m-balance')).toHaveValue(/4\s?510\s?000/);
     await expect(page.getByText('€')).toHaveCount(0);
 
@@ -907,19 +926,19 @@ test.describe('country and locale', () => {
   test('each country keeps its own plan — one does not overwrite the other', async ({ page }) => {
     await page.goto('/cs/plan');
     await fillWizard(page);
-    await openSection(page, 'cisla');
+    await openPlanGroup(page, 'savings');
     await page.getByLabel(/Kolik máte teď/).fill('333000');
     await waitForAutosave(page);
 
     await page.goto('/sk/plan');
     await fillWizard(page, 'sk');
-    await openSection(page, 'cisla');
+    await openPlanGroup(page, 'savings');
     await page.getByLabel(/Koľko máte teraz/).fill('12000');
     await waitForAutosave(page, 'sk');
 
     /* The Slovak save must not have eaten the Czech plan. */
     await page.goto('/cs/plan');
-    await openSection(page, 'cisla');
+    await openPlanGroup(page, 'savings');
     await expect(page.getByLabel(/Kolik máte teď/)).toHaveValue(/333\s?000/);
   });
 });
@@ -946,7 +965,7 @@ test.describe('accessibility and sharing', () => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await page.goto('/cs/plan');
     await fillWizard(page);
-    await openSection(page, 'cisla');
+    await openPlanGroup(page, 'savings');
     await page.getByLabel(/Kolik máte teď/).fill('777000');
     await page.getByRole('button', { name: /Zkopírovat odkaz/ }).click();
     await expect(page.getByText('Odkaz zkopírován')).toBeVisible();
@@ -967,7 +986,7 @@ test.describe('accessibility and sharing', () => {
   test('envelopes are descriptive: adding one must not move the projection', async ({ page }) => {
     await page.goto('/cs/plan');
     await fillWizard(page);
-    await openSection(page, 'cisla');
+    await openPlanGroup(page, 'savings');
     await openGroup(page, /Obálky/);
 
     const before = await page.locator('svg[role="img"]').first().getAttribute('aria-label');
