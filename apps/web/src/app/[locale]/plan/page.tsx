@@ -11,13 +11,13 @@ export default async function PlanPage({ params }: { params: Promise<{ locale: s
   const today = new Date().toLocaleDateString(locale === 'sk' ? 'sk-SK' : 'cs-CZ');
 
   return (
-    <div style={{ display: 'grid', gap: 20 }}>
-      <div style={{ maxWidth: '60ch' }}>
-        <h1 style={{ fontSize: 26 }}>{t('nav.plan')}</h1>
-        <p className="muted" style={{ margin: '6px 0 0', fontSize: 15 }}>
-          {t('brand.tagline')}
-        </p>
-      </div>
+    <div className="stack">
+      {/*
+        Heading only. The subtitle moved into PlannerClient because it names the projection's
+        horizon, and the horizon is a value the user edits — a server-rendered "25 rokov" was
+        simply wrong for anyone who changed it.
+      */}
+      <h1 className="plan-h1">{t('nav.plan')}</h1>
       <PlannerClient locale={locale as AppLocale} startMonth={startMonth} today={today} />
     </div>
   );

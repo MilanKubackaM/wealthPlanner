@@ -1,5 +1,24 @@
 # Changelog
 
+## Phase 2.5j — Two numbers that were lying
+
+**The three-figure recap above the plan is gone.** It was a sensitivity analysis — for each group
+of inputs, how far the reserve trough moved when that group was reset to national averages — and
+the analysis was sound. The presentation was not: a row reading "Čistý mesačný príjem
++296 181 €" parses as an income of 296 thousand, not as "the trough would be that much worse on
+the average". A number nobody can read is worse than no number, and the same question is answered
+legibly by the sensitivity section further down the page.
+
+**The subtitle now names the horizon the user actually set.** It was a server-rendered string
+with "25" written into it, so anyone who moved the horizon to 30 or 37 years was told 25 — and
+the horizon is one of the parameters the plan invites them to change. It moved into
+`PlannerClient`, the only place that knows the answer, and it re-reads on every edit. ICU plurals,
+because "1 rok / 2 roky / 5 rokov" is three forms in both languages.
+
+`brand.tagline` went with it: nothing referenced it any more, the page metadata has its own
+description. Style ratchets fell as two inline style objects went with the page header: inline
+styles 139 → 134, numeric literals 98 → 94.
+
 ## Phase 2.5i — "Čísla plánu" becomes "Nastavenie plánu"
 
 **One column of thirty inputs is now six collapsed panels** — Domácnosť a príjmy, Bývanie,

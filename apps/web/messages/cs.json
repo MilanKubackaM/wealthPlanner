@@ -1,7 +1,6 @@
 {
   "brand": {
-    "name": "Dovolíme si?",
-    "tagline": "Měsíc po měsíci spočítaný rozpočet vaší domácnosti na dalších 25 let"
+    "name": "Dovolíme si?"
   },
   "meta": {
     "title": "Dovolíme si? — měsíční simulátor rodinných financí",
@@ -205,9 +204,6 @@
       "title": "Děti",
       "body": "Nic tu není povinné."
     },
-    "ribbon": {
-      "recap": "Hotovo. Tři čísla, která s vaším plánem udělala nejvíc:"
-    },
     "country": {
       "title": "V které zemi to počítáme?",
       "body": "Rozhoduje země, kde pracujete a berete dávky."
@@ -359,7 +355,8 @@
     "potRemove": "Odebrat",
     "pending": "{count} k doplnění",
     "groupHousehold": "Domácnost a příjmy",
-    "groupSavings": "Rezervy a investice"
+    "groupSavings": "Rezervy a investice",
+    "horizonLead": "Měsíc po měsíci spočítaný rozpočet vaší domácnosti na {years, plural, one {další # rok} few {další # roky} other {dalších # let}}"
   },
   "compare": {
     "heading": "Srovnání scénářů",

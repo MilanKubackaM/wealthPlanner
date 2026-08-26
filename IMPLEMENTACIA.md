@@ -1421,6 +1421,24 @@ hľadanú **od začiatku súboru** — takže koniec skončil *pred* začiatkom 
 jednej sekcie **zduplikoval tri**. Zachytilo to až strict-mode porušenie na duplicitnom `id`
 v prehliadači, nie typechecker: ten dve kópie všetkého skompiluje bez slova.
 
+### Fáza 2.5j — Dve čísla, ktoré klamali (hotové 25. 8. 2026)
+
+**Trojriadkový recap nad plánom je zrušený.** Bola to citlivostná analýza — pre každú skupinu
+vstupov o koľko sa pohlo dno rezervy, keby sa tá skupina vrátila na národný priemer — a analýza
+bola v poriadku. Podanie nie: riadok „Čistý mesačný príjem **+296 181 €**" sa čita ako príjem
+296 tisíc, nie ako „dno by bolo o toľko horšie pri priemere". **Číslo, ktoré nikto neprečíta, je
+horšie než žiadne číslo**, a na tú istú otázku odpovedá čitateľne sekcia „Čo keď sa predpoklady
+nevyplnia" nižšie na stránke.
+
+**Podtitul pomenúva horizont, ktorý si užívateľ naozaj nastavil.** Bol to server-rendered
+string s „25" napísaným vnútri, takže komu horizont sedel na 30 alebo 37 rokoch, ten čítal 25 —
+a horizont je práve jeden z parametrov, ktoré plán vyzýva zmeniť. Presunul sa do
+`PlannerClient`, teda na jediné miesto, ktoré odpoveď pozná, a prepočítava sa pri každej úprave.
+ICU plurály, pretože „1 rok / 2 roky / 5 rokov" sú v oboch jazykoch tri formy.
+
+`brand.tagline` išiel s ním — nič ho už nereferencovalo, metadáta stránky majú vlastný popis.
+Ratchety klesli spolu s dvoma inline štýlmi v hlavičke stránky: 139 → 134 a 98 → 94.
+
 ### Fáza 2.6 — Hodnotenia od používateľov (analýza hotová, implementácia pauznutá)
 
 > Analýza je dokončená 25. 8. 2026, implementácia odložená. Toto je jediná funkcia v celom

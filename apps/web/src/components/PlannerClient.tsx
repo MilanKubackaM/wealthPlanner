@@ -295,7 +295,6 @@ export function PlannerClient({
   const [linkCountry, setLinkCountry] = useState<JurisdictionCode | null>(null);
   const [otherCountry, setOtherCountry] = useState<JurisdictionCode | null>(null);
   const [sections, setSections] = useState<Record<string, boolean>>(SECTION_DEFAULTS);
-  const [recap, setRecap] = useState<Array<{ label: string; delta: number }>>([]);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const printing = usePrinting();
 
@@ -1660,29 +1659,27 @@ export function PlannerClient({
    * parked, and nothing in this body ever read it.)
    */
   function finishWizard() {
-    const pristine = defaultScenario(scenario.jurisdiction, startMonth, size);
-    const mine = simulate(scenario).minReserve;
-    const groups: Array<[string, ScenarioInput]> = [
-      [t('planner.housing'), { ...scenario, housing: pristine.housing }],
-      [t('planner.expenses'), { ...scenario, expenses: pristine.expenses }],
-      [
-        t('planner.reserve'),
-        { ...scenario, reserve: pristine.reserve, jointInvesting: pristine.jointInvesting },
-      ],
-      [t('planner.netIncome'), { ...scenario, people: pristine.people }],
-      [t('planner.children'), { ...scenario, children: [] }],
-      [t('planner.debts'), { ...scenario, liabilities: [] }],
-    ];
-    const deltas = groups
-      .map(([label, without]) => ({ label, delta: mine - simulate(without).minReserve }))
-      .filter((entry) => Math.abs(entry.delta) > 1)
-      .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
-    setRecap(deltas.slice(0, 3));
+    /*
+     * This used to also compute a three-line "recap" — for each group of inputs, how far the
+     * reserve trough moved when that group was reset to its defaults. A sensitivity analysis,
+     * and a defensible one, but it was unreadable: a row saying "Čistý mesačný príjem
+     * +296 181 €" reads as an income of 296 thousand, not as "the trough would be that much
+     * worse on the national average". A number nobody can parse is worse than no number, and
+     * the same question is answered legibly by the sensitivity section further down the page.
+     */
     setStage('plan');
     /* Save the moment the wizard hands over, rather than waiting for the first later edit. */
     savePlan(scenario, touched);
     setSavedAt(new Date().toISOString());
   }
+
+  /*
+   * The subtitle says how far the projection actually reaches. It used to be a server-rendered
+   * string with "25" written into it, so a user who set a 30-year horizon was told 25 — and the
+   * horizon is one of the parameters the plan invites them to change. It lives here because
+   * this is the only place that knows the answer, and it re-reads on every edit.
+   */
+  const horizonYears = Math.max(1, scenario.assumptions.horizonYear - startMonth.year);
 
   if (stage === 'onboarding') {
     const total = STEP_IDS.length;
@@ -1838,6 +1835,10 @@ export function PlannerClient({
 
   return (
     <div className="stack-lg">
+      {/* The subtitle the page header used to render on the server, now that it can say the
+          horizon the user actually set. */}
+      <p className="plan-lead">{t('planner.horizonLead', { years: horizonYears })}</p>
+
       {fromLink && (
         <p className="card notice" style={{ margin: 0, fontSize: 14 }}>
           {t('share.loadedFromLink')}
@@ -1855,22 +1856,6 @@ export function PlannerClient({
         </p>
       )}
 
-      {recap.length > 0 && (
-        <div className="card notice">
-          <p style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>{t('onboarding.ribbon.recap')}</p>
-          <ul className="recap">
-            {recap.map((item) => (
-              <li key={item.label}>
-                <span>{item.label}</span>
-                <strong className="tabular">
-                  {item.delta < 0 ? '−' : '+'}
-                  {money(Math.abs(item.delta), currency, locale)}
-                </strong>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
 
       <SectionRail
         label={t('planSections.railLabel')}
@@ -2265,7 +2250,6 @@ export function PlannerClient({
                 clearPlan(scenario.jurisdiction);
                 setScenario(defaultScenario(scenario.jurisdiction, startMonth, size));
                 setTouched([]);
-                setRecap([]);
                 setStage('onboarding');
                 setStep(0);
               }}

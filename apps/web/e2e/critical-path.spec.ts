@@ -762,6 +762,33 @@ test.describe('planner', () => {
     expect(errors, errors.join('\n')).toEqual([]);
   });
 
+  test('the subtitle names the horizon the user actually set', async ({ page }) => {
+    const errors: string[] = [];
+    failOnConsoleErrors(page, errors);
+
+    await page.goto('/cs/plan');
+    await fillWizard(page);
+
+    /*
+     * It used to be a server-rendered string with "25" written into it, so a user who set a
+     * 30-year horizon was told 25 — and the horizon is one of the parameters the plan invites
+     * them to change.
+     */
+    const lead = page.locator('.plan-lead');
+    await expect(lead).toContainText(/na dalších \d+ let/);
+    const before = Number((await lead.textContent())?.match(/\d+/)?.[0]);
+
+    await openSection(page, 'predpoklady');
+    await page.getByLabel(/Horizont/).fill(String(new Date().getFullYear() + 40));
+    await expect.poll(async () => Number((await lead.textContent())?.match(/\d+/)?.[0])).toBe(40);
+    expect(before).not.toBe(40);
+
+    /* And the three unreadable sensitivity figures that used to sit above it are gone. */
+    await expect(page.locator('.recap')).toHaveCount(0);
+
+    expect(errors, errors.join('\n')).toEqual([]);
+  });
+
   test('collapsed panels say how many parameters are still on a default', async ({ page }) => {
     const errors: string[] = [];
     failOnConsoleErrors(page, errors);
